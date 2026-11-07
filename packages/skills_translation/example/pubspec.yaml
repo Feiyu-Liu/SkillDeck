@@ -1,0 +1,56 @@
+name: skills_translation_example
+description: Desktop example for the skills_translation package.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  crypto: ^3.0.7
+  cupertino_icons: ^1.0.8
+  file_selector: 1.0.3
+  flutter:
+    sdk: flutter
+  path: ">=1.9.0 <2.0.0"
+  skills_translation:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+# Pub does not inherit dependency overrides from path dependencies. Keep these
+# aligned with the skills_translation package until the hosted llm_dart
+# 0.11.0-alpha.1 archive is complete or the package upgrades the dependency.
+dependency_overrides:
+  llm_dart_anthropic:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_anthropic
+  llm_dart_openai:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_openai
+  llm_dart_provider:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider
+  llm_dart_provider_utils:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider_utils
+  llm_dart_transport:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_transport
+
+flutter:
+  uses-material-design: false

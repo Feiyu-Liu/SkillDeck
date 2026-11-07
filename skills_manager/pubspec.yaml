@@ -1,0 +1,195 @@
+name: skills_manager
+description: SkillDeck, a desktop console for transactional Agent Skill management.
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+  flutter: '>=3.47.0'
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.0
+  highlight: ^0.7.0
+  flutter_md:
+    git:
+      url: https://github.com/Feiyu-Liu/md.git
+      ref: cb79a7789682bfd750c0bdb45a2e4bea8a85f0ef
+  next_ui:
+    git:
+      url: https://github.com/Feiyu-Liu/next-ui.git
+      ref: e91aa0399adadd38898f5658bfb4925e32b637c2
+  go_router: ^17.3.0
+  path: ^1.9.1
+  crypto: ^3.0.7
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.2
+  file_selector: ^1.0.4
+  window_manager: ^0.5.2
+  tray_manager: 0.7.0
+  nativeapi: 0.3.0
+  auto_updater:
+    git:
+      url: https://github.com/Feiyu-Liu/auto_updater.git
+      ref: 74351247aaa93743bd1c5804de54cce4de76787b
+      path: packages/auto_updater
+  skilldeck_cli:
+    path: ../packages/skilldeck_cli
+  skills_workspace:
+    path: ../packages/skills_workspace
+  skills_translation:
+    path: ../packages/skills_translation
+  flutter_secure_storage: 11.0.0
+  shared_preferences: 2.5.5
+  matomo_tracker: 6.1.1
+  package_info_plus: 10.2.1
+  yaml: ^3.1.3
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  flutter_svg: 2.3.0
+  lucide_icons_flutter: ^3.1.15
+  toastification: ^3.2.0
+  intl: any
+  smooth_corner: ^1.1.1
+  scroll_animator: ^0.3.0
+  shimmer_animation: ^2.2.2
+
+dependency_overrides:
+  llm_dart_anthropic:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_anthropic
+  llm_dart_openai:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_openai
+  llm_dart_provider:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider
+  llm_dart_provider_utils:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider_utils
+  llm_dart_transport:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_transport
+
+dev_dependencies:
+  fake_async: ^1.3.3
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  shared_preferences_platform_interface: 2.4.2
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# Generate platform launcher icons from the product logo.
+flutter_launcher_icons:
+  image_path: "assets/app_icon_source.png"
+  macos:
+    generate: true
+    # macOS 15 and earlier don't mask icons; this one carries its own shape.
+    image_path: "assets/app_icon_macos.png"
+  windows:
+    generate: true
+    icon_size: 256
+
+# The following section is specific to Flutter packages.
+flutter:
+  generate: true
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+    - family: Space Grotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-Variable.ttf
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Variable.ttf
+    - family: Noto Sans SC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-Variable.ttf
+
+  assets:
+    - assets/agent_skill/skilldeck/SKILL.md
+    - assets/agent_icons/
+    - assets/app_icon.png
+    - assets/licenses/
+    - assets/tray/
+    - assets/whats_new/
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package

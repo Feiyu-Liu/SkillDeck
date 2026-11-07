@@ -1,0 +1,58 @@
+name: Set up hosted CI
+description: Pinned Flutter SDK and native dependencies on standard GitHub runners.
+inputs:
+  flutter-version:
+    default: '3.47.5'
+    description: Flutter SDK version (3.29.3 is the translation compatibility floor).
+  native:
+    default: 'true'
+    description: Install and verify native desktop build dependencies.
+runs:
+  using: composite
+  steps:
+    - name: Install Linux native dependencies
+      if: inputs.native == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang libclang-dev cmake ninja-build pkg-config libssl-dev libgtk-3-dev liblzma-dev xvfb
+    - name: Enter Visual Studio developer environment
+      if: inputs.native == 'true' && runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@a102174a2b586eec2ea151a69e6fd14404a8ce7c # v1.13.0
+      with:
+        arch: x64
+    - name: Verify Windows native dependencies
+      if: inputs.native == 'true' && runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Get-Command cl.exe, clang.exe, cmake.exe, ninja.exe -ErrorAction Stop
+        cmake --version
+        ninja --version
+    - name: Prepare macOS native dependencies
+      if: inputs.native == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        for tool in cmake ninja pkg-config; do
+          if ! command -v "$tool" >/dev/null; then brew install "$tool"; fi
+        done
+        if ! command -v pod >/dev/null; then brew install cocoapods; fi
+        xcodebuild -version
+        xcrun clang --version
+        cmake --version
+        ninja --version
+        pkg-config --version
+        pod --version
+    - name: Install pinned Flutter
+      uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: stable
+        cache: 'true'
+    - name: Verify SDK versions
+      shell: bash
+      env:
+        EXPECTED_FLUTTER: ${{ inputs.flutter-version }}
+      run: |
+        flutter --version --machine > "$RUNNER_TEMP/flutter-version.json"
+        python -c 'import json, os; from pathlib import Path; text = (Path(os.environ["RUNNER_TEMP"]) / "flutter-version.json").read_text(); v = json.loads(text[text.index("{"):]); assert v["frameworkVersion"] == os.environ["EXPECTED_FLUTTER"], v; assert os.environ["EXPECTED_FLUTTER"] != "3.47.5" or v["dartSdkVersion"].split()[0] == "3.13.4", v; print(v["frameworkVersion"], v["dartSdkVersion"])'
+        dart --version

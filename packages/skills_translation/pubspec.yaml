@@ -1,0 +1,62 @@
+name: skills_translation
+description: Live translation and content-addressed caching for immutable Skill content.
+version: 0.3.0
+publish_to: none
+
+environment:
+  sdk: ">=3.7.0 <4.0.0"
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_md:
+    git:
+      url: https://github.com/Feiyu-Liu/md.git
+      ref: cb79a7789682bfd750c0bdb45a2e4bea8a85f0ef
+  crypto: ^3.0.7
+  dio: 5.9.2
+  ffi: ">=2.2.0 <3.0.0"
+  llm_dart_anthropic: 0.11.0-alpha.1
+  llm_dart_openai: 0.11.0-alpha.1
+  llm_dart_provider: 0.11.0-alpha.1
+  llm_dart_provider_utils: 0.11.0-alpha.1
+  llm_dart_transport: 0.11.0-alpha.1
+  logging: 1.3.0
+  path: ">=1.9.0 <2.0.0"
+  yaml: ^3.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^4.0.0
+  test: ^1.25.7
+
+# The hosted alpha.1 archive omits llm_dart_provider/lib/src/tool. Pin the
+# complete upstream release tag until the publisher replaces that artifact.
+dependency_overrides:
+  llm_dart_anthropic:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_anthropic
+  llm_dart_openai:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_openai
+  llm_dart_provider:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider
+  llm_dart_provider_utils:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_provider_utils
+  llm_dart_transport:
+    git:
+      url: https://github.com/Latias94/llm_dart.git
+      ref: a3b8827c5ff0cb86770f24a34bbd551482eaf3ae
+      path: packages/llm_dart_transport

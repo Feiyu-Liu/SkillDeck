@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "project_root": "..",
+  "flutter_project": "skills_manager",
+  "flutter_version": "3.47.5",
+  "artifact_name": "SkillDeck",
+  "define_file": "keys/release-defines.json",
+  "feed_define": "SKILLDECK_UPDATE_FEED_URL",
+  "version_define": "SKILLDECK_VERSION",
+  "bucket": "example-release-bucket",
+  "public_base_url": "https://download.example.com",
+  "object_prefix": "example/stable",
+  "sign_update_tool": "skills_manager/macos/Pods/Sparkle/bin/sign_update",
+  "sparkle_account": "example-sparkle-account",
+  "no_tree_shake_icons": true,
+  "offline_pub_get": true,
+  "dmg": {
+    "background": "skills_manager/assets/dmg-background.png",
+    "window_pos": [200, 120],
+    "window_size": [800, 400],
+    "icon_size": 108,
+    "app_position": [230, 225],
+    "applications_position": [570, 225]
+  },
+  "targets": {
+    "macos-arm64": {
+      "platform": "macos",
+      "architecture": "arm64",
+      "disable_impeller": false,
+      "appcast_key": "example/stable/macos-arm64/appcast.xml",
+      "latest_key": "example/stable/latest.json",
+      "compatibility_appcasts": ["example/stable/appcast.xml"]
+    },
+    "macos-x86_64": {
+      "platform": "macos",
+      "architecture": "x86_64",
+      "disable_impeller": true,
+      "appcast_key": "example/stable/macos-x86_64/appcast.xml",
+      "latest_key": "example/stable/latest-intel.json"
+    },
+    "windows-x64": {
+      "platform": "windows",
+      "architecture": "x64",
+      "ssh_host": "windows-build-host",
+      "remote_project_root": "D:/path/to/project",
+      "iscc": "C:/Program Files (x86)/Inno Setup 6/ISCC.exe",
+      "inno_script": "skills_manager/windows/packaging/inno/skilldeck.iss",
+      "exe_name": "SkillDeck.exe",
+      "authenticode": "unsigned",
+      "winsparkle_version": "0.8.1",
+      "private_key": "keys/windows/winsparkle_dsa_priv.pem",
+      "public_key": "skills_manager/windows/runner/resources/winsparkle_dsa_pub.pem",
+      "appcast_key": "example/stable/appcast.xml",
+      "shared_appcast": true,
+      "latest_key": "example/stable/latest-windows.json",
+      "initialize_indexes": ["example/stable/latest-windows.json"]
+    }
+  }
+}

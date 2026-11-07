@@ -1,0 +1,1441 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "help",
+  "results": [],
+  "data": {
+    "commands": {
+      "status": {
+        "description": "Show the running App, Workspace, and Project Roots.",
+        "arguments": [],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        }
+      },
+      "agents": {
+        "description": "List device Agents and their global roots.",
+        "arguments": [],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        }
+      },
+      "list": {
+        "description": "List selected Skills. Provide refs, filters, or --all.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          }
+        }
+      },
+      "show": {
+        "description": "Show exactly one selected Skill and its documents.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "document": {
+            "type": "path",
+            "description": "Read a listed document (at most 512 KiB)."
+          }
+        }
+      },
+      "install": {
+        "description": "Inspect and install a Source. Without --agent, add to the library only.",
+        "arguments": [
+          {
+            "name": "source",
+            "type": "sourceLocator",
+            "required": true
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "skill": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Declared name or Slot Key, case-insensitive; exclusive with --all-skills."
+          },
+          "all-skills": {
+            "type": "bool",
+            "description": "Install every candidate; otherwise select the only candidate or use --skill."
+          },
+          "agent": {
+            "type": "agentId",
+            "repeatable": true,
+            "description": "Activate for these device Agents."
+          },
+          "project": {
+            "type": "path",
+            "description": "Destination Project Root, relative to cwd; requires --agent. Registers an unknown root automatically."
+          }
+        }
+      },
+      "source": {
+        "description": "Manage Skill Sources.",
+        "arguments": [],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        },
+        "subcommands": {
+          "relink": {
+            "description": "Reconnect adopted Skills using the skills.sh lock after approval in SkillDeck. Inspects each Source; defaults to all adopted Skills.",
+            "arguments": [
+              {
+                "name": "refs",
+                "type": "skillIdOrSlotKey",
+                "repeatable": true,
+                "required": false
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "tag": {
+                "type": "string",
+                "repeatable": true,
+                "description": "Require every named Personal Tag, case-insensitively."
+              },
+              "untagged": {
+                "type": "bool",
+                "description": "Select Skills without Personal Tags."
+              },
+              "favorite": {
+                "type": "bool",
+                "description": "Select Favorites."
+              },
+              "source": {
+                "type": "string",
+                "description": "Match a Source display locator prefix."
+              },
+              "active-for": {
+                "type": "agentId",
+                "description": "Select Skills activated for this Agent."
+              },
+              "project": {
+                "type": "path",
+                "description": "Match Activations at this Project Root; relative to cwd."
+              },
+              "has-update": {
+                "type": "bool",
+                "description": "Select Skills with an observed available update."
+              },
+              "all": {
+                "type": "bool",
+                "description": "Start from all Skills, then apply filters."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Return destructive disclosure facts without creating an approval or changing anything."
+              },
+              "approval-timeout": {
+                "type": "seconds",
+                "default": 90,
+                "minimum": 0,
+                "maximum": 600,
+                "description": "Wait up to 0–600 seconds for approval in SkillDeck; timing out leaves the request pending."
+              },
+              "from-skills-lock": {
+                "type": "bool",
+                "required": true,
+                "description": "Read Source hints from the skills.sh v3 lock."
+              },
+              "keep-going": {
+                "type": "bool",
+                "default": true,
+                "description": "Continue after an item fails (default on); --no-keep-going stops early."
+              }
+            }
+          },
+          "replace": {
+            "description": "Replace selected Skills from one inspected Source after approval in SkillDeck. Batch candidates match by Slot Key.",
+            "arguments": [
+              {
+                "name": "refs",
+                "type": "skillIdOrSlotKey",
+                "repeatable": true,
+                "required": false
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "tag": {
+                "type": "string",
+                "repeatable": true,
+                "description": "Require every named Personal Tag, case-insensitively."
+              },
+              "untagged": {
+                "type": "bool",
+                "description": "Select Skills without Personal Tags."
+              },
+              "favorite": {
+                "type": "bool",
+                "description": "Select Favorites."
+              },
+              "source": {
+                "type": "string",
+                "description": "Match a Source display locator prefix."
+              },
+              "active-for": {
+                "type": "agentId",
+                "description": "Select Skills activated for this Agent."
+              },
+              "project": {
+                "type": "path",
+                "description": "Match Activations at this Project Root; relative to cwd."
+              },
+              "has-update": {
+                "type": "bool",
+                "description": "Select Skills with an observed available update."
+              },
+              "all": {
+                "type": "bool",
+                "description": "Start from all Skills, then apply filters."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Return destructive disclosure facts without creating an approval or changing anything."
+              },
+              "approval-timeout": {
+                "type": "seconds",
+                "default": 90,
+                "minimum": 0,
+                "maximum": 600,
+                "description": "Wait up to 0–600 seconds for approval in SkillDeck; timing out leaves the request pending."
+              },
+              "keep-going": {
+                "type": "bool",
+                "description": "Continue after an item fails."
+              },
+              "to": {
+                "type": "sourceLocator",
+                "required": true,
+                "description": "New Source; relative local paths resolve against cwd."
+              },
+              "ref": {
+                "type": "string",
+                "description": "New Source ref; omitted means its default branch."
+              },
+              "skill": {
+                "type": "string",
+                "description": "Candidate declared name or Slot Key; requires exactly one selected Skill."
+              }
+            }
+          }
+        }
+      },
+      "remove": {
+        "description": "Request removal of selected Skills. The user must approve in SkillDeck at the reviewed Repository Revision.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Return destructive disclosure facts without creating an approval or changing anything."
+          },
+          "approval-timeout": {
+            "type": "seconds",
+            "default": 90,
+            "minimum": 0,
+            "maximum": 600,
+            "description": "Wait up to 0–600 seconds for approval in SkillDeck; timing out leaves the request pending."
+          }
+        }
+      },
+      "approvals": {
+        "description": "Inspect, resume, or withdraw an App-session approval request.",
+        "arguments": [],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        },
+        "subcommands": {
+          "wait": {
+            "description": "Resume waiting without withdrawing on timeout or disconnect.",
+            "arguments": [
+              {
+                "name": "id",
+                "type": "approvalId",
+                "required": true
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "approval-timeout": {
+                "type": "seconds",
+                "default": 90,
+                "minimum": 0,
+                "maximum": 600,
+                "description": "Wait up to 0–600 seconds for approval in SkillDeck; timing out leaves the request pending."
+              }
+            }
+          },
+          "status": {
+            "description": "Return pending, executing, or the original terminal result.",
+            "arguments": [
+              {
+                "name": "id",
+                "type": "approvalId",
+                "required": true
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              }
+            }
+          },
+          "cancel": {
+            "description": "Withdraw a pending approval; terminal outcomes remain unchanged.",
+            "arguments": [
+              {
+                "name": "id",
+                "type": "approvalId",
+                "required": true
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              }
+            }
+          }
+        }
+      },
+      "update": {
+        "description": "Update selected Skills with an observed available update. Never checks implicitly; run --check first. Dirty Drafts and conflicts require action in the App.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "check": {
+            "type": "bool",
+            "description": "Check through the App update coordinator without updating. With --dry-run, inspect current state only."
+          }
+        }
+      },
+      "activate": {
+        "description": "Change selected Skills at Agent roots. An unregistered activation project is registered automatically; deactivation never registers an unused root.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Destination Project Root, relative to cwd; omitted means global."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "agent": {
+            "type": "agentId",
+            "repeatable": true,
+            "description": "Device Agent member to change (required)."
+          }
+        }
+      },
+      "deactivate": {
+        "description": "Change selected Skills at Agent roots. An unregistered activation project is registered automatically; deactivation never registers an unused root.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Destination Project Root, relative to cwd; omitted means global."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "agent": {
+            "type": "agentId",
+            "repeatable": true,
+            "description": "Device Agent member to change (required)."
+          }
+        }
+      },
+      "favorite": {
+        "description": "Set Favorites for selected Skills.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "off": {
+            "type": "bool",
+            "description": "Clear Favorite."
+          }
+        }
+      },
+      "note": {
+        "description": "Set or clear the Note of exactly one Skill.",
+        "arguments": [
+          {
+            "name": "refs",
+            "type": "skillIdOrSlotKey",
+            "repeatable": true,
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          },
+          "tag": {
+            "type": "string",
+            "repeatable": true,
+            "description": "Require every named Personal Tag, case-insensitively."
+          },
+          "untagged": {
+            "type": "bool",
+            "description": "Select Skills without Personal Tags."
+          },
+          "favorite": {
+            "type": "bool",
+            "description": "Select Favorites."
+          },
+          "source": {
+            "type": "string",
+            "description": "Match a Source display locator prefix."
+          },
+          "active-for": {
+            "type": "agentId",
+            "description": "Select Skills activated for this Agent."
+          },
+          "project": {
+            "type": "path",
+            "description": "Match Activations at this Project Root; relative to cwd."
+          },
+          "has-update": {
+            "type": "bool",
+            "description": "Select Skills with an observed available update."
+          },
+          "all": {
+            "type": "bool",
+            "description": "Start from all Skills, then apply filters."
+          },
+          "dry-run": {
+            "type": "bool",
+            "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+          },
+          "keep-going": {
+            "type": "bool",
+            "description": "Continue after an item fails."
+          },
+          "set": {
+            "type": "string",
+            "description": "Save a nonblank Note."
+          },
+          "clear": {
+            "type": "bool",
+            "description": "Delete the Note."
+          }
+        }
+      },
+      "tag": {
+        "description": "Add, remove, or rename Personal Tags.",
+        "arguments": [],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        },
+        "subcommands": {
+          "add": {
+            "description": "Assign Tags, creating missing Tags.",
+            "arguments": [
+              {
+                "name": "refs",
+                "type": "skillIdOrSlotKey",
+                "repeatable": true,
+                "required": false
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "untagged": {
+                "type": "bool",
+                "description": "Select Skills without Personal Tags."
+              },
+              "favorite": {
+                "type": "bool",
+                "description": "Select Favorites."
+              },
+              "source": {
+                "type": "string",
+                "description": "Match a Source display locator prefix."
+              },
+              "active-for": {
+                "type": "agentId",
+                "description": "Select Skills activated for this Agent."
+              },
+              "project": {
+                "type": "path",
+                "description": "Match Activations at this Project Root; relative to cwd."
+              },
+              "has-update": {
+                "type": "bool",
+                "description": "Select Skills with an observed available update."
+              },
+              "all": {
+                "type": "bool",
+                "description": "Start from all Skills, then apply filters."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+              },
+              "keep-going": {
+                "type": "bool",
+                "description": "Continue after an item fails."
+              },
+              "tag": {
+                "type": "string",
+                "repeatable": true,
+                "description": "Tag to change (required); use other flags to filter selection."
+              }
+            }
+          },
+          "remove": {
+            "description": "Unassign existing Tags.",
+            "arguments": [
+              {
+                "name": "refs",
+                "type": "skillIdOrSlotKey",
+                "repeatable": true,
+                "required": false
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "untagged": {
+                "type": "bool",
+                "description": "Select Skills without Personal Tags."
+              },
+              "favorite": {
+                "type": "bool",
+                "description": "Select Favorites."
+              },
+              "source": {
+                "type": "string",
+                "description": "Match a Source display locator prefix."
+              },
+              "active-for": {
+                "type": "agentId",
+                "description": "Select Skills activated for this Agent."
+              },
+              "project": {
+                "type": "path",
+                "description": "Match Activations at this Project Root; relative to cwd."
+              },
+              "has-update": {
+                "type": "bool",
+                "description": "Select Skills with an observed available update."
+              },
+              "all": {
+                "type": "bool",
+                "description": "Start from all Skills, then apply filters."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+              },
+              "keep-going": {
+                "type": "bool",
+                "description": "Continue after an item fails."
+              },
+              "tag": {
+                "type": "string",
+                "repeatable": true,
+                "description": "Tag to change (required); use other flags to filter selection."
+              }
+            }
+          },
+          "delete": {
+            "description": "Delete a Personal Tag after approval in SkillDeck. Dry run returns the tag and assigned Skill count.",
+            "arguments": [
+              {
+                "name": "name",
+                "type": "string",
+                "required": true
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Return destructive disclosure facts without creating an approval or changing anything."
+              },
+              "approval-timeout": {
+                "type": "seconds",
+                "default": 90,
+                "minimum": 0,
+                "maximum": 600,
+                "description": "Wait up to 0–600 seconds for approval in SkillDeck; timing out leaves the request pending."
+              }
+            }
+          },
+          "rename": {
+            "description": "Rename one Personal Tag.",
+            "arguments": [
+              {
+                "name": "old",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "new",
+                "type": "string",
+                "required": true
+              }
+            ],
+            "flags": {
+              "json": {
+                "type": "bool",
+                "description": "Print one stable JSON document."
+              },
+              "no-launch": {
+                "type": "bool",
+                "description": "Do not launch the App."
+              },
+              "wait": {
+                "type": "seconds",
+                "default": 30,
+                "description": "Requested lock wait budget; writes currently use the App default."
+              },
+              "help": {
+                "type": "bool",
+                "description": "Show CLI-local help."
+              },
+              "dry-run": {
+                "type": "bool",
+                "description": "Predict wouldSucceed/unchanged without mutations; runtime failures such as occupied targets may be missed."
+              },
+              "keep-going": {
+                "type": "bool",
+                "description": "Continue after an item fails."
+              }
+            }
+          }
+        }
+      },
+      "help": {
+        "description": "Show this CLI-local catalog without contacting the App.",
+        "arguments": [
+          {
+            "name": "command",
+            "type": "commandName",
+            "required": false
+          }
+        ],
+        "flags": {
+          "json": {
+            "type": "bool",
+            "description": "Print one stable JSON document."
+          },
+          "no-launch": {
+            "type": "bool",
+            "description": "Do not launch the App."
+          },
+          "wait": {
+            "type": "seconds",
+            "default": 30,
+            "description": "Requested lock wait budget; writes currently use the App default."
+          },
+          "help": {
+            "type": "bool",
+            "description": "Show CLI-local help."
+          }
+        }
+      }
+    },
+    "globalFlags": {
+      "json": {
+        "type": "bool",
+        "description": "Print one stable JSON document."
+      },
+      "no-launch": {
+        "type": "bool",
+        "description": "Do not launch the App."
+      },
+      "wait": {
+        "type": "seconds",
+        "default": 30,
+        "description": "Requested lock wait budget; writes currently use the App default."
+      },
+      "help": {
+        "type": "bool",
+        "description": "Show CLI-local help."
+      },
+      "version": {
+        "type": "bool",
+        "description": "Show the CLI version."
+      }
+    },
+    "selection": "Resolve refs by id before Slot Key; refs union --all, then intersect all filters. Filters alone start from all Skills.",
+    "outcomes": [
+      "succeeded",
+      "unchanged",
+      "committedFinalizationPending",
+      "failed",
+      "notAttempted",
+      "skipped",
+      "cancelled",
+      "wouldSucceed",
+      "alreadyInstalled",
+      "updateAvailable",
+      "upToDate",
+      "checkFailed"
+    ],
+    "exitCodes": {
+      "0": "Every item succeeded or committed.",
+      "1": "Failed, including approvalDenied, approvalExpired, approvalCancelled, and approvalNotFound.",
+      "2": "Usage error.",
+      "3": "Partial batch.",
+      "4": "App unavailable (appUnavailable, appNotInstalled, appLaunchTimeout, missingHome) or protocolMismatch.",
+      "5": "User action required in the App (approvalPending, approvalAlreadyPending, actionRequired).",
+      "130": "Cancelled."
+    },
+    "errorCodes": [
+      "usage",
+      "ambiguousSource",
+      "candidateNotFound",
+      "replacementCandidateNotFound",
+      "replacementCandidateAmbiguous",
+      "replacementSlotOccupied",
+      "lockUnavailable",
+      "lockEntryMissing",
+      "lockSourceUnsupported",
+      "notAdopted",
+      "alreadyInstalled",
+      "checkFailed",
+      "unknownAgent",
+      "partialBatch",
+      "actionRequired",
+      "approvalPending",
+      "approvalAlreadyPending",
+      "approvalDenied",
+      "approvalExpired",
+      "approvalCancelled",
+      "approvalNotFound",
+      "activationTargetOccupied",
+      "agentRootOwnershipRepairRequired",
+      "tagNotFound",
+      "tagNameConflict",
+      "invalidTagName",
+      "invalidNote",
+      "unknownCommand",
+      "skillNotFound",
+      "ambiguousSelection",
+      "documentNotFound",
+      "documentTooLarge",
+      "responseTooLarge",
+      "workspaceUnavailable",
+      "staleSnapshot",
+      "repositoryBusy",
+      "repositoryNotOpen",
+      "revisionStoreCorrupt",
+      "controlPlaneCorrupt",
+      "stateCorrupt",
+      "invalidEffectiveFilePath",
+      "ioFailure",
+      "operationFailed",
+      "appUnavailable",
+      "appNotInstalled",
+      "appLaunchTimeout",
+      "protocolMismatch",
+      "unauthorized",
+      "insecureDiscovery",
+      "protocolViolation",
+      "timeout",
+      "missingHome",
+      "internalError",
+      "sourceUnavailable",
+      "sourceAuthenticationRequired",
+      "gitUnavailable",
+      "gitFailed",
+      "developerToolsRequired",
+      "transportRejected",
+      "httpFailure",
+      "digestMismatch",
+      "archiveInvalid",
+      "staleInstallTakeover",
+      "staleActivationTakeover",
+      "invalidSkill",
+      "unsupportedSkillName",
+      "skillContentLimitExceeded",
+      "duplicateSkillSlot",
+      "sourceReplacementRequired",
+      "updateUnsupported",
+      "externalConflict",
+      "activationUnavailable",
+      "activationUnsupported",
+      "projectRootNotFound",
+      "invalidProjectRoot",
+      "projectRootConflict",
+      "agentNotFound",
+      "duplicateAgentId",
+      "agentRootOwnership",
+      "personalTagNotFound",
+      "duplicatePersonalTag",
+      "operationCancelled",
+      "unsupportedStateVersion",
+      "unsupportedJournalVersion",
+      "journalCorrupt",
+      "journalMaintenanceFailed",
+      "migrationFailed",
+      "finalizationRecoveryFailed",
+      "dirtyDraftResolutionRequired",
+      "updateCandidateResolutionRequired",
+      "draftChangedDuringPublish",
+      "declaredNameChangeNotAllowed",
+      "historicalNameMismatch",
+      "rollbackFailed",
+      "recoveryFailed",
+      "invalidSource",
+      "staleDriftReview",
+      "driftResolutionUnavailable"
+    ]
+  },
+  "error": null
+}

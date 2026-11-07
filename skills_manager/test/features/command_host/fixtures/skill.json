@@ -1,0 +1,20 @@
+{
+  "id": "skill-1",
+  "slotKey": "alpha",
+  "name": "Alpha",
+  "declaredName": "declared-alpha",
+  "description": "Description of Alpha",
+  "source": {"kind": "git", "locator": "https://example.test/repo"},
+  "contentHash": "hash-skill-1",
+  "favorite": true,
+  "note": "Personal note",
+  "tags": ["Testing"],
+  "activations": [
+    {"agent": "codex", "scope": "global", "mode": "copy"},
+    {"agent": "claude", "scope": "global", "mode": "copy"},
+    {"agent": "codex", "scope": "project", "projectPath": "/projects/demo", "mode": "symbolicLink"}
+  ],
+  "update": {"status": "updateAvailable"},
+  "draft": {"present": true},
+  "integrity": "healthy"
+}

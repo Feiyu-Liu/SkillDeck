@@ -1,0 +1,5 @@
+SQLite
+
+SQLite is in the public domain. The SQLite authors have dedicated the code
+to the public domain. See https://sqlite.org/copyright.html for details and
+the SQLite blessing.

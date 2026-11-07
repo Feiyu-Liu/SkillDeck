@@ -1,0 +1,43 @@
+name: Skills Manager CI
+on:
+  pull_request:
+    paths: ['skills_manager/**', 'packages/**', '.github/**']
+  push:
+    branches: [main]
+    paths: ['skills_manager/**', 'packages/**', '.github/**']
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Verification only (no release packaging).
+        type: choice
+        default: quick
+        options: [quick, merge]
+permissions:
+  contents: read
+concurrency:
+  group: app-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  quick:
+    if: github.event_name == 'pull_request' || inputs.tier == 'quick'
+    uses: ./.github/workflows/skills-manager-platform.yml
+    with:
+      runner: ubuntu-24.04
+      device: linux
+      tier: quick
+  active-platforms:
+    if: github.event_name == 'push' || inputs.tier == 'merge'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # App delivery targets only; macOS Intel remains deferred.
+          - runner: macos-15
+            device: macos
+          - runner: windows-2022
+            device: windows
+    uses: ./.github/workflows/skills-manager-platform.yml
+    with:
+      runner: ${{ matrix.runner }}
+      device: ${{ matrix.device }}
+      tier: merge

@@ -1,0 +1,44 @@
+# Dart/Flutter tooling
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+doc/api/
+*.log
+
+# Generated Dart files
+*.g.dart
+!packages/skills_workspace/lib/src/infrastructure/database/workspace_database.g.dart
+*.freezed.dart
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE / editor
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.DS_Store
+.claude/scheduled_tasks.lock
+
+# Flutter platform ephemeral / generated registrants
+**/ephemeral/
+**/flutter/generated_plugin_registrant.*
+**/flutter/generated_plugins.cmake
+skills_manager/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Local SkillDeck signing keys; never commit private release material.
+/skills_manager/keys/
+
+# Local dart-define files; they hold machine-local and analytics configuration.
+skills_manager/debug.json
+skills_manager/staging.json
+keys/
+marketing/
+
+# Local build and release artifacts (Flutter bundles, notarization zips).
+dist/
+landing_page/

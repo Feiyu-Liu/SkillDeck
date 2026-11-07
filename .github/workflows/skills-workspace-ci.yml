@@ -1,0 +1,68 @@
+name: Skills Workspace CI
+on:
+  pull_request:
+    paths: ['packages/skills_workspace/**', '.github/**']
+  push:
+    branches: [main]
+    paths: ['packages/skills_workspace/**', '.github/**']
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Verification only (no release packaging).
+        type: choice
+        default: quick
+        options: [quick, merge]
+permissions:
+  contents: read
+concurrency:
+  group: workspace-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  generated-code:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: packages/skills_workspace
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ci
+      - name: Check hosted CI policy
+        working-directory: .
+        run: ruby .github/tests/workflow_policy_test.rb
+      - run: dart pub get --enforce-lockfile
+      - run: dart run tool/regenerate.dart
+      - name: Require clean generated output, including new files
+        working-directory: .
+        run: |
+          git diff --exit-code
+          status="$(git status --porcelain=v1 --untracked-files=all)"
+          if [[ -n "$status" ]]; then
+            printf '%s\n' "$status"
+            exit 1
+          fi
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - if: github.event_name == 'pull_request' || inputs.tier == 'quick'
+        run: dart test -j 1
+      - if: github.event_name == 'pull_request' || inputs.tier == 'quick'
+        run: dart test -j 1 integration_test
+  platform-gates:
+    if: github.event_name == 'push' || inputs.tier == 'merge'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS Intel is deferred, not represented by a passing arm64 job.
+          - runner: macos-15
+            device: macos
+          - runner: windows-2022
+            device: windows
+          - runner: ubuntu-24.04
+            device: linux
+    uses: ./.github/workflows/skills-workspace-platform.yml
+    with:
+      runner: ${{ matrix.runner }}
+      device: ${{ matrix.device }}

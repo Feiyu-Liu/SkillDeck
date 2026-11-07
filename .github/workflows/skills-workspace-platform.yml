@@ -1,0 +1,68 @@
+name: Skills Workspace Platform Gate
+on:
+  workflow_call:
+    inputs:
+      runner:
+        required: true
+        type: string
+      device:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: packages/skills_workspace
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ci
+      - run: dart pub get --enforce-lockfile
+      - name: Verify dependency decisions
+        run: dart --disable-dart-dev --packages=.dart_tool/package_config.json tool/verify_dependency_spikes.dart
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - if: runner.os != 'Linux'
+        run: dart test -j 1
+      - run: dart test -j 1 integration_test
+      - if: runner.os == 'Linux'
+        run: dart test -j 1 --coverage=coverage
+      - if: runner.os == 'Linux'
+        run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.raw.info --package=. --report-on=lib
+      - if: runner.os == 'Linux'
+        run: dart run tool/filter_coverage.dart coverage/lcov.raw.info coverage/lcov.info
+      - if: runner.os == 'Linux'
+        run: dart run tool/check_coverage.dart coverage/lcov.info 85
+      - name: Direct C ABI and open-handle gate
+        run: dart run tool/run_native_abi_test.dart
+      - run: flutter config --enable-${{ inputs.device }}-desktop
+      - working-directory: packages/skills_workspace/example
+        run: flutter pub get --enforce-lockfile
+      - name: Seed verified SQLite downloads
+        working-directory: .
+        env:
+          SQLITE_NATIVE_ASSET_CACHE: ${{ runner.temp }}/workspace-sqlite
+        run: dart .github/scripts/sqlite_native_asset_cache.dart seed-current-platform
+      - name: Restore verified SQLite downloads
+        working-directory: .
+        env:
+          SQLITE_NATIVE_ASSET_CACHE: ${{ runner.temp }}/workspace-sqlite
+          SQLITE_NATIVE_ASSET_SOURCE: ${{ github.workspace }}/packages/skills_workspace/example/.dart_tool/hooks_runner/shared/sqlite3/build
+        run: dart .github/scripts/sqlite_native_asset_cache.dart restore
+      - working-directory: packages/skills_workspace/example
+        run: flutter analyze --fatal-infos --no-pub
+      - working-directory: packages/skills_workspace/example
+        run: flutter test --no-pub
+      - name: Desktop integration harness
+        if: runner.os != 'Linux'
+        working-directory: packages/skills_workspace/example
+        run: flutter test --no-pub -d ${{ inputs.device }} integration_test/native_revision_engine_test.dart
+      - name: Headless Linux desktop integration harness
+        if: runner.os == 'Linux'
+        working-directory: packages/skills_workspace/example
+        run: xvfb-run -a flutter test --no-pub -d linux integration_test/native_revision_engine_test.dart

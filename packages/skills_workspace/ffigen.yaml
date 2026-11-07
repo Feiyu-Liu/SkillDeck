@@ -1,0 +1,23 @@
+# Run with `dart run ffigen --config ffigen.yaml`.
+name: SkillsWorkspaceNativeBindings
+description: |
+  Private bindings for the Skills Workspace native boundary.
+
+  Regenerate bindings with `dart run ffigen --config ffigen.yaml`.
+output: 'lib/src/native/generated/skills_workspace_bindings_generated.dart'
+headers:
+  entry-points:
+    - 'native/include/skills_workspace_native.h'
+  include-directives:
+    - 'native/include/skills_workspace_native.h'
+functions:
+  include:
+    - 'skills_workspace_native_ping'
+    - 'skills_workspace_posix_.*'
+    - 'skills_workspace_revision_.*'
+    - 'skills_workspace_transport_.*'
+ffi-native:
+  asset-id: 'package:skills_workspace/src/native/generated/skills_workspace_bindings_generated.dart'
+comments:
+  style: any
+  length: full

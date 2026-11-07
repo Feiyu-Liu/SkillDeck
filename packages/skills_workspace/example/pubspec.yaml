@@ -1,0 +1,22 @@
+name: skills_workspace_example
+description: Demonstrates the skills_workspace desktop Native Assets boundary.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  skills_workspace:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:

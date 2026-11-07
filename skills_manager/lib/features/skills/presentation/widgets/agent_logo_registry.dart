@@ -1,0 +1,158 @@
+abstract final class AgentLogoRegistry {
+  static const assetRoot = 'assets/agent_icons';
+
+  static const Map<String, String> assetSlugs = {
+    'amp': 'amp',
+    'antigravity': 'antigravity',
+    'antigravity-cli': 'antigravity',
+    'claude-code': 'claudecode',
+    'openclaw': 'openclaw',
+    'cline': 'cline',
+    'codebuddy': 'codebuddy',
+    'codex': 'codex',
+    'cursor': 'cursor',
+    'devin': 'devin',
+    'gemini-cli': 'geminicli',
+    'github-copilot': 'githubcopilot',
+    'goose': 'goose',
+    'hermes-agent': 'hermesagent',
+    'inference-sh': 'inference',
+    'junie': 'junie',
+    'kilo': 'kilocode',
+    'kimi-code-cli': 'kimi',
+    'kiro-cli': 'kiro',
+    'mistral-vibe': 'mistral',
+    'opencode': 'opencode',
+    'openhands': 'openhands',
+    'pi': 'pi',
+    'qoder': 'qoder',
+    'qoder-cn': 'qoder',
+    'qwen-code': 'qwen',
+    'replit': 'replit',
+    'roo': 'roocode',
+    'trae': 'trae',
+    'trae-cn': 'trae',
+    'windsurf': 'windsurf',
+    'zencoder': 'zencoder',
+  };
+
+  static const Map<String, String> colorAssetExtensions = {
+    'amp': 'svg',
+    'antigravity': 'png',
+    'claudecode': 'svg',
+    'openclaw': 'svg',
+    'codebuddy': 'svg',
+    'codex': 'svg',
+    'devin': 'svg',
+    'geminicli': 'svg',
+    'junie': 'svg',
+    'kimi': 'svg',
+    'kiro': 'svg',
+    'mistral': 'svg',
+    'openhands': 'svg',
+    'qoder': 'svg',
+    'qwen': 'svg',
+    'replit': 'svg',
+    'trae': 'svg',
+    'zencoder': 'svg',
+  };
+
+  static const Set<String> reviewedAgentIds = {
+    'aider-desk',
+    'amp',
+    'antigravity',
+    'antigravity-cli',
+    'astrbot',
+    'autohand-code',
+    'augment',
+    'bob',
+    'claude-code',
+    'openclaw',
+    'cline',
+    'codearts-agent',
+    'codebuddy',
+    'codemaker',
+    'codestudio',
+    'codex',
+    'command-code',
+    'continue',
+    'cortex',
+    'crush',
+    'cursor',
+    'deepagents',
+    'devin',
+    'dexto',
+    'droid',
+    'eve',
+    'firebender',
+    'forgecode',
+    'gemini-cli',
+    'github-copilot',
+    'goose',
+    'hermes-agent',
+    'inference-sh',
+    'jazz',
+    'junie',
+    'iflow-cli',
+    'kilo',
+    'kimi-code-cli',
+    'kiro-cli',
+    'kode',
+    'lingma',
+    'loaf',
+    'mcpjam',
+    'mistral-vibe',
+    'moxby',
+    'mux',
+    'opencode',
+    'openhands',
+    'ona',
+    'pi',
+    'qoder',
+    'qoder-cn',
+    'qwen-code',
+    'replit',
+    'reasonix',
+    'rovodev',
+    'roo',
+    'tabnine-cli',
+    'terramind',
+    'tinycloud',
+    'trae',
+    'trae-cn',
+    'warp',
+    'windsurf',
+    'zed',
+    'zcode',
+    'zencoder',
+    'zenflow',
+    'neovate',
+    'pochi',
+    'promptscript',
+    'adal',
+    'universal',
+  };
+
+  static String? monochromeAssetPathFor(String agentId) {
+    final slug = assetSlugs[agentId];
+    return slug == null ? null : '$assetRoot/$slug.svg';
+  }
+
+  static String? colorAssetPathFor(String agentId) {
+    final slug = assetSlugs[agentId];
+    final extension = slug == null ? null : colorAssetExtensions[slug];
+    return extension == null ? null : '$assetRoot/$slug-color.$extension';
+  }
+
+  static Set<String> get monochromeAssetPaths =>
+      Set.unmodifiable(assetSlugs.values.map((slug) => '$assetRoot/$slug.svg'));
+
+  static Set<String> get colorAssetPaths => Set.unmodifiable(
+    colorAssetExtensions.entries.map(
+      (entry) => '$assetRoot/${entry.key}-color.${entry.value}',
+    ),
+  );
+
+  static Set<String> get assetPaths =>
+      Set.unmodifiable({...monochromeAssetPaths, ...colorAssetPaths});
+}

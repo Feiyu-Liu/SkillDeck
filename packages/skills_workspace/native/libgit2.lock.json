@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "name": "libgit2",
+  "version": "1.9.7",
+  "tag": "v1.9.7",
+  "commit": "49e408b3208bc3093757a1c2db938d3590f3f412",
+  "sourceUrl": "https://github.com/libgit2/libgit2",
+  "archiveUrl": "https://github.com/libgit2/libgit2/archive/49e408b3208bc3093757a1c2db938d3590f3f412.tar.gz",
+  "archiveSha256": "173c45822177d73bb1a97555d864ad04a3e0486eb0bc3455443a4669a35d8aa2",
+  "license": "GPL-2.0-only with the libgit2 linking exception",
+  "projectPatches": [
+    {
+      "id": "windows-static-library-export-boundary",
+      "path": "include/git2/common.h",
+      "reason": "Treat GIT_STATIC declarations as ordinary extern declarations so MSVC does not copy libgit2's public API into the package DLL export table."
+    },
+    {
+      "id": "windows-anonymous-source-authentication",
+      "path": "src/libgit2/transports/winhttp.c",
+      "reason": "Disable automatic WinHTTP authentication replay for anonymous public Source acquisition and preserve authentication-scheme errors as GIT_EAUTH; the shim refuses credential callbacks and delegates third-party authentication to system Git."
+    },
+    {
+      "id": "reinitialize-global-settings-safely",
+      "path": "src/libgit2/settings.c",
+      "reason": "Clear freed global setting pointers at shutdown so subsequent runtime owners can reapply the fixed User-Agent without a double free."
+    },
+    {
+      "id": "release-owner-thread-error-state",
+      "path": "src/util/errors.c",
+      "reason": "Provide a private non-exported thread-error cleanup helper, declared in src/util/errors.h, so runtime owners can release their TLS allocation before a different thread shuts down the shared runtime and deletes the POSIX TLS key."
+    }
+  ],
+  "build": {
+    "BUILD_SHARED_LIBS": "OFF",
+    "BUILD_TESTS": "OFF",
+    "BUILD_CLI": "OFF",
+    "BUILD_EXAMPLES": "OFF",
+    "BUILD_FUZZERS": "OFF",
+    "USE_THREADS": "ON",
+    "USE_SSH": "OFF",
+    "USE_HTTPS": {
+      "macos": "SecureTransport",
+      "linux": "OpenSSL-Dynamic",
+      "windows": "WinHTTP"
+    },
+    "USE_GSSAPI": "OFF",
+    "USE_NTLMCLIENT": "OFF",
+    "USE_BUNDLED_ZLIB": "ON",
+    "USE_HTTP_PARSER": "builtin",
+    "REGEX_BACKEND": "builtin",
+    "USE_ICONV": "OFF",
+    "USE_SHA1": "CollisionDetection",
+    "USE_SHA256": "Builtin",
+    "EXPERIMENTAL_SHA256": "OFF",
+    "DEBUG_STRICT_OPEN": "ON",
+    "DEPRECATE_HARD": "ON",
+    "ENABLE_REPRODUCIBLE_BUILDS": "OFF",
+    "STATIC_CRT": "OFF",
+    "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
+    "CMAKE_C_VISIBILITY_PRESET": "hidden",
+    "GIT_STATIC": "Windows compiler definition",
+    "SHA1DC_FORCE_ALIGNED_ACCESS": "ON"
+  },
+  "artifactPolicy": {
+    "linkage": "static libgit2 inside one package-owned dynamic Native Asset",
+    "exports": "skills_workspace_* allowlist only",
+    "macosDeploymentTargets": {
+      "x86_64": "10.15",
+      "arm64": "11.0"
+    },
+    "windowsArchitectures": ["x64"],
+    "linuxArchitectures": ["x64"]
+  },
+  "updateProcedure": [
+    "Select an upstream libgit2 release and record its immutable tag and commit.",
+    "Download the commit archive, verify its SHA-256, replace native/third_party/libgit2 as one source subtree, and reapply every recorded project patch.",
+    "Review the license, changelog, vulnerability notices, CMake switches, generated feature header, and project shim compatibility.",
+    "Regenerate private ffigen bindings and run clean-generation checks.",
+    "Run native, Flutter host, C ABI, sanitizer, crash-recovery, and release-artifact gates on macOS arm64/x64, Windows x64, and Linux x64.",
+    "Update this lock file and THIRD_PARTY_NOTICES.md in the same commit."
+  ]
+}

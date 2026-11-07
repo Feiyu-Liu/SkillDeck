@@ -1,0 +1,6 @@
+.dart_tool/
+.packages
+coverage/
+doc/api/
+pubspec.lock
+!example/pubspec.lock
