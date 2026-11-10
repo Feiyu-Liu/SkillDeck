@@ -2,13 +2,13 @@
 
 ## Project Structure & Module Organization
 
-`CONTEXT-MAP.md` identifies bounded contexts and `CONTEXT.md` defines Skill Workspace vocabulary. Private architecture documents, ADRs, and agent guides are excluded from this snapshot; remaining ADR identifiers are historical references. Ask the maintainer for clarification before changing domain behavior. The monorepo contains `packages/skills_workspace/`, `packages/skills_translation/`, and the desktop app in `skills_manager/`. Keep package production code in `lib/src/`, public exports in each package's top-level library file, and tests in `test/`. Treat the sibling `../skills/` checkout as a read-only CLI reference.
+`CONTEXT-MAP.md` identifies bounded contexts and `CONTEXT.md` defines Skill Workspace vocabulary. Private architecture documents, ADRs, and agent guides are excluded from this snapshot; remaining ADR identifiers are historical references. Ask the maintainer for clarification before changing domain behavior. The monorepo contains `packages/skills_workspace/`, `packages/skills_translation/`, and the desktop app in `skilldeck-app/`. Keep package production code in `lib/src/`, public exports in each package's top-level library file, and tests in `test/`. Treat the sibling `../skills/` checkout as a read-only CLI reference.
 
 ## Build, Test, and Development Commands
 
 Run these from the package or App being changed. Skill Workspace backend work
 belongs in `packages/skills_workspace/`; Flutter composition and presentation
-work belongs in `skills_manager/`:
+work belongs in `skilldeck-app/`:
 
 - `dart format --output=none --set-exit-if-changed .` checks formatting.
 - `dart analyze --fatal-infos` runs strict static analysis.

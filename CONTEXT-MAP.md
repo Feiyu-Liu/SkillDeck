@@ -42,7 +42,7 @@ only when it has real, modeled terms of its own.
   document from a Repository Copy plus the published Slot Key and content hash. It is
   strictly read-only with respect to skill content and never mutates the repository or
   any Activation.
-- **App composition:** `skills_manager` (the desktop app) is the single front end and
+- **App composition:** `skilldeck-app/` (Dart package `skills_manager`, the desktop app) is the single front end and
   composes Skill Workspace and Translation; the contexts do not depend on each other
   directly.
 - **`skilldeck` CLI → App:** the CLI is a client of the running App's local

@@ -47,7 +47,7 @@ void main() {
         isNot(contains('desktop_updater')),
       ),
     );
-    expect(_read('../.gitignore'), contains('/skills_manager/keys/'));
+    expect(_read('../.gitignore'), contains('/skilldeck-app/keys/'));
   });
 }
 

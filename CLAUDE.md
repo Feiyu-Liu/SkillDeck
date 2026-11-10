@@ -6,14 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `SkillsFlutter` is a Dart and Flutter monorepo for the local Agent Skill
 Workspace. The shipped desktop product is named **SkillDeck**; `skills_manager`
-is its package name. Current production components are:
+is its Dart package name; its directory is `skilldeck-app/`. Current production
+components are:
 
 | Path | Responsibility |
 | --- | --- |
 | `packages/skills_workspace/` | Transactional Skill Workspace backend and sole authority for managed Skill lifecycle, revision history, activation, recovery, and Library metadata. Pure Dart plus a native FFI layer. |
 | `packages/skills_translation/` | Independent Markdown translation context and disposable content-addressed cache. Flutter package, held to a lower minimum SDK than the rest of the repo. |
 | `packages/skilldeck_cli/` | The `skilldeck` CLI and the Local Command Host protocol (NDJSON). A thin client that never opens the Workspace; it drives the running App (ADR-0111). Pure Dart. |
-| `skills_manager/` | Flutter desktop App that composes Workspace and Translation through App-owned repository seams and Riverpod. |
+| `skilldeck-app/` | Flutter desktop App that composes Workspace and Translation through App-owned repository seams and Riverpod. |
 | `landing_page/` | Marketing site: Vite + React + Tailwind, prerendered and deployed to Cloudflare Pages (`npm run lint`, `npm test`, `npm run pages:deploy`). |
 | `release/`, `tool/release.py` | Desktop release orchestration (sign, notarize, publish updater feeds). See `release/README.md`. |
 
@@ -84,7 +85,7 @@ flutter test
 flutter test test/translation_protocol_test.dart               # single file
 ```
 
-App gates, from `skills_manager/`:
+App gates, from `skilldeck-app/`:
 
 ```bash
 flutter pub get --enforce-lockfile
@@ -107,7 +108,7 @@ flutter run -d macos --dart-define-from-file=debug.json
 flutter build macos --release --dart-define-from-file=staging.json
 ```
 
-`skills_manager/pubspec_overrides.yaml` is gitignored and machine-local (it
+`skilldeck-app/pubspec_overrides.yaml` is gitignored and machine-local (it
 path-overrides `my_ui`); never commit it or rely on it in CI reasoning.
 
 ## Generated code
@@ -123,7 +124,7 @@ native headers.
 `.gitignore` excludes `*.g.dart` repo-wide with one deliberate exception,
 `workspace_database.g.dart` — do not "fix" that by ignoring it.
 
-App user-facing strings live in `skills_manager/lib/l10n/app_en.arb` and
+App user-facing strings live in `skilldeck-app/lib/l10n/app_en.arb` and
 `app_zh.arb` and generate into `lib/l10n/generated/`; both locales must stay in
 sync.
 
@@ -180,7 +181,7 @@ Stores. Agent-visible Activations are rebuildable filesystem projections. The
 App accesses effective files through public lease-safe content APIs, never by
 inferring private Workspace paths or reading SQLite directly.
 
-### skills_manager
+### skilldeck-app
 
 Feature-first under `lib/features/<feature>/{data,models,presentation}`, with
 cross-cutting concerns in `lib/shared/` and composition in `lib/app/`. Views
@@ -207,7 +208,7 @@ The App holds the Workspace's process-lifetime ownership lock (ADR-0093/0094),
 so a second process can never open it. `skilldeck` therefore only discovers the
 running App (launching it if needed), sends a command over the local protocol in
 `skilldeck_cli/lib/src/protocol/`, and renders the typed result. The App side
-lives in `skills_manager/lib/features/command_host/` and executes every command
+lives in `skilldeck-app/lib/features/command_host/` and executes every command
 through the same `SkillsWorkspaceRepository` decorator chain as the GUI.
 Destructive CLI requests are approved in the App, never by a flag an Agent can
 pass. The App depends on `skilldeck_cli` for the shared protocol types

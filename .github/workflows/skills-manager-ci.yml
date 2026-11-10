@@ -1,10 +1,10 @@
 name: Skills Manager CI
 on:
   pull_request:
-    paths: ['skills_manager/**', 'packages/**', '.github/**']
+    paths: ['skilldeck-app/**', 'packages/**', '.github/**']
   push:
     branches: [main]
-    paths: ['skills_manager/**', 'packages/**', '.github/**']
+    paths: ['skilldeck-app/**', 'packages/**', '.github/**']
   workflow_dispatch:
     inputs:
       tier:
