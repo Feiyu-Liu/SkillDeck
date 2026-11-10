@@ -246,6 +246,29 @@ void main() {
   test('handshake accepts compatible authenticated peer', () async {
     expect(await hello(), isA<HostHello>());
   });
+  test('abrupt handshake disconnects leave the host available', () async {
+    final discovery = await readDiscovery(temp.path);
+    for (var attempt = 0; attempt < 16; attempt++) {
+      final socket = await connect();
+      socket.add(
+        encodeLine(
+          ClientHello(
+            protocolVersion: commandHostProtocolVersion,
+            cliVersion: 'test',
+            secret: discovery.secret,
+          ),
+        ),
+      );
+      await socket.flush();
+      // Let the host enqueue its reply, then close without reading it. Unix
+      // transports may report ECONNRESET while cancelling the input stream.
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      socket.destroy();
+    }
+    expect((await command('status')).ok, isTrue);
+    await server.stop();
+  });
+
   test('handshake rejects incorrect secret and protocol', () async {
     expect(
       (await hello(secret: 'wrong') as HostReject).code,

@@ -278,8 +278,14 @@ final class CommandHostServer {
     } finally {
       _commands.remove(socket);
       socket.destroy();
-      await messages.cancel();
-      _connections.remove(socket);
+      try {
+        await messages.cancel();
+      } on SocketException {
+        // A peer reset can surface while the decoder subscription is cancelled.
+        // This connection is already closed; keep it from escaping the server.
+      } finally {
+        _connections.remove(socket);
+      }
     }
   }
 
