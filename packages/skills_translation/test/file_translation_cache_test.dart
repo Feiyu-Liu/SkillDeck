@@ -182,7 +182,7 @@ void main() {
     expect(await _jsonFiles(root), hasLength(1));
   });
 
-  test('waits for an OS file lock held by another process', () async {
+  Future<void> waitForExternalCacheLock() async {
     await root.create(recursive: true);
     final lockHandle = await File(
       p.join(root.path, 'cache.lock'),
@@ -191,6 +191,8 @@ void main() {
     var lockReleased = false;
     final child = await Process.start(_flutterExecutable, [
       'test',
+      '--no-pub',
+      '--reporter=expanded',
       '--dart-define=CACHE_ROOT=${root.path}',
       'test/support/locked_cache_writer.dart',
     ], workingDirectory: Directory.current.path);
@@ -245,7 +247,13 @@ void main() {
       ),
       isNotNull,
     );
-  }, timeout: const Timeout(Duration(seconds: 90)));
+  }
+
+  test(
+    'waits for an OS file lock held by another process',
+    waitForExternalCacheLock,
+    timeout: const Timeout(Duration(seconds: 90)),
+  );
 
   test(
     'deletes one Slot or clears all entries without deleting the root',
@@ -283,6 +291,8 @@ void main() {
       final stopPath = p.join(temporary.path, 'reader.stop');
       final child = await Process.start(_flutterExecutable, [
         'test',
+        '--no-pub',
+        '--reporter=expanded',
         '--dart-define=ENTRY_PATH=$jsonPath',
         '--dart-define=STOP_PATH=$stopPath',
         '--dart-define=CONTENT_LENGTH=$contentLength',

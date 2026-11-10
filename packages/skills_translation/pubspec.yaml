@@ -35,6 +35,9 @@ dev_dependencies:
 # The hosted alpha.1 archive omits llm_dart_provider/lib/src/tool. Pin the
 # complete upstream release tag until the publisher replaces that artifact.
 dependency_overrides:
+  # The pinned Markdown selection code needs the typed Matrix4 translation API.
+  # Flutter 3.29 pins 2.1.4; 2.2.0 provides that API and still supports Dart 3.7.
+  vector_math: 2.2.0
   llm_dart_anthropic:
     git:
       url: https://github.com/Latias94/llm_dart.git
