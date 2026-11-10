@@ -314,7 +314,7 @@ SPDX audit. Unidentified holders are explicitly marked unverified.
 | `term_glyph` | `1.2.2` |
 | `test_api` | `0.7.12` |
 | `typed_data` | `1.4.0` |
-| `vector_math` | `2.4.3` |
+| `vector_math` | `2.2.0` |
 | `vm_service` | `15.3.0` |
 | `web` | `1.1.1` |
 | `yaml` | `3.1.4` |
@@ -716,6 +716,7 @@ SPDX audit. Unidentified holders are explicitly marked unverified.
 | `vector_graphics` | `1.2.3` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_graphics-1.2.3.tar.gz) in exact-version archive |
 | `vector_graphics_codec` | `1.1.13` | BSD family | Copyright 2013 The Flutter Authors. All rights reserved. | [LICENSE](https://pub.dev/api/archives/vector_graphics_codec-1.1.13.tar.gz) in exact-version archive |
 | `vector_graphics_compiler` | `1.3.0` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_graphics_compiler-1.3.0.tar.gz) in exact-version archive |
+| `vector_math` | `2.2.0` | BSD family | Copyright 2015, Google Inc. All rights reserved. | [LICENSE](https://pub.dev/api/archives/vector_math-2.2.0.tar.gz) in exact-version archive |
 | `vector_math` | `2.4.3` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_math-2.4.3.tar.gz) in exact-version archive |
 | `vm_service` | `15.3.0` | BSD family | Copyright 2015, the Dart project authors. | [LICENSE](https://pub.dev/api/archives/vm_service-15.3.0.tar.gz) in exact-version archive |
 | `vm_service` | `15.4.0` | BSD family | Copyright 2015, the Dart project authors. | [LICENSE](https://pub.dev/api/archives/vm_service-15.4.0.tar.gz) in exact-version archive |
