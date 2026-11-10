@@ -706,8 +706,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: e91aa0399adadd38898f5658bfb4925e32b637c2
-      resolved-ref: e91aa0399adadd38898f5658bfb4925e32b637c2
+      ref: d5504736fd1dfaf9896859455fafbc19f7db948a
+      resolved-ref: d5504736fd1dfaf9896859455fafbc19f7db948a
       url: "https://github.com/Feiyu-Liu/next-ui.git"
     source: git
     version: "0.1.0"

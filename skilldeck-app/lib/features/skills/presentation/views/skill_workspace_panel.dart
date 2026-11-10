@@ -853,6 +853,8 @@ class _SectionTabs extends StatelessWidget {
         onItemSelected: (index) => onSelected(WorkspaceTab.values[index]),
         height: 42,
         padding: const EdgeInsets.all(3),
+        thumbInset: 4,
+        smoothness: 0,
         iconSize: 14,
         labelFontSize: 0,
         labelSpacing: 0,
