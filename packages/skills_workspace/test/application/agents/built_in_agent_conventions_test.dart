@@ -128,9 +128,24 @@ void main() {
               path.join(home, '.gemini', 'config', 'skills'),
             );
             expect(rule.projectSkillsPath, '.agents/skills');
-            expect(rule.detectionPaths, [
-              AgentDetectionPath.absolute(path.join(home, '.gemini', id)),
-            ]);
+            expect(
+              rule.detectionPaths.map(
+                (entry) => (
+                  entry.kind,
+                  path.normalize(entry.path),
+                  entry.relativeToProject,
+                  entry.dependencyName,
+                ),
+              ),
+              [
+                (
+                  AgentDetectionKind.pathExists,
+                  path.join(home, '.gemini', id),
+                  false,
+                  null,
+                ),
+              ],
+            );
             expect(rule.globalDiscoverySkillsPaths.map(path.normalize), [
               path.join(home, '.gemini', id, 'skills'),
             ]);
