@@ -35,6 +35,12 @@ jobs:
           printf 'XCODE_XCCONFIG_FILE=%s\n' "$config" >> "$GITHUB_ENV"
       - run: flutter config --enable-${{ inputs.device }}-desktop
       - run: flutter pub get --enforce-lockfile
+      - name: Prepare locked bundled CLI dependencies
+        if: runner.os == 'macOS'
+        working-directory: packages/skilldeck_cli
+        env:
+          PUB_HOSTED_URL: https://pub.dev
+        run: dart pub get --enforce-lockfile
       - name: Seed verified SQLite downloads
         working-directory: .
         env:
