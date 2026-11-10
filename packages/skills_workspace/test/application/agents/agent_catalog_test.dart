@@ -25,20 +25,28 @@ void main() {
     }
   });
 
-  test('built-in catalog preserves all 73 reference Agent IDs', () {
+  test('built-in catalog preserves all 81 reference Agent IDs', () {
     final definitions = buildBuiltInAgentDefinitions(
       platform: DesktopPlatform.macos,
       environment: <String, String>{'HOME': temporaryDirectory.path},
     );
 
-    expect(definitions, hasLength(73));
+    expect(definitions, hasLength(81));
     expect(
       definitions.map((definition) => definition.id).toSet(),
-      hasLength(73),
+      hasLength(81),
     );
     expect(
       definitions.map((definition) => definition.id),
       containsAll(<String>[
+        'grok',
+        'kimchi',
+        'minimax-code',
+        'posit-assistant',
+        'fx',
+        'sarvam-code',
+        'deepseek-harness',
+        'workbuddy',
         'amp',
         'claude-code',
         'codex',

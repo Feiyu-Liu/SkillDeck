@@ -74,10 +74,41 @@ Lobe icons 1.94.0 npm package integrity pins:
 - `@lobehub/icons-static-svg`: `sha512-Inx1TYkjLH6YeHOIHeVW9+OM/xxRnk8TmcQVKquFUDBmE3X9sUuRGt7kALrrDBNNAbrWz7Qq6fAiFj9E9Mmw9Q==`
 - `@lobehub/icons-static-png`: `sha512-UX+BolfzVoCaY5UJd+IvjmrxPfes1jbiHAsi3QadePnpjQlDLV6asLe4TTShws4MExsVhI7rAjR9Ah1j9f2sTQ==`
 
+### Additional Agent icons (2026-11-10)
+
+The `grok.svg`, `minimax.svg`, `minimax-color.svg`, `deepseek.svg`,
+`deepseek-color.svg`, and `workbuddy.svg` files in
+`skills_manager/assets/agent_icons/` are unmodified Lobe Icons static SVGs from
+<https://github.com/lobehub/lobe-icons/tree/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons>.
+The matching `workbuddy-color.png` is the unmodified
+`packages/static-png/light/workbuddy-color.png` from that same commit. The
+raster variant preserves the color SVG's unsupported Gaussian-blur filter in
+Flutter, following the existing Antigravity icon convention.
+These files are distributed under the same MIT license and LobeHub attribution in
+`skills_manager/assets/licenses/lobe-icons.txt`. The other icon assets retain
+their previously recorded 1.94.0 provenance.
+
 ### vercel-labs/skills attribution
 
 Compared against `vercel-labs/skills` commit
 `435076e78988e1e6ec40d00b0b1d76bdbbc5419a`.
+
+The built-in Agent catalog was additionally synchronized against commit
+`26dc8e4755a11fea22ed788256c3db50001b013d` on 2026-11-10 (eight added IDs, including the two independent
+conventions below; Droid/Kilo/Pi canonical-path changes are deferred). The
+other files in this table retain the comparison baseline above.
+
+Additional directory-convention references (no source implementation copied):
+
+- DeepSeek Harness: official `deepseek-ai/deepseek-harness` commit
+  `fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159`,
+  `packages/util/home-paths/src/index.ts` and
+  `packages/skill/skill-filesystem/src/index.ts`.
+- WorkBuddy domestic edition: `xingkongliang/skills-manager` commit
+  `63bdf81ca3da0a27daa82aae431979507a8acb8b`,
+  `src-tauri/src/core/tool_adapters.rs`. The default directory convention is
+  modeled independently in Dart; runtime loading is not established by this
+  source comparison. The overseas `.workbuddy-ai` edition is not registered.
 
 | File (under `packages/skills_workspace/`) | Judgment and evidence |
 | --- | --- |

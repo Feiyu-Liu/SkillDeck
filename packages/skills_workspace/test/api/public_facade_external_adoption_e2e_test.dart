@@ -220,68 +220,79 @@ void main() {
         : const Timeout(Duration(minutes: 2)),
   );
 
-  test(
-    'adopts from a linked compatibility root into the canonical root',
-    () async {
-      final fixture = await _CanonicalMigrationFixture.create();
-      addTearDown(fixture.dispose);
-      final repository = fixture.createRepository();
+  test('adopts legacy Antigravity into its corrected canonical root', () async {
+    final fixture = await _CanonicalMigrationFixture.create();
+    addTearDown(fixture.dispose);
+    var repository = fixture.createRepository();
+    final sharedMarker = File(
+      path.join(fixture.agentHome.path, '.agents', 'skills', 'keep.txt'),
+    );
+    await sharedMarker.parent.create(recursive: true);
+    await sharedMarker.writeAsString('other agents');
 
-      await _expectSuccess(repository.open());
-      final discovery = await _expectSuccess(
-        repository.discoverExternalSkills(
-          const DiscoverExternalSkillsRequest(scanAllKnownLocations: true),
-        ),
-      );
-      final candidate = discovery.candidates.singleWhere(
-        (candidate) => candidate.slotKey == _canonicalMigrationSlot,
-      );
-      expect(candidate.locations, <String>[fixture.legacySkillPath]);
-      expect(candidate.destinationLocations, <String>[
-        fixture.canonicalSkillPath,
-      ]);
+    await _expectSuccess(repository.open());
+    expect(
+      await File(
+        path.join(fixture.physicalLegacySkillPath, 'body.md'),
+      ).readAsString(),
+      'legacy body\n',
+    );
+    final discovery = await _expectSuccess(
+      repository.discoverExternalSkills(
+        const DiscoverExternalSkillsRequest(scanAllKnownLocations: true),
+      ),
+    );
+    final candidate = discovery.candidates.singleWhere(
+      (candidate) => candidate.slotKey == _canonicalMigrationSlot,
+    );
+    expect(candidate.locations, <String>[fixture.legacySkillPath]);
+    expect(candidate.destinationLocations, <String>[
+      fixture.canonicalSkillPath,
+    ]);
 
-      final adoption = await _expectSuccess(
-        repository.adopt(
-          AdoptRequest(
-            selection: ExternalAdoptionSelection.fromCandidate(
-              candidate,
-              fixture.legacySkillPath,
-            ),
+    final adoption = await _expectSuccess(
+      repository.adopt(
+        AdoptRequest(
+          selection: ExternalAdoptionSelection.fromCandidate(
+            candidate,
+            fixture.legacySkillPath,
           ),
         ),
-      );
+      ),
+    );
 
-      final managed = adoption.snapshot.findSkill(
-        adoption.affectedSkillIds.single,
-      )!;
-      expect(managed.activations, hasLength(1));
-      expect(managed.activations.single.location, fixture.canonicalSkillsRoot);
-      expect(
-        await File(
-          path.join(fixture.canonicalSkillPath, 'body.md'),
-        ).readAsString(),
-        'legacy body\n',
-      );
-      expect(
-        await Directory(fixture.physicalLegacySkillPath).exists(),
-        isFalse,
-      );
-      expect(
-        path.equals(
-          await Directory(
-            fixture.linkedLegacySkillsRoot,
-          ).resolveSymbolicLinks(),
-          await Directory(
-            fixture.physicalLegacySkillsRoot,
-          ).resolveSymbolicLinks(),
-        ),
-        isTrue,
-      );
-      await _expectVoidSuccess(repository.close());
-    },
-    timeout: const Timeout(Duration(minutes: 2)),
-  );
+    final managed = adoption.snapshot.findSkill(
+      adoption.affectedSkillIds.single,
+    )!;
+    expect(managed.activations, hasLength(1));
+    expect(managed.activations.single.location, fixture.canonicalSkillsRoot);
+    expect(
+      await File(
+        path.join(fixture.canonicalSkillPath, 'body.md'),
+      ).readAsString(),
+      'legacy body\n',
+    );
+    expect(await Directory(fixture.physicalLegacySkillPath).exists(), isFalse);
+    expect(
+      path.equals(
+        await Directory(fixture.linkedLegacySkillsRoot).resolveSymbolicLinks(),
+        await Directory(
+          fixture.physicalLegacySkillsRoot,
+        ).resolveSymbolicLinks(),
+      ),
+      isTrue,
+    );
+    expect(await sharedMarker.readAsString(), 'other agents');
+    await _expectVoidSuccess(repository.close());
+    repository = fixture.createRepository();
+    final reopened = await _expectSuccess(repository.open());
+    expect(
+      reopened.findSkill(managed.id)!.activations.single.location,
+      fixture.canonicalSkillsRoot,
+    );
+    expect(await sharedMarker.readAsString(), 'other agents');
+    await _expectVoidSuccess(repository.close());
+  }, timeout: const Timeout(Duration(minutes: 2)));
 
   for (final target in <String>['its own folder', 'the compatibility root']) {
     test(
@@ -387,10 +398,27 @@ void main() {
         );
         final managedSkillId = adoption!.affectedSkillIds.single;
         managedSkillIds.add(managedSkillId);
-        final activation = adoption.snapshot
+        final activations = adoption.snapshot
             .findSkill(managedSkillId)!
-            .activations
-            .single;
+            .activations;
+        // Shared discovery also offers DeepSeek's distinct native destination.
+        expect(activations, hasLength(2));
+        final deepseek = activations.singleWhere(
+          (a) => a.agentIds.contains('deepseek-harness'),
+        );
+        expect(
+          deepseek.location,
+          path.join(fixture.agentHome.path, '.dsh', 'skills'),
+        );
+        expect(
+          await File(
+            path.join(deepseek.location, candidate.slotKey, 'SKILL.md'),
+          ).exists(),
+          isTrue,
+        );
+        final activation = activations.singleWhere(
+          (a) => a.agentIds.contains('claude-code'),
+        );
         expect(
           activation.agentIds,
           containsAll(<String>['claude-code', 'cursor']),
@@ -473,11 +501,15 @@ final class _CanonicalMigrationFixture {
       'skills-workspace-canonical-migration-e2e-',
     );
     final agentHome = Directory(path.join(temporaryRoot.path, 'home'));
-    final canonicalSkillsRoot = path.join(agentHome.path, '.agents', 'skills');
-    final physicalLegacySkillsRoot = path.join(
+    final canonicalSkillsRoot = path.join(
       agentHome.path,
       '.gemini',
       'config',
+      'skills',
+    );
+    final physicalLegacySkillsRoot = path.join(
+      agentHome.path,
+      '.legacy-antigravity',
       'skills',
     );
     final linkedLegacySkillsRoot = path.join(

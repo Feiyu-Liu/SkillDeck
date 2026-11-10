@@ -1,3 +1,4 @@
+import 'package:skills_workspace/src/application/agents/built_in_agent_definitions.dart';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
@@ -11,6 +12,29 @@ import '../../support/activation/activation_fakes.dart';
 
 void main() {
   final home = Platform.isWindows ? r'C:\Users\tester' : '/Users/tester';
+
+  test(
+    'built-in Antigravity ownership includes native and legacy roots only',
+    () async {
+      final inspection = _FakeInspection()..physicalPaths[home] = home;
+      final auditor = AgentRootOwnershipAuditor(
+        catalogs: _catalog(
+          builtIns: buildBuiltInAgentDefinitions(
+            platform: DesktopPlatform.macos,
+            environment: {'HOME': home},
+          ).where((agent) => agent.id.startsWith('antigravity')).toList(),
+        ),
+        inspection: inspection,
+        userHomePath: home,
+      );
+      await auditor.inspect();
+      expect(inspection.inspected.toSet(), {
+        path.join(home, '.gemini', 'config', 'skills'),
+        path.join(home, '.gemini', 'antigravity', 'skills'),
+        path.join(home, '.gemini', 'antigravity-cli', 'skills'),
+      });
+    },
+  );
 
   test('returns unsupported without inspecting paths', () async {
     final inspection = _FakeInspection(supported: false);
