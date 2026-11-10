@@ -573,6 +573,12 @@ Map<String, String> _agentEnvironment(String? agentHomePath) {
     'VIBE_HOME',
     'HERMES_HOME',
     'AUTOHAND_HOME',
+    'GROK_HOME',
+    'SARVAM_HOME',
+    'REASONIX_HOME',
+    'DSH_HOME',
+    'DSH_AGENTS_HOME',
+    'APPDATA',
   ]) {
     environment.remove(key);
   }
