@@ -28,14 +28,14 @@ doc/api/
 **/ephemeral/
 **/flutter/generated_plugin_registrant.*
 **/flutter/generated_plugins.cmake
-skills_manager/macos/Flutter/GeneratedPluginRegistrant.swift
+skilldeck-app/macos/Flutter/GeneratedPluginRegistrant.swift
 
 # Local SkillDeck signing keys; never commit private release material.
-/skills_manager/keys/
+/skilldeck-app/keys/
 
 # Local dart-define files; they hold machine-local and analytics configuration.
-skills_manager/debug.json
-skills_manager/staging.json
+skilldeck-app/debug.json
+skilldeck-app/staging.json
 keys/
 marketing/
 

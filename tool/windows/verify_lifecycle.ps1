@@ -7,7 +7,7 @@ param(
 # executable is accepted; never close, kill, or alter the installed App.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$AppPath = Join-Path $Root 'skills_manager\build\windows\x64\runner\Release\SkillDeck.exe'
+$AppPath = Join-Path $Root 'skilldeck-app\build\windows\x64\runner\Release\SkillDeck.exe'
 $OutputDirectory = Join-Path $Root 'dist\lifecycle'
 $app = Get-Item -LiteralPath $AppPath
 if ($app.VersionInfo.ProductName -ne 'SkillDeck Lifecycle Test') {

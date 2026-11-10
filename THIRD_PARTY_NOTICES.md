@@ -49,7 +49,7 @@ vendored and is not selected by the locked build.
 from release `sqlite3-3.5.2`; its cached hook source
 `lib/src/hook/asset_hashes.dart` specifies the following expected SHA-256s.
 SQLite is public domain (SQLite authors; no copyright claimed); see
-<https://sqlite.org/copyright.html> and `skills_manager/assets/licenses/sqlite.txt`.
+<https://sqlite.org/copyright.html> and `skilldeck-app/assets/licenses/sqlite.txt`.
 These are expected download hashes, not hashes measured on release bundles.
 The SQLite core version and actual released bytes are **unverified**.
 
@@ -63,21 +63,52 @@ The SQLite core version and actual released bytes are **unverified**.
 
 | Path | Component, version/pin | License and holder | Text |
 | --- | --- | --- | --- |
-| `skills_manager/assets/fonts/NotoSansSC-Variable.ttf` | Noto Sans SC; embedded font version 2.004 | OFL-1.1; Adobe | `skills_manager/assets/licenses/noto-sans-sc.txt` |
-| `skills_manager/assets/agent_icons/` | Lobe icons static SVG and PNG 1.94.0 (npm packages `@lobehub/icons-static-svg` and `@lobehub/icons-static-png`) | MIT; LobeHub | `skills_manager/assets/licenses/lobe-icons.txt` |
-| `skills_manager/assets/fonts/Inter-Variable.ttf` | Inter 4.001, git-66647c0bb | OFL-1.1; The Inter Project Authors | `skills_manager/assets/licenses/ofl-1.1.txt`; font name table |
-| `skills_manager/assets/fonts/JetBrainsMono-Variable.ttf` | JetBrains Mono 2.211 | OFL-1.1; The JetBrains Mono Project Authors | `skills_manager/assets/licenses/ofl-1.1.txt`; font name table |
-| `skills_manager/assets/fonts/SpaceGrotesk-Variable.ttf` | Space Grotesk 2.000 | OFL-1.1; The Space Grotesk Project Authors | `skills_manager/assets/licenses/ofl-1.1.txt`; font name table |
+| `skilldeck-app/assets/fonts/NotoSansSC-Variable.ttf` | Noto Sans SC; embedded font version 2.004 | OFL-1.1; Adobe | `skilldeck-app/assets/licenses/noto-sans-sc.txt` |
+| `skilldeck-app/assets/agent_icons/` | Lobe icons static SVG and PNG 1.94.0 (npm packages `@lobehub/icons-static-svg` and `@lobehub/icons-static-png`) | MIT; LobeHub | `skilldeck-app/assets/licenses/lobe-icons.txt` |
+| `skilldeck-app/assets/fonts/Inter-Variable.ttf` | Inter 4.001, git-66647c0bb | OFL-1.1; The Inter Project Authors | `skilldeck-app/assets/licenses/ofl-1.1.txt`; font name table |
+| `skilldeck-app/assets/fonts/JetBrainsMono-Variable.ttf` | JetBrains Mono 2.211 | OFL-1.1; The JetBrains Mono Project Authors | `skilldeck-app/assets/licenses/ofl-1.1.txt`; font name table |
+| `skilldeck-app/assets/fonts/SpaceGrotesk-Variable.ttf` | Space Grotesk 2.000 | OFL-1.1; The Space Grotesk Project Authors | `skilldeck-app/assets/licenses/ofl-1.1.txt`; font name table |
 
 Lobe icons 1.94.0 npm package integrity pins:
 
 - `@lobehub/icons-static-svg`: `sha512-Inx1TYkjLH6YeHOIHeVW9+OM/xxRnk8TmcQVKquFUDBmE3X9sUuRGt7kALrrDBNNAbrWz7Qq6fAiFj9E9Mmw9Q==`
 - `@lobehub/icons-static-png`: `sha512-UX+BolfzVoCaY5UJd+IvjmrxPfes1jbiHAsi3QadePnpjQlDLV6asLe4TTShws4MExsVhI7rAjR9Ah1j9f2sTQ==`
 
+### Additional Agent icons (2026-11-10)
+
+The `grok.svg`, `minimax.svg`, `minimax-color.svg`, `deepseek.svg`,
+`deepseek-color.svg`, and `workbuddy.svg` files in
+`skilldeck-app/assets/agent_icons/` are unmodified Lobe Icons static SVGs from
+<https://github.com/lobehub/lobe-icons/tree/ea434b96e75813517b377825e01c0df61dee8836/packages/static-svg/icons>.
+The matching `workbuddy-color.png` is the unmodified
+`packages/static-png/light/workbuddy-color.png` from that same commit. The
+raster variant preserves the color SVG's unsupported Gaussian-blur filter in
+Flutter, following the existing Antigravity icon convention.
+These files are distributed under the same MIT license and LobeHub attribution in
+`skilldeck-app/assets/licenses/lobe-icons.txt`. The other icon assets retain
+their previously recorded 1.94.0 provenance.
+
 ### vercel-labs/skills attribution
 
 Compared against `vercel-labs/skills` commit
 `435076e78988e1e6ec40d00b0b1d76bdbbc5419a`.
+
+The built-in Agent catalog was additionally synchronized against commit
+`26dc8e4755a11fea22ed788256c3db50001b013d` on 2026-11-10 (eight added IDs, including the two independent
+conventions below; Droid/Kilo/Pi canonical-path changes are deferred). The
+other files in this table retain the comparison baseline above.
+
+Additional directory-convention references (no source implementation copied):
+
+- DeepSeek Harness: official `deepseek-ai/deepseek-harness` commit
+  `fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159`,
+  `packages/util/home-paths/src/index.ts` and
+  `packages/skill/skill-filesystem/src/index.ts`.
+- WorkBuddy domestic edition: `xingkongliang/skills-manager` commit
+  `63bdf81ca3da0a27daa82aae431979507a8acb8b`,
+  `src-tauri/src/core/tool_adapters.rs`. The default directory convention is
+  modeled independently in Dart; runtime loading is not established by this
+  source comparison. The overseas `.workbuddy-ai` edition is not registered.
 
 | File (under `packages/skills_workspace/`) | Judgment and evidence |
 | --- | --- |
@@ -118,7 +149,7 @@ SOFTWARE.
 ### Extracted UI dependency
 
 `next_ui` 0.1.0 replaces the private `my_ui` dependency. Its exact immutable
-revision is recorded in `skills_manager/pubspec.lock`; the public Git pin is
+revision is recorded in `skilldeck-app/pubspec.lock`; the public Git pin is
 `e91aa0399adadd38898f5658bfb4925e32b637c2`. Its source baseline was `my_ui`
 `3dc634e3ed8221b9c5032a2122f47bdbde32f73e`, not the private working tree.
 Original contributions are MIT (Feiyu-Liu), with full MIT text in the
@@ -283,7 +314,7 @@ SPDX audit. Unidentified holders are explicitly marked unverified.
 | `term_glyph` | `1.2.2` |
 | `test_api` | `0.7.12` |
 | `typed_data` | `1.4.0` |
-| `vector_math` | `2.4.3` |
+| `vector_math` | `2.2.0` |
 | `vm_service` | `15.3.0` |
 | `web` | `1.1.1` |
 | `yaml` | `3.1.4` |
@@ -343,7 +374,7 @@ SPDX audit. Unidentified holders are explicitly marked unverified.
 | `webkit_inspection_protocol` | `1.2.1` |
 | `yaml` | `3.1.4` |
 
-#### `skills_manager/pubspec.lock`
+#### `skilldeck-app/pubspec.lock`
 
 | Hosted package | Version |
 | --- | --- |
@@ -685,6 +716,7 @@ SPDX audit. Unidentified holders are explicitly marked unverified.
 | `vector_graphics` | `1.2.3` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_graphics-1.2.3.tar.gz) in exact-version archive |
 | `vector_graphics_codec` | `1.1.13` | BSD family | Copyright 2013 The Flutter Authors. All rights reserved. | [LICENSE](https://pub.dev/api/archives/vector_graphics_codec-1.1.13.tar.gz) in exact-version archive |
 | `vector_graphics_compiler` | `1.3.0` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_graphics_compiler-1.3.0.tar.gz) in exact-version archive |
+| `vector_math` | `2.2.0` | BSD family | Copyright 2015, Google Inc. All rights reserved. | [LICENSE](https://pub.dev/api/archives/vector_math-2.2.0.tar.gz) in exact-version archive |
 | `vector_math` | `2.4.3` | BSD family | Copyright 2013 The Flutter Authors | [LICENSE](https://pub.dev/api/archives/vector_math-2.4.3.tar.gz) in exact-version archive |
 | `vm_service` | `15.3.0` | BSD family | Copyright 2015, the Dart project authors. | [LICENSE](https://pub.dev/api/archives/vm_service-15.3.0.tar.gz) in exact-version archive |
 | `vm_service` | `15.4.0` | BSD family | Copyright 2015, the Dart project authors. | [LICENSE](https://pub.dev/api/archives/vm_service-15.4.0.tar.gz) in exact-version archive |

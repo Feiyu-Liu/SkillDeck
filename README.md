@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="skills_manager/assets/app_icon.png" width="96" height="96" alt="SkillDeck icon" />
+<img src="skilldeck-app/assets/app_icon.png" width="96" height="96" alt="SkillDeck icon" />
 
 # SkillDeck
 
@@ -81,7 +81,7 @@ Dependency resolution also requires Git and network access. The workspace compil
 From the repository root:
 
 ```sh
-cd skills_manager
+cd skilldeck-app
 flutter pub get --enforce-lockfile
 flutter run -d macos
 ```
@@ -103,7 +103,7 @@ dart run bin/skilldeck.dart status --no-launch
 
 ### Validate changes
 
-For the App, run from `skills_manager/`:
+For the App, run from `skilldeck-app/`:
 
 ```sh
 dart format --output=none --set-exit-if-changed .
@@ -137,7 +137,7 @@ Workflow policy can be checked offline with `ruby .github/tests/workflow_policy_
 
 | Path | Responsibility |
 | --- | --- |
-| [`skills_manager/`](skills_manager/) | Flutter desktop App: interface, settings, workspace orchestration, and local command host |
+| [`skilldeck-app/`](skilldeck-app/) | Flutter desktop App: interface, settings, workspace orchestration, and local command host |
 | [`packages/skills_workspace/`](packages/skills_workspace/) | Transactional skill lifecycle, activation, SQLite metadata, and native Git revision engine |
 | [`packages/skills_translation/`](packages/skills_translation/) | Independent Markdown translation and content-addressed cache |
 | [`packages/skilldeck_cli/`](packages/skilldeck_cli/) | The `skilldeck` CLI and local App communication protocol |

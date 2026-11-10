@@ -103,6 +103,22 @@ final class CommandHostServer {
       );
       _listener!.listen(
         (socket) {
+          // Socket reports write failures through IOSink.done independently of
+          // its readable stream. Observe it before serving the connection.
+          unawaited(
+            socket.done.then<void>(
+              (_) {},
+              onError: (Object error, StackTrace stackTrace) {
+                if (error is! SocketException) {
+                  Error.throwWithStackTrace(error, stackTrace);
+                }
+                diagnostics.info(
+                  'commandHost.rejected',
+                  context: {'code': 'transportError'},
+                );
+              },
+            ),
+          );
           _connections.add(socket);
           final serving = _serve(socket);
           _serving.add(serving);
@@ -278,8 +294,14 @@ final class CommandHostServer {
     } finally {
       _commands.remove(socket);
       socket.destroy();
-      await messages.cancel();
-      _connections.remove(socket);
+      try {
+        await messages.cancel();
+      } on SocketException {
+        // A peer reset can surface while the decoder subscription is cancelled.
+        // This connection is already closed; keep it from escaping the server.
+      } finally {
+        _connections.remove(socket);
+      }
     }
   }
 

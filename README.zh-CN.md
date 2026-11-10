@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="skills_manager/assets/app_icon.png" width="96" height="96" alt="SkillDeck 图标" />
+<img src="skilldeck-app/assets/app_icon.png" width="96" height="96" alt="SkillDeck 图标" />
 
 # SkillDeck
 
@@ -81,7 +81,7 @@ CLI 是桌面 App 的本地客户端，**不是独立的工作区引擎**。管�
 在仓库根目录执行：
 
 ```sh
-cd skills_manager
+cd skilldeck-app
 flutter pub get --enforce-lockfile
 flutter run -d macos
 ```
@@ -103,7 +103,7 @@ dart run bin/skilldeck.dart status --no-launch
 
 ### 检查修改
 
-App（在 `skills_manager/` 中）：
+App（在 `skilldeck-app/` 中）：
 
 ```sh
 dart format --output=none --set-exit-if-changed .
@@ -137,7 +137,7 @@ Workspace 和 App 工作流可在 Actions 页面手动选择 `quick` 或 `merge`
 
 | 路径 | 职责 |
 | --- | --- |
-| [`skills_manager/`](skills_manager/) | Flutter 桌面 App：界面、设置、工作区编排与本地命令服务 |
+| [`skilldeck-app/`](skilldeck-app/) | Flutter 桌面 App：界面、设置、工作区编排与本地命令服务 |
 | [`packages/skills_workspace/`](packages/skills_workspace/) | 事务型 Skill 生命周期、激活、SQLite 元数据及原生 Git 版本引擎 |
 | [`packages/skills_translation/`](packages/skills_translation/) | 独立的 Markdown 翻译与内容寻址缓存 |
 | [`packages/skilldeck_cli/`](packages/skilldeck_cli/) | `skilldeck` CLI 及 App 本地通信协议 |

@@ -6,6 +6,52 @@ import 'package:skills_manager/features/skills/presentation/widgets/agent_logo.d
 import 'package:skills_manager/features/skills/presentation/widgets/agent_logo_registry.dart';
 
 void main() {
+  for (final entry in {
+    'grok': 'grok',
+    'minimax-code': 'minimax',
+    'deepseek-harness': 'deepseek',
+    'workbuddy': 'workbuddy',
+  }.entries) {
+    for (final brandColor in [true, false]) {
+      testWidgets('${entry.key} renders its Lobe icon (color=$brandColor)', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          CupertinoApp(
+            home: Center(
+              child: AgentLogo(agentId: entry.key, useBrandColor: brandColor),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final colored = brandColor && entry.key != 'grok';
+        if (entry.key == 'workbuddy' && colored) {
+          final image = tester.widget<Image>(find.byType(Image));
+          expect(
+            (image.image as AssetImage).assetName,
+            'assets/agent_icons/workbuddy-color.png',
+          );
+          expect(find.byType(SvgPicture), findsNothing);
+          expect(tester.takeException(), isNull);
+          return;
+        }
+        final picture = tester.widget<SvgPicture>(find.byType(SvgPicture));
+        expect(
+          (picture.bytesLoader as SvgAssetLoader).assetName,
+          'assets/agent_icons/${entry.value}${colored ? '-color' : ''}.svg',
+        );
+        expect(picture.colorFilter, colored ? isNull : isNotNull);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+  for (final id in ['kimchi', 'posit-assistant', 'fx', 'sarvam-code']) {
+    testWidgets('$id uses neutral fallback', (tester) async {
+      await tester.pumpWidget(CupertinoApp(home: AgentLogo(agentId: id)));
+      expect(find.byIcon(LucideIcons.bot), findsOneWidget);
+    });
+  }
+
   testWidgets('renders a curated SVG for a mapped Agent', (tester) async {
     await tester.pumpWidget(
       const CupertinoApp(
@@ -94,8 +140,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(SvgPicture), findsNWidgets(30));
-    expect(find.byType(Image), findsNWidgets(2));
+    expect(find.byType(SvgPicture), findsNWidgets(33));
+    expect(find.byType(Image), findsNWidgets(3));
     expect(tester.takeException(), isNull);
   });
 

@@ -105,10 +105,25 @@ void main() {
         final managed = report.snapshot.findSkill(
           report.affectedSkillIds.single,
         )!;
-        expect(managed.activations, hasLength(1));
+        // A reviewed occurrence under the shared physical root also offers
+        // DeepSeek's native destination. A Codex-only occurrence does not.
+        final includesDeepseek = shape != 'compatEmpty';
+        expect(managed.activations, hasLength(includesDeepseek ? 2 : 1));
+        if (includesDeepseek) {
+          final deepseek = managed.activations.singleWhere(
+            (a) => a.agentIds.contains('deepseek-harness'),
+          );
+          expect(deepseek.location, path.join(f.home, '.dsh', 'skills'));
+          expect(
+            await File(path.join(deepseek.location, slot, 'SKILL.md')).exists(),
+            isTrue,
+          );
+        }
         expect(
           await Directory(
-            managed.activations.single.location,
+            managed.activations
+                .singleWhere((a) => !a.agentIds.contains('deepseek-harness'))
+                .location,
           ).resolveSymbolicLinks(),
           await Directory(f.claude).resolveSymbolicLinks(),
         );
@@ -191,7 +206,7 @@ void main() {
       final report = _success(await f.adopt(slot));
       expect(
         report.snapshot.findSkill(report.affectedSkillIds.single)!.activations,
-        hasLength(1),
+        hasLength(slot == slots.first ? 2 : 1),
       );
       expect(
         await File(path.join(f.claude, slot, 'SKILL.md')).exists(),

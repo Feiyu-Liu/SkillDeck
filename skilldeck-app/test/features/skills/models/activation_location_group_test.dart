@@ -144,6 +144,34 @@ void main() {
     agentIds: agentIds,
   );
 
+  test(
+    'old shared activation does not enable corrected Antigravity location',
+    () {
+      final groups = groupActivationLocations([
+        target('antigravity', location: '/home/test/.gemini/config/skills'),
+        target('antigravity-cli', location: '/home/test/.gemini/config/skills'),
+        target('codex'),
+      ]);
+      final skill = testSkill(
+        slotKey: 'legacy',
+        displayName: 'Legacy',
+        activations: [
+          activation(
+            location: '/home/test/.agents/skills',
+            agentIds: ['antigravity', 'codex'],
+          ),
+        ],
+      );
+      final active = activeGroupsInScope(
+        skill,
+        groups: groups,
+        scope: InstalledScopeFilter.global,
+      );
+      expect(active.single.targets.single.agentId, 'codex');
+      expect(skill.activations.single.agentIds, ['antigravity', 'codex']);
+    },
+  );
+
   test('Scope buckets an installed Skill by the reach of its Activations', () {
     final never = testSkill(slotKey: 'never', displayName: 'Never activated');
     final globalOnly = testSkill(

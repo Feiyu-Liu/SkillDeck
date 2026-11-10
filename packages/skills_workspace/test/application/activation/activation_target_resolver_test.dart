@@ -1,3 +1,4 @@
+import 'package:skills_workspace/src/application/agents/built_in_agent_definitions.dart';
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/src/application/activation/activation_result.dart';
 import 'package:skills_workspace/src/application/activation/activation_target_resolver.dart';
@@ -10,6 +11,63 @@ import 'package:test/test.dart';
 import '../../support/activation/activation_fakes.dart';
 
 void main() {
+  test(
+    'Antigravity shares project roots but has a distinct global group',
+    () async {
+      final home = _platformLocation('/home/test');
+      final resolver = _resolver(
+        buildBuiltInAgentDefinitions(
+          platform: DesktopPlatform.macos,
+          environment: {'HOME': home},
+        ),
+      );
+      final root = ProjectRoot(id: 'project', path: path.join(home, 'project'));
+      final snapshot = RepositorySnapshot(
+        revision: RepositoryRevision.initial(),
+        managedSkills: const [],
+        projectRoots: [root],
+      );
+      for (final scope in ActivationScope.values) {
+        final result = await resolver.resolve(
+          selection: ActivationSelection.explicit([
+            for (final id in ['antigravity', 'antigravity-cli', 'codex'])
+              ActivationTarget(
+                agentId: id,
+                scope: scope,
+                projectRootId: scope == ActivationScope.project
+                    ? root.id
+                    : null,
+              ),
+          ]),
+          requestedMode: RequestedActivationMode.copy,
+          snapshot: snapshot,
+        );
+        final targets = result.valueOrNull!.targets;
+        if (scope == ActivationScope.global) {
+          expect(targets, hasLength(2));
+          final antigravity = targets.singleWhere(
+            (t) => t.agentIds.contains('antigravity'),
+          );
+          expect(antigravity.agentIds, ['antigravity', 'antigravity-cli']);
+          expect(
+            antigravity.location,
+            path.join(home, '.gemini', 'config', 'skills'),
+          );
+        } else {
+          expect(targets.single.agentIds, [
+            'antigravity',
+            'antigravity-cli',
+            'codex',
+          ]);
+          expect(
+            targets.single.location,
+            path.join(root.path, '.agents', 'skills'),
+          );
+        }
+      }
+    },
+  );
+
   test('none resolves no targets without warnings', () async {
     final resolver = _resolver(<AgentDefinition>[]);
 

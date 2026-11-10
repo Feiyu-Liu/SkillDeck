@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 90
     defaults:
       run:
-        working-directory: skills_manager
+        working-directory: skilldeck-app
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -44,7 +44,7 @@ jobs:
         working-directory: .
         env:
           SQLITE_NATIVE_ASSET_CACHE: ${{ runner.temp }}/app-sqlite
-          SQLITE_NATIVE_ASSET_SOURCE: ${{ github.workspace }}/skills_manager/.dart_tool/hooks_runner/shared/sqlite3/build
+          SQLITE_NATIVE_ASSET_SOURCE: ${{ github.workspace }}/skilldeck-app/.dart_tool/hooks_runner/shared/sqlite3/build
         run: dart .github/scripts/sqlite_native_asset_cache.dart restore
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze --fatal-infos --no-pub

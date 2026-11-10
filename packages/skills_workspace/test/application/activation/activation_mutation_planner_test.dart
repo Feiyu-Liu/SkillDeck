@@ -24,6 +24,56 @@ void main() {
     );
   });
 
+  test(
+    'activating a corrected catalog target never retires the old shared root',
+    () {
+      final existing = SkillActivation(
+        location: '/agents/skills',
+        scope: ActivationScope.global,
+        mode: ActivationMode.copy,
+        agentIds: const ['antigravity', 'codex'],
+      );
+      final target = ResolvedActivationTarget(
+        location: '/gemini/config/skills',
+        scope: ActivationScope.global,
+        mode: ActivationMode.copy,
+        agentIds: const ['antigravity', 'antigravity-cli'],
+      );
+      final snapshot = _snapshot(activations: [existing]);
+      final persisted = [_persisted(existing)];
+      final result = planner.activate(
+        snapshot: snapshot,
+        managedSkillIds: {_skillId},
+        resolvedTargets: ResolvedActivationTargets(targets: [target]),
+        occupancies: const [],
+        persistedActivations: persisted,
+      );
+      final plan = result.valueOrNull!;
+      expect(plan.businessChanges.mutations, hasLength(1));
+      expect(
+        (plan.businessChanges.mutations.single as PutActivation).canonicalPath,
+        target.location,
+      );
+      expect(
+        (plan.pathMutations.single as MaterializeActivationPath).targetPath,
+        path.join(target.location, 'example'),
+      );
+      expect(snapshot.managedSkills.single.activations.single, existing);
+      final removal = planner
+          .deactivate(
+            snapshot: snapshot,
+            managedSkillIds: {_skillId},
+            locations: {existing.location},
+            persistedActivations: persisted,
+          )
+          .valueOrNull!;
+      expect(
+        (removal.pathMutations.single as DeleteActivationPath).targetPath,
+        path.join(existing.location, 'example'),
+      );
+    },
+  );
+
   test('plans a vacant copy target and one Activation row', () {
     final result = planner.activate(
       snapshot: _snapshot(),

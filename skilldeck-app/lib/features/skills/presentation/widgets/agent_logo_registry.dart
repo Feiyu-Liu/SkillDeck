@@ -2,6 +2,10 @@ abstract final class AgentLogoRegistry {
   static const assetRoot = 'assets/agent_icons';
 
   static const Map<String, String> assetSlugs = {
+    'grok': 'grok',
+    'minimax-code': 'minimax',
+    'deepseek-harness': 'deepseek',
+    'workbuddy': 'workbuddy',
     'amp': 'amp',
     'antigravity': 'antigravity',
     'antigravity-cli': 'antigravity',
@@ -37,6 +41,9 @@ abstract final class AgentLogoRegistry {
   };
 
   static const Map<String, String> colorAssetExtensions = {
+    'minimax': 'svg',
+    'deepseek': 'svg',
+    'workbuddy': 'png',
     'amp': 'svg',
     'antigravity': 'png',
     'claudecode': 'svg',
@@ -58,6 +65,14 @@ abstract final class AgentLogoRegistry {
   };
 
   static const Set<String> reviewedAgentIds = {
+    'grok',
+    'kimchi',
+    'minimax-code',
+    'posit-assistant',
+    'fx',
+    'sarvam-code',
+    'deepseek-harness',
+    'workbuddy',
     'aider-desk',
     'amp',
     'antigravity',

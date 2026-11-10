@@ -3,9 +3,9 @@ import 'package:path/path.dart' as path;
 
 import '../../domain/public_models.dart';
 
-const int builtInAgentCatalogVersion = 1;
+const int builtInAgentCatalogVersion = 2;
 
-/// Builds the 73 built-in Agent conventions without reading process state.
+/// Builds the 81 built-in Agent conventions without reading process state.
 List<AgentDefinition> buildBuiltInAgentDefinitions({
   required DesktopPlatform platform,
   required Map<String, String> environment,
@@ -36,6 +36,33 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
     'AUTOHAND_HOME',
     path.join(home, '.autohand'),
   );
+  final grokHome = _envHome(environment, 'GROK_HOME', path.join(home, '.grok'));
+  final sarvamHome = _envHome(
+    environment,
+    'SARVAM_HOME',
+    path.join(home, '.sarvam'),
+  );
+  final reasonixHome = _envHome(
+    environment,
+    'REASONIX_HOME',
+    platform == DesktopPlatform.windows
+        ? path.join(
+            _envHome(
+              environment,
+              'APPDATA',
+              path.join(home, 'AppData', 'Roaming'),
+            ),
+            'reasonix',
+          )
+        : path.join(home, '.reasonix'),
+  );
+  final dshHome = _expandedEnvHome(environment, 'DSH_HOME', home, '.dsh');
+  final dshAgentsHome = _expandedEnvHome(
+    environment,
+    'DSH_AGENTS_HOME',
+    home,
+    '.agents',
+  );
   final openClawHome = _firstExisting(<String>[
     path.join(home, '.openclaw'),
     path.join(home, '.clawdbot'),
@@ -52,18 +79,28 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
     List<String> projectDetectionPaths = const <String>[],
     List<String> projectPackageDependencies = const <String>[],
     bool requireAllDetectionPaths = false,
+    bool globalReadsCanonical = true,
+    List<String> extraGlobalDiscoveryPaths = const <String>[],
+    List<String> projectDiscoveryPaths = const <String>[],
   }) {
-    final universal = projectSkillsPath == '.agents/skills';
+    final universal =
+        projectSkillsPath == '.agents/skills' && globalReadsCanonical;
     final canonicalGlobalSkillsPath = universal && globalSkillsPath != null
         ? universalGlobalSkillsPath
         : globalSkillsPath;
-    final globalDiscoverySkillsPaths = <String>[
-      if (universal &&
-          globalSkillsPath != null &&
-          path.normalize(globalSkillsPath) !=
-              path.normalize(universalGlobalSkillsPath))
-        globalSkillsPath,
-    ];
+    final globalDiscoverySkillsPaths =
+        <String>{
+          if (universal &&
+              globalSkillsPath != null &&
+              path.normalize(globalSkillsPath) !=
+                  path.normalize(universalGlobalSkillsPath))
+            path.normalize(globalSkillsPath),
+          ...extraGlobalDiscoveryPaths.map(path.normalize),
+        }..remove(
+          canonicalGlobalSkillsPath == null
+              ? null
+              : path.normalize(canonicalGlobalSkillsPath),
+        );
     final detections = <AgentDetectionPath>[
       for (final detectionPath
           in absoluteDetectionPaths ??
@@ -83,7 +120,8 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
         platform: AgentPlatformDefinition(
           globalSkillsPath: canonicalGlobalSkillsPath,
           projectSkillsPath: projectSkillsPath,
-          globalDiscoverySkillsPaths: globalDiscoverySkillsPaths,
+          globalDiscoverySkillsPaths: globalDiscoverySkillsPaths.toList(),
+          projectDiscoverySkillsPaths: projectDiscoveryPaths,
           detectionPaths: detections,
           requireAllDetectionPaths: requireAllDetectionPaths,
         ),
@@ -112,13 +150,19 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       'antigravity',
       'Antigravity',
       '.agents/skills',
-      h('.gemini/antigravity/skills'),
+      h('.gemini/config/skills'),
+      globalReadsCanonical: false,
+      absoluteDetectionPaths: <String>[h('.gemini/antigravity')],
+      extraGlobalDiscoveryPaths: <String>[h('.gemini/antigravity/skills')],
     ),
     agent(
       'antigravity-cli',
       'Antigravity CLI',
       '.agents/skills',
-      h('.gemini/antigravity-cli/skills'),
+      h('.gemini/config/skills'),
+      globalReadsCanonical: false,
+      absoluteDetectionPaths: <String>[h('.gemini/antigravity-cli')],
+      extraGlobalDiscoveryPaths: <String>[h('.gemini/antigravity-cli/skills')],
     ),
     agent(
       'astrbot',
@@ -221,6 +265,15 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       '.agents/skills',
       h('.deepagents/agent/skills'),
     ),
+    agent(
+      'deepseek-harness',
+      'DeepSeek Harness',
+      '.dsh/skills',
+      path.join(dshHome, 'skills'),
+      absoluteDetectionPaths: <String>[dshHome],
+      extraGlobalDiscoveryPaths: <String>[path.join(dshAgentsHome, 'skills')],
+      projectDiscoveryPaths: const <String>['.agents/skills'],
+    ),
     agent('devin', 'Devin for Terminal', '.devin/skills', c('devin/skills')),
     agent(
       'dexto',
@@ -246,6 +299,14 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       h('.firebender/skills'),
     ),
     agent('forgecode', 'ForgeCode', '.forge/skills', h('.forge/skills')),
+    agent(
+      'fx',
+      'fx',
+      '.agents/skills',
+      h('.agents/skills'),
+      absoluteDetectionPaths: <String>[h('.fx')],
+    ),
+    agent('grok', 'Grok Build', '.grok/skills', path.join(grokHome, 'skills')),
     agent('gemini-cli', 'Gemini CLI', '.agents/skills', h('.gemini/skills')),
     agent(
       'github-copilot',
@@ -284,6 +345,13 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       h('.agents/skills'),
       absoluteDetectionPaths: <String>[h('.kimi-code'), h('.kimi')],
     ),
+    agent(
+      'kimchi',
+      'Kimchi',
+      '.kimchi/skills',
+      h('.config/kimchi/harness/skills'),
+      absoluteDetectionPaths: <String>[h('.config/kimchi')],
+    ),
     agent('kiro-cli', 'Kiro CLI', '.kiro/skills', h('.kiro/skills')),
     agent('kode', 'Kode', '.kode/skills', h('.kode/skills')),
     agent('lingma', 'Lingma', '.lingma/skills', h('.lingma/skills')),
@@ -301,6 +369,16 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       '.vibe/skills',
       path.join(vibeHome, 'skills'),
     ),
+    agent(
+      'minimax-code',
+      'MiniMax Code',
+      '.minimax/skills',
+      h('.minimax/skills'),
+      absoluteDetectionPaths: <String>[
+        h('.minimax'),
+        '/Applications/MiniMax Code.app',
+      ],
+    ),
     agent('moxby', 'Moxby', '.moxby/skills', h('.moxby/skills')),
     agent('mux', 'Mux', '.mux/skills', h('.mux/skills')),
     agent('opencode', 'OpenCode', '.agents/skills', c('opencode/skills')),
@@ -312,6 +390,13 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
     ),
     agent('ona', 'Ona', '.ona/skills', h('.ona/skills')),
     agent('pi', 'Pi', '.pi/skills', h('.pi/agent/skills')),
+    agent(
+      'posit-assistant',
+      'Posit Assistant',
+      '.posit/assistant/skills',
+      h('.posit/assistant/skills'),
+      absoluteDetectionPaths: <String>[h('.posit/assistant'), h('.positai')],
+    ),
     agent('qoder', 'Qoder', '.qoder/skills', h('.qoder/skills')),
     agent('qoder-cn', 'Qoder CN', '.qoder/skills', h('.qoder-cn/skills')),
     agent('qwen-code', 'Qwen Code', '.qwen/skills', h('.qwen/skills')),
@@ -323,7 +408,20 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       absoluteDetectionPaths: const <String>[],
       projectDetectionPaths: const <String>['.replit'],
     ),
-    agent('reasonix', 'Reasonix', '.reasonix/skills', h('.reasonix/skills')),
+    agent(
+      'reasonix',
+      'Reasonix',
+      '.reasonix/skills',
+      path.join(reasonixHome, 'skills'),
+      extraGlobalDiscoveryPaths: <String>[h('.reasonix/skills')],
+    ),
+    agent(
+      'sarvam-code',
+      'Sarvam Code',
+      '.agents/skills',
+      h('.agents/skills'),
+      absoluteDetectionPaths: <String>[sarvamHome],
+    ),
     agent('rovodev', 'Rovo Dev', '.rovodev/skills', h('.rovodev/skills')),
     agent('roo', 'Roo Code', '.roo/skills', h('.roo/skills')),
     agent(
@@ -358,6 +456,12 @@ List<AgentDefinition> buildBuiltInAgentDefinitions({
       'Windsurf',
       '.windsurf/skills',
       h('.codeium/windsurf/skills'),
+    ),
+    agent(
+      'workbuddy',
+      'WorkBuddy',
+      '.workbuddy/skills',
+      h('.workbuddy/skills'),
     ),
     agent(
       'zed',
@@ -427,4 +531,21 @@ String _firstExisting(List<String> candidates, Set<String> existingPaths) {
     (candidate) => normalized.contains(path.normalize(candidate)),
     orElse: () => candidates.first,
   );
+}
+
+// DeepSeek supports home-prefixed overrides. Keep this builder independent of
+// process cwd: relative overrides are rejected by AgentPlatformDefinition.
+String _expandedEnvHome(
+  Map<String, String> environment,
+  String key,
+  String home,
+  String fallback,
+) {
+  final raw = environment[key];
+  if (raw == null || raw.trim().isEmpty) return path.join(home, fallback);
+  if (raw == '~') return home;
+  if (raw.startsWith('~/') || raw.startsWith('~\\')) {
+    return path.normalize(path.join(home, raw.substring(2)));
+  }
+  return path.normalize(raw);
 }
