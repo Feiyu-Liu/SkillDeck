@@ -688,7 +688,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppUpdateAvailableGeneric => '有新的 SkillDeck 版本可用。';
 
   @override
-  String get settingsAppUpdateDownloaded => '签名更新已在更新器中准备就绪。';
+  String get settingsAppUpdateDownloaded => '更新已下载。请在更新窗口查看进度并确认安装。';
 
   @override
   String get settingsAppUpdateFailed => '更新操作失败，请重新检查。';
@@ -700,13 +700,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppUpdateCheck => '检查更新';
 
   @override
+  String get settingsAppUpdateProcessing => '更新正在处理中，请稍后再试。';
+
+  @override
   String get sidebarAppUpdateChecking => '正在检查…';
 
   @override
   String get sidebarAppUpdateAvailable => '有可用更新';
 
   @override
-  String get sidebarAppUpdateDownloaded => '安装更新';
+  String get sidebarAppUpdateDownloaded => '查看更新';
 
   @override
   String get sidebarAppUpdateFailed => '重试更新';

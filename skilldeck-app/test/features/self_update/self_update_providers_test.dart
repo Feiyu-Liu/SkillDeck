@@ -182,7 +182,7 @@ void main() {
       });
 
       await coordinator.initialize();
-      await coordinator.checkForUpdates();
+      expect(await coordinator.checkForUpdates(), UpdateCheckStart.busy);
 
       expect(platform.checkCount, 1);
       expect(coordinator.state, isA<AppUpdateIdle>());

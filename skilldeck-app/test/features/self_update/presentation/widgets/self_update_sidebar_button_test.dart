@@ -11,6 +11,8 @@ import 'package:skills_manager/features/self_update/self_update_providers.dart';
 import 'package:skills_manager/features/settings/settings_providers.dart';
 import 'package:skills_manager/l10n/generated/app_localizations.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
+import 'package:skills_manager/shared/notifications/app_notification_presenter.dart';
+import 'package:skills_manager/shared/notifications/app_notification_providers.dart';
 import 'package:skills_manager/shared/widgets/app_sidebar.dart';
 
 import '../../../../support/memory_app_settings_store.dart';
@@ -50,7 +52,41 @@ void main() {
 
     coordinator.onUpdaterUpdateDownloaded(null);
     await tester.pump();
-    expect(find.text('Install update'), findsOneWidget);
+    expect(find.text('View update'), findsOneWidget);
+  });
+
+  testWidgets('downloaded prompt focuses the native dialog', (tester) async {
+    platform.checkStart = UpdateCheckStart.resumed;
+    await tester.pumpWidget(_testApp(coordinator));
+    coordinator.onUpdaterUpdateDownloaded(null);
+    await tester.pump();
+    await tester.tap(find.byKey(button));
+    await tester.pump();
+    expect(platform.checkCount, 1);
+    expect(coordinator.state, isA<AppUpdateDownloaded>());
+    expect(find.text('View update'), findsOneWidget);
+  });
+
+  testWidgets('native busy shows feedback and permits a later retry', (
+    tester,
+  ) async {
+    final presenter = _RecordingPresenter();
+    platform.checkStart = UpdateCheckStart.busy;
+    await tester.pumpWidget(_testApp(coordinator, presenter: presenter));
+    coordinator.onUpdaterUpdateDownloaded(null);
+    await tester.pump();
+    await tester.tap(find.byKey(button));
+    await tester.pump();
+    expect(
+      presenter.messages.single.content.message,
+      'The updater is busy. Please try again shortly.',
+    );
+    expect(coordinator.state, isA<AppUpdateDownloaded>());
+    platform.checkStart = UpdateCheckStart.resumed;
+    await tester.tap(find.byKey(button));
+    await tester.pump();
+    expect(platform.checkCount, 2);
+    expect(presenter.messages, hasLength(1));
   });
 
   testWidgets('stays in place as a busy control while its check runs', (
@@ -102,35 +138,41 @@ void main() {
   });
 }
 
-Widget _testApp(AppUpdateCoordinator coordinator, {bool rail = false}) =>
-    ProviderScope(
-      overrides: [
-        appUpdateCoordinatorProvider.overrideWithValue(coordinator),
-        appSettingsStoreProvider.overrideWithValue(MemoryAppSettingsStore()),
-      ],
-      child: CupertinoApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: SkillsTheme.theme,
-        home: CupertinoPageScaffold(
-          child: Center(
-            child: SizedBox(
-              width: rail ? 44 : 200,
-              child: SelfUpdateSidebarButton(rail: rail),
-            ),
-          ),
+Widget _testApp(
+  AppUpdateCoordinator coordinator, {
+  bool rail = false,
+  AppNotificationPresenter? presenter,
+}) => ProviderScope(
+  overrides: [
+    appUpdateCoordinatorProvider.overrideWithValue(coordinator),
+    appSettingsStoreProvider.overrideWithValue(MemoryAppSettingsStore()),
+    if (presenter != null)
+      appNotificationPresenterProvider.overrideWithValue(presenter),
+  ],
+  child: CupertinoApp(
+    locale: const Locale('en'),
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    theme: SkillsTheme.theme,
+    home: CupertinoPageScaffold(
+      child: Center(
+        child: SizedBox(
+          width: rail ? 44 : 200,
+          child: SelfUpdateSidebarButton(rail: rail),
         ),
       ),
-    );
+    ),
+  ),
+);
 
 final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   final _events = StreamController<Map<Object?, Object?>>.broadcast();
   int checkCount = 0;
+  UpdateCheckStart checkStart = UpdateCheckStart.started;
 
   void emit(String type) => _events.add({'type': type});
 
@@ -143,11 +185,22 @@ final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   @override
   Future<UpdateCheckStart> checkForUpdates({bool? inBackground}) async {
     checkCount++;
-    return UpdateCheckStart.started;
+    return checkStart;
   }
 
   @override
   Future<void> setScheduledCheckInterval(int interval) async {}
 
   Future<void> close() => _events.close();
+}
+
+class _RecordingPresenter implements AppNotificationPresenter {
+  final messages = <AppNotificationPresentation>[];
+  @override
+  void present(AppNotificationPresentation presentation) =>
+      messages.add(presentation);
+  @override
+  void dismissAll() {}
+  @override
+  void dispose() {}
 }

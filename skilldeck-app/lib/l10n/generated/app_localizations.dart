@@ -1349,7 +1349,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppUpdateDownloaded.
   ///
   /// In en, this message translates to:
-  /// **'The signed update is ready in the updater.'**
+  /// **'The update has downloaded. Open the updater to view progress and confirm installation.'**
   String get settingsAppUpdateDownloaded;
 
   /// No description provided for @settingsAppUpdateFailed.
@@ -1370,6 +1370,12 @@ abstract class AppLocalizations {
   /// **'Check for updates'**
   String get settingsAppUpdateCheck;
 
+  /// No description provided for @settingsAppUpdateProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'The updater is busy. Please try again shortly.'**
+  String get settingsAppUpdateProcessing;
+
   /// No description provided for @sidebarAppUpdateChecking.
   ///
   /// In en, this message translates to:
@@ -1385,7 +1391,7 @@ abstract class AppLocalizations {
   /// No description provided for @sidebarAppUpdateDownloaded.
   ///
   /// In en, this message translates to:
-  /// **'Install update'**
+  /// **'View update'**
   String get sidebarAppUpdateDownloaded;
 
   /// No description provided for @sidebarAppUpdateFailed.

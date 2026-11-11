@@ -55,7 +55,7 @@ dependencies:
   auto_updater:
     git:
       url: https://github.com/Feiyu-Liu/auto_updater.git
-      ref: 74351247aaa93743bd1c5804de54cce4de76787b
+      ref: 0f05a998a9cc6fac8e2c3100514c55321e549d1f
       path: packages/auto_updater
   skilldeck_cli:
     path: ../packages/skilldeck_cli
