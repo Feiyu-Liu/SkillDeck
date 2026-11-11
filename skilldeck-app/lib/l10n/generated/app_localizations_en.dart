@@ -2901,4 +2901,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewDismiss => 'Got It';
+
+  @override
+  String get workspaceSourceUnavailable => 'Source address unavailable';
+
+  @override
+  String get workspaceSourceNotWebLink =>
+      'This source has no supported safe web link.';
+
+  @override
+  String get workspaceOpenSourceFailed =>
+      'The source link could not be opened.';
+
+  @override
+  String workspaceOpenSource(String address) {
+    return 'Open source: $address';
+  }
 }

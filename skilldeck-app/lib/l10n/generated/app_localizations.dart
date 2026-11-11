@@ -4848,6 +4848,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Got It'**
   String get whatsNewDismiss;
+
+  /// No description provided for @workspaceSourceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Source address unavailable'**
+  String get workspaceSourceUnavailable;
+
+  /// No description provided for @workspaceSourceNotWebLink.
+  ///
+  /// In en, this message translates to:
+  /// **'This source has no supported safe web link.'**
+  String get workspaceSourceNotWebLink;
+
+  /// No description provided for @workspaceOpenSourceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The source link could not be opened.'**
+  String get workspaceOpenSourceFailed;
+
+  /// No description provided for @workspaceOpenSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source: {address}'**
+  String workspaceOpenSource(String address);
 }
 
 class _AppLocalizationsDelegate

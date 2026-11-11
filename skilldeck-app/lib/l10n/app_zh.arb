@@ -884,5 +884,10 @@
   "whatsNewDarkModeTitle": "现已支持深色模式",
   "whatsNewDarkModeBody": "可以在设置 › 外观中选择浅色或深色，也可以让 SkillDeck 跟随系统自动切换",
   "whatsNewOpenAppearanceSettings": "进入外观设置",
-  "whatsNewDismiss": "知道了"
+  "whatsNewDismiss": "知道了",
+  "workspaceSourceUnavailable": "来源地址不可用",
+  "workspaceSourceNotWebLink": "此来源没有可安全打开的网页链接。",
+  "workspaceOpenSourceFailed": "无法打开来源链接。",
+  "workspaceOpenSource": "打开来源：{address}",
+  "@workspaceOpenSource": {"placeholders": {"address": {"type": "String"}}}
 }
