@@ -7,6 +7,7 @@
   "define_file": "keys/release-defines.json",
   "feed_define": "SKILLDECK_UPDATE_FEED_URL",
   "version_define": "SKILLDECK_VERSION",
+  "build_version_define": "SKILLDECK_BUILD_VERSION",
   "bucket": "example-release-bucket",
   "public_base_url": "https://download.example.com",
   "object_prefix": "example/stable",

@@ -3,8 +3,107 @@ import 'dart:async';
 import 'package:auto_updater/auto_updater.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/features/self_update/self_update_providers.dart';
+import 'package:skills_manager/features/self_update/data/app_update_configuration.dart';
 
 void main() {
+  for (final injected in [true, false]) {
+    test('Windows ${injected ? "injected" : "facade"} initialization awaits '
+        'the installed identity before the scheduler can start', () async {
+      final platform = _FakeAutoUpdaterPlatform();
+      final previous = AutoUpdaterPlatform.instance;
+      AutoUpdaterPlatform.instance = platform;
+      final configured = Completer<void>();
+      platform.configureBuildVersion = configured.future;
+      final coordinator = injected
+          ? AppUpdateCoordinator.forTesting(
+              platform: platform,
+              isWindows: true,
+              installedReleaseVersion: '1.0.7+18',
+            )
+          : AppUpdateCoordinator(
+              configuration: AppUpdateConfiguration(
+                feedUrl: Uri.parse('https://updates.example.com/appcast.xml'),
+              ),
+              isWindows: true,
+              installedReleaseVersion: '1.0.7+18',
+            );
+      addTearDown(() async {
+        coordinator.dispose();
+        AutoUpdaterPlatform.instance = previous;
+        await platform.close();
+      });
+      final initialization = coordinator.initialize(reportFailure: true);
+      expect(platform.configurationCalls, ['identity:1.0.7+18']);
+      configured.complete();
+      await initialization;
+      expect(platform.configurationCalls, [
+        'identity:1.0.7+18',
+        'interval:21600',
+        'feed:https://updates.example.com/appcast.xml',
+      ]);
+      await coordinator.initialize();
+      expect(platform.configurationCalls, hasLength(3));
+    });
+  }
+
+  test(
+    'a configured Windows updater refuses a missing or invalid identity',
+    () async {
+      for (final identity in ['', '1.0.7', '1.0.7.18', '1.0.7+18\u0000']) {
+        final platform = _FakeAutoUpdaterPlatform();
+        final coordinator = AppUpdateCoordinator.forTesting(
+          platform: platform,
+          isWindows: true,
+          installedReleaseVersion: identity,
+        );
+        await coordinator.initialize(reportFailure: true);
+        expect(platform.configurationCalls, isEmpty);
+        expect(coordinator.state, isA<AppUpdateFailed>());
+        coordinator.dispose();
+        await platform.close();
+      }
+    },
+  );
+
+  test(
+    'a rejected native identity prevents scheduler initialization',
+    () async {
+      final platform = _FakeAutoUpdaterPlatform()
+        ..configureBuildVersion = Future<void>.error(
+          StateError('already initialized'),
+        );
+      final coordinator = AppUpdateCoordinator.forTesting(
+        platform: platform,
+        isWindows: true,
+        installedReleaseVersion: '1.0.7+18',
+      );
+      addTearDown(() async {
+        coordinator.dispose();
+        await platform.close();
+      });
+      await coordinator.initialize(reportFailure: true);
+      expect(platform.configurationCalls, ['identity:1.0.7+18']);
+      expect(coordinator.state, isA<AppUpdateFailed>());
+    },
+  );
+
+  test(
+    'macOS initialization keeps its existing native version policy',
+    () async {
+      final platform = _FakeAutoUpdaterPlatform();
+      final coordinator = AppUpdateCoordinator.forTesting(platform: platform);
+      addTearDown(() async {
+        coordinator.dispose();
+        await platform.close();
+      });
+      await coordinator.initialize();
+      expect(platform.configurationCalls, [
+        'interval:21600',
+        'feed:https://updates.example.com/appcast.xml',
+      ]);
+    },
+  );
+
   test('native install request exits exactly once, not on download', () async {
     final platform = _FakeAutoUpdaterPlatform();
     var quits = 0;
@@ -458,6 +557,14 @@ final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   bool completeCheck = true;
   UpdateCheckStart checkStart = UpdateCheckStart.started;
   int checkCount = 0;
+  final configurationCalls = <String>[];
+  Future<void>? configureBuildVersion;
+
+  @override
+  Future<void> setAppBuildVersion(String version) async {
+    configurationCalls.add('identity:$version');
+    await configureBuildVersion;
+  }
 
   void emit(String type, [Map<Object?, Object?> data = const {}]) {
     _events.add({'type': type, ...data});
@@ -467,7 +574,9 @@ final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   Stream<Map<Object?, Object?>> get sparkleEvents => _events.stream;
 
   @override
-  Future<void> setFeedURL(String feedUrl) async {}
+  Future<void> setFeedURL(String feedUrl) async {
+    configurationCalls.add('feed:$feedUrl');
+  }
 
   @override
   Future<UpdateCheckStart> checkForUpdates({bool? inBackground}) async {
@@ -485,7 +594,9 @@ final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   }
 
   @override
-  Future<void> setScheduledCheckInterval(int interval) async {}
+  Future<void> setScheduledCheckInterval(int interval) async {
+    configurationCalls.add('interval:$interval');
+  }
 
   Future<void> close() => _events.close();
 }
