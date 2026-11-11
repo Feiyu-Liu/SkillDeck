@@ -155,10 +155,16 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
     }
   }
 
-  Future<void> checkForUpdates({bool inBackground = false}) async {
-    if (_disposed || _requestInFlight || _activeRequest != null) return;
+  Future<UpdateCheckStart?> checkForUpdates({bool inBackground = false}) async {
+    if (_disposed) return null;
+    if (_requestInFlight || _activeRequest != null) {
+      return UpdateCheckStart.busy;
+    }
     await initialize(reportFailure: !inBackground);
-    if (!_initialized || _requestInFlight || _activeRequest != null) return;
+    if (!_initialized) return null;
+    if (_requestInFlight || _activeRequest != null) {
+      return UpdateCheckStart.busy;
+    }
     _requestInFlight = true;
     _activeRequest = inBackground
         ? _UpdateRequestKind.background
@@ -177,7 +183,7 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
           : await autoUpdater.checkForUpdates(inBackground: inBackground);
     } on Object {
       _finishRequest(failed: !inBackground);
-      return;
+      return null;
     } finally {
       _requestInFlight = false;
     }
@@ -185,11 +191,12 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
     // brought the update it shows into focus. That session's own events still
     // update the state, so this request has nothing left to wait for.
     if (start != UpdateCheckStart.started) _returnToStateBeforeCheck();
+    return start;
   }
 
-  Future<void> openUpdateDialog({required bool blocked}) async {
-    if (blocked) return;
-    await checkForUpdates();
+  Future<UpdateCheckStart?> openUpdateDialog({required bool blocked}) async {
+    if (blocked) return null;
+    return checkForUpdates();
   }
 
   @override

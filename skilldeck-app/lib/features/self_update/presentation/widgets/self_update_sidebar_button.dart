@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skills_manager/features/self_update/presentation/widgets/self_update_action.dart';
 import 'package:skills_manager/features/self_update/self_update_providers.dart';
 import 'package:skills_manager/features/settings/settings_providers.dart';
 import 'package:skills_manager/features/skills/workspace_finalization_coordinator.dart';
@@ -64,7 +65,12 @@ class SelfUpdateSidebarButton extends ConsumerWidget {
                 key: const Key('nav-item-self-update'),
                 onPressed: enabled
                     ? () => unawaited(
-                        coordinator.openUpdateDialog(blocked: installBlocked),
+                        openNativeUpdateDialog(
+                          context,
+                          ref,
+                          coordinator,
+                          blocked: installBlocked,
+                        ),
                       )
                     : null,
                 padding: EdgeInsets.zero,

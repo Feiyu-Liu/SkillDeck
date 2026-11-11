@@ -28,6 +28,29 @@ void main() {
     expect(find.byKey(const Key('self-update-check')), findsNothing);
   });
 
+  testWidgets('downloaded settings action opens the native updater', (
+    tester,
+  ) async {
+    final platform = _FakeAutoUpdaterPlatform();
+    final coordinator = AppUpdateCoordinator.forTesting(platform: platform);
+    addTearDown(() async {
+      coordinator.dispose();
+      await platform.dispose();
+    });
+    coordinator.onUpdaterUpdateDownloaded(null);
+    await tester.pumpWidget(
+      _testApp(
+        configuration: coordinator.configuration,
+        coordinator: coordinator,
+      ),
+    );
+    expect(find.text('View update'), findsOneWidget);
+    expect(find.text('Install update'), findsNothing);
+    await tester.tap(find.byKey(const Key('self-update-check')));
+    await tester.pump();
+    expect(platform.checkCalls, 1);
+  });
+
   testWidgets('initializes native updater before manual check', (tester) async {
     final platform = _FakeAutoUpdaterPlatform();
     final coordinator = AppUpdateCoordinator.forTesting(

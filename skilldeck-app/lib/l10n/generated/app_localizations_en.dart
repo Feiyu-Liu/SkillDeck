@@ -719,7 +719,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppUpdateDownloaded =>
-      'The signed update is ready in the updater.';
+      'The update has downloaded. Open the updater to view progress and confirm installation.';
 
   @override
   String get settingsAppUpdateFailed =>
@@ -733,13 +733,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppUpdateCheck => 'Check for updates';
 
   @override
+  String get settingsAppUpdateProcessing =>
+      'The updater is busy. Please try again shortly.';
+
+  @override
   String get sidebarAppUpdateChecking => 'Checking…';
 
   @override
   String get sidebarAppUpdateAvailable => 'Update available';
 
   @override
-  String get sidebarAppUpdateDownloaded => 'Install update';
+  String get sidebarAppUpdateDownloaded => 'View update';
 
   @override
   String get sidebarAppUpdateFailed => 'Retry update';

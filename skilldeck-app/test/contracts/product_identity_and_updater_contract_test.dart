@@ -43,7 +43,7 @@ void main() {
       _read('pubspec.yaml'),
       allOf(
         contains('auto_updater:'),
-        contains('ref: 74351247aaa93743bd1c5804de54cce4de76787b'),
+        contains('ref: 0f05a998a9cc6fac8e2c3100514c55321e549d1f'),
         isNot(contains('desktop_updater')),
       ),
     );

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skills_manager/features/self_update/presentation/widgets/self_update_action.dart';
 import 'package:skills_manager/features/self_update/self_update_providers.dart';
 import 'package:skills_manager/features/settings/presentation/widgets/settings_layout.dart';
 import 'package:skills_manager/l10n/l10n.dart';
@@ -68,7 +69,7 @@ class SelfUpdateSettings extends ConsumerWidget {
   }
 }
 
-class _ConfiguredUpdateRow extends StatelessWidget {
+class _ConfiguredUpdateRow extends ConsumerWidget {
   const _ConfiguredUpdateRow({
     required this.coordinator,
     required this.installBlocked,
@@ -78,7 +79,7 @@ class _ConfiguredUpdateRow extends StatelessWidget {
   final bool installBlocked;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = coordinator.state;
     final busy = state is AppUpdateChecking;
     return SettingsRow(
@@ -106,12 +107,19 @@ class _ConfiguredUpdateRow extends StatelessWidget {
       ),
       trailing: AppButton(
         key: const Key('self-update-check'),
-        label: context.l10n.settingsAppUpdateCheck,
+        label: state is AppUpdateAvailable || state is AppUpdateDownloaded
+            ? context.l10n.sidebarAppUpdateDownloaded
+            : context.l10n.settingsAppUpdateCheck,
         icon: LucideIcons.refreshCw,
         onPressed: busy || installBlocked
             ? null
             : () => unawaited(
-                coordinator.openUpdateDialog(blocked: installBlocked),
+                openNativeUpdateDialog(
+                  context,
+                  ref,
+                  coordinator,
+                  blocked: installBlocked,
+                ),
               ),
       ),
     );
