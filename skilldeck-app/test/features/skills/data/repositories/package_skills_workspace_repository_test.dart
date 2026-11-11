@@ -70,6 +70,8 @@ description: Package adapter fixture
       final skill = installed.snapshot.skills.single;
       expect(skill.id.value, isNot(startsWith('legacy:')));
       expect(skill.slotKey, 'adapter-skill');
+      expect(skill.createdAt, isNotNull);
+      expect(skill.copyWith(isFavorite: true).createdAt, skill.createdAt);
       expect(skill.isFavorite, isFalse);
       expect(skill.personalTagIds, isEmpty);
 
@@ -97,6 +99,7 @@ description: Package adapter fixture
 
       final refreshed = await _expectCompletion(repository.refresh());
       expect(refreshed.findSkillById(skill.id)?.slotKey, 'adapter-skill');
+      expect(refreshed.findSkillById(skill.id)?.createdAt, skill.createdAt);
       expect(await _expectCompletion(repository.open()), same(refreshed));
     },
   );

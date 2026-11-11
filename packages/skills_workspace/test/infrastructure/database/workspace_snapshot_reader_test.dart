@@ -46,6 +46,40 @@ void main() {
   });
 
   test(
+    'keeps the persisted added time across revision changes and reopen',
+    () async {
+      await _insertFullProjection(database);
+      final before = (await reader.read()).managedSkills.single;
+      expect(
+        before.createdAt,
+        DateTime.fromMicrosecondsSinceEpoch(1000000, isUtc: true),
+      );
+
+      await (database.update(
+        database.currentRevisionSelection,
+      )..where((row) => row.managedSkillId.equals(_skillId))).write(
+        const CurrentRevisionSelectionCompanion(
+          effectiveObjectId: Value(_incomingObjectId),
+        ),
+      );
+      final updated = (await reader.read()).managedSkills.single;
+      expect(
+        updated.currentRevision.publishedAt,
+        isNot(before.currentRevision.publishedAt),
+      );
+      expect(updated.createdAt, before.createdAt);
+
+      await database.close();
+      database = WorkspaceDatabase.forFile(File(layout.databasePath));
+      reader = WorkspaceSnapshotReader(database: database, layout: layout);
+      expect(
+        (await reader.read()).managedSkills.single.createdAt,
+        before.createdAt,
+      );
+    },
+  );
+
+  test(
     'assembles every public projection without leaking Drift rows',
     () async {
       await _insertFullProjection(database);

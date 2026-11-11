@@ -888,6 +888,7 @@ final class InitialImportPlanner {
   ManagedSkill _previewSkill(_PreparedSubject subject, DateTime now) =>
       ManagedSkill(
         id: subject.managedSkillId,
+        createdAt: now,
         slotKey: subject.input.skill.slotKey,
         declaredName: subject.input.skill.declaredName,
         displayName: subject.input.skill.declaredName,

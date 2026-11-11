@@ -116,8 +116,8 @@ int _compareByAddedAt(
   InstalledSkill right, {
   required bool descending,
 }) {
-  final leftAt = left.currentRevision?.acquiredAt;
-  final rightAt = right.currentRevision?.acquiredAt;
+  final leftAt = left.createdAt;
+  final rightAt = right.createdAt;
   if (leftAt == null && rightAt != null) return 1;
   if (leftAt != null && rightAt == null) return -1;
   if (leftAt != null && rightAt != null) {

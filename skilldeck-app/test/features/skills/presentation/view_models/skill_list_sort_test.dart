@@ -29,10 +29,10 @@ void main() {
 
   test('sorts by added time and uses name as a stable tie breaker', () {
     final skills = [
-      _skill('newer', 'Newer', acquiredAt: newer),
-      _skill('older', 'Older', acquiredAt: older),
-      _skill('same-b', 'Same', acquiredAt: older),
-      _skill('same-a', 'Same', acquiredAt: older),
+      _skill('newer', 'Newer', createdAt: newer),
+      _skill('older', 'Older', createdAt: older),
+      _skill('same-b', 'Same', createdAt: older),
+      _skill('same-a', 'Same', createdAt: older),
     ];
 
     skills.sort(
@@ -58,10 +58,28 @@ void main() {
     ]);
   });
 
+  test('updates do not move a previously added Skill', () {
+    for (final mode in [
+      SkillListSortMode.recentlyAdded,
+      SkillListSortMode.oldestAdded,
+    ]) {
+      final before = [
+        _skill('a', 'A', createdAt: older, acquiredAt: older),
+        _skill('b', 'B', createdAt: newer, acquiredAt: newer),
+      ]..sort((a, b) => compareInstalledSkills(a, b, mode));
+      final after = [
+        _skill('a', 'A', createdAt: older, acquiredAt: DateTime.utc(2026, 3)),
+        _skill('b', 'B', createdAt: newer, acquiredAt: newer),
+      ]..sort((a, b) => compareInstalledSkills(a, b, mode));
+      expect(after.map((skill) => skill.id), before.map((skill) => skill.id));
+    }
+  });
+
   test('places a skill without added time after dated skills', () {
     final skills = [
-      _skill('unknown', 'Unknown'),
-      _skill('dated', 'Dated', acquiredAt: older),
+      // A revision time cannot recover a missing first-added time.
+      _skill('unknown', 'Unknown', acquiredAt: DateTime.utc(2027)),
+      _skill('dated', 'Dated', createdAt: older),
     ];
 
     skills.sort(
@@ -76,6 +94,7 @@ void main() {
 InstalledSkill _skill(
   String slotKey,
   String displayName, {
+  DateTime? createdAt,
   DateTime? acquiredAt,
 }) => InstalledSkill(
   id: WorkspaceSkillId(slotKey),
@@ -84,6 +103,7 @@ InstalledSkill _skill(
   description: '$displayName description',
   contentHash: 'hash-$slotKey',
   activationCount: 0,
+  createdAt: createdAt,
   currentRevision: acquiredAt == null
       ? null
       : SkillRevision(

@@ -648,6 +648,7 @@ final class WorkspaceSkill {
     required this.source,
     required this.currentRevision,
     required List<SkillActivationLocation> activations,
+    this.createdAt,
     this.isFavorite = false,
     this.note,
     List<String> personalTagIds = const [],
@@ -657,6 +658,7 @@ final class WorkspaceSkill {
   }) : activations = List.unmodifiable(activations),
        personalTagIds = List.unmodifiable(personalTagIds);
 
+  final DateTime? createdAt;
   final WorkspaceSkillId id;
   final String slotKey;
   final String declaredName;
@@ -682,6 +684,7 @@ final class WorkspaceSkill {
     Object? updateCandidate = _workspaceUnset,
   }) => WorkspaceSkill(
     id: id,
+    createdAt: createdAt,
     slotKey: slotKey ?? this.slotKey,
     declaredName: declaredName,
     displayName: displayName,

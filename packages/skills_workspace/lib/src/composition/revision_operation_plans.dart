@@ -1422,6 +1422,7 @@ ManagedSkill _previewSkill(
   int plannedAtMicros,
 ) => ManagedSkill(
   id: subject.managedSkillId,
+  createdAt: DateTime.fromMicrosecondsSinceEpoch(plannedAtMicros, isUtc: true),
   slotKey: subject.skill.slotKey,
   declaredName: subject.skill.declaredName,
   displayName: subject.skill.declaredName,

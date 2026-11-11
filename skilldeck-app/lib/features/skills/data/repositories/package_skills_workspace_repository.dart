@@ -1142,6 +1142,7 @@ final class PackageSkillsWorkspaceRepository
     workspace.SkillIntegrityStatus? integrity,
   ) => WorkspaceSkill(
     id: WorkspaceSkillId(source.id.value),
+    createdAt: source.createdAt,
     slotKey: source.slotKey,
     declaredName: source.declaredName,
     displayName: source.displayName,
