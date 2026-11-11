@@ -71,7 +71,38 @@ void main() {
 
     expect(result.disposition, WorkspaceRevisionMaintenanceDisposition.healthy);
     expect(revisionEngine.restoredPaths, isEmpty);
+    expect(revisionEngine.verifiedPaths, [storePath]);
+    expect(revisionEngine.readCommits, [
+      RevisionObjectId(_upstream),
+      RevisionObjectId(_effective),
+    ]);
   });
+
+  test(
+    'identical upstream and Effective pointers read one authoritative tree',
+    () async {
+      final selected =
+          (await maintenance.selectedRevisions()).single
+              as DriftWorkspaceSelectedRevision;
+      final storePath = layout.revisionStorePath(selected.managedSkillId);
+      await revisionEngine.makeHealthy(storePath);
+      final result = await maintenance.validateOrRecover(
+        DriftWorkspaceSelectedRevision(
+          managedSkillId: selected.managedSkillId,
+          sourceLineage: selected.sourceLineage,
+          currentUpstream: selected.currentUpstream,
+          currentEffective: selected.currentUpstream,
+        ),
+      );
+      expect(
+        result.disposition,
+        WorkspaceRevisionMaintenanceDisposition.healthy,
+      );
+      expect(revisionEngine.verifiedPaths, [storePath]);
+      expect(revisionEngine.readCommits, [RevisionObjectId(_upstream)]);
+      expect(revisionEngine.restoredPaths, isEmpty);
+    },
+  );
 
   test('restores a corrupt Store only from its matching Bundle', () async {
     final selected =
@@ -268,6 +299,8 @@ String _bundlePath(WorkspaceLayout layout) =>
 
 final class _MarkerRevisionEngine implements RevisionEnginePort {
   final List<String> restoredPaths = <String>[];
+  final List<String> verifiedPaths = <String>[];
+  final List<RevisionObjectId> readCommits = <RevisionObjectId>[];
 
   Future<void> makeHealthy(String repositoryPath) async {
     await Directory(repositoryPath).create(recursive: true);
@@ -276,6 +309,11 @@ final class _MarkerRevisionEngine implements RevisionEnginePort {
 
   @override
   Future<void> verifyStore(String repositoryPath) async {
+    verifiedPaths.add(repositoryPath);
+    await _requireHealthy(repositoryPath);
+  }
+
+  Future<void> _requireHealthy(String repositoryPath) async {
     if (!await File(path.join(repositoryPath, '.healthy')).exists()) {
       throw const RevisionEngineException(
         RevisionEngineFailureCode.verificationFailed,
@@ -288,7 +326,8 @@ final class _MarkerRevisionEngine implements RevisionEnginePort {
     String repositoryPath,
     RevisionObjectId commit,
   ) async {
-    await verifyStore(repositoryPath);
+    readCommits.add(commit);
+    await _requireHealthy(repositoryPath);
     return NormalizedSkillTree(
       files: const [],
       contentHash: _hash,

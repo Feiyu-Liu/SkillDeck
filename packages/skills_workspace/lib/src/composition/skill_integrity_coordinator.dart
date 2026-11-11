@@ -1,6 +1,7 @@
 import '../application/ports/operation_ports.dart';
 import '../application/ports/workspace_lifecycle_ports.dart';
 import '../application/runtime/workspace_snapshot_publisher.dart';
+import '../application/runtime/workspace_performance_trace.dart';
 import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
 
@@ -64,6 +65,28 @@ final class SkillIntegrityCoordinator {
   Future<SkillIntegrityValidationResult> _validate(
     ManagedSkillId skillId,
   ) async {
+    final trace = WorkspacePerformanceTrace(
+      WorkspacePerformancePhase.skillValidation,
+    );
+    var failed = true;
+    try {
+      final result = await _runValidation(skillId, trace);
+      failed = switch (result.status) {
+        SkillIntegrityStatus.healthy ||
+        SkillIntegrityStatus.recovered ||
+        SkillIntegrityStatus.driftPending => false,
+        _ => true,
+      };
+      return result;
+    } finally {
+      trace.finish(failed: failed, checkedSkillCount: 1);
+    }
+  }
+
+  Future<SkillIntegrityValidationResult> _runValidation(
+    ManagedSkillId skillId,
+    WorkspacePerformanceTrace trace,
+  ) async {
     final initialStatus = _statusFor(skillId);
     if (initialStatus == SkillIntegrityStatus.revisionStoreCorrupt) {
       return const SkillIntegrityValidationResult(
@@ -84,6 +107,7 @@ final class SkillIntegrityCoordinator {
           repairMismatching: false,
           repairMissing: false,
         );
+        _recordInspection(trace, inspected);
         if (inspected.mismatchingSkillIds.contains(skillId)) {
           return await _finish(skillId, SkillIntegrityStatus.driftPending);
         }
@@ -104,6 +128,7 @@ final class SkillIntegrityCoordinator {
             repairMismatching: false,
             repairMissing: true,
           );
+          _recordInspection(trace, repaired);
           if (repaired.mismatchingSkillIds.contains(skillId)) {
             return await _finish(skillId, SkillIntegrityStatus.driftPending);
           }
@@ -176,4 +201,14 @@ final class SkillIntegrityCoordinator {
     _publicationQueue = next.catchError((_) {});
     return next;
   }
+}
+
+void _recordInspection(
+  WorkspacePerformanceTrace trace,
+  WorkspaceMaterializationReconciliationReport report,
+) {
+  trace.inspectedArtifactCount += report.inspectedArtifactCount;
+  trace.inspectedFileCount += report.inspectedFileCount;
+  trace.inspectedByteCount += report.inspectedByteCount;
+  trace.repairedArtifactCount += report.repairedArtifactCount;
 }

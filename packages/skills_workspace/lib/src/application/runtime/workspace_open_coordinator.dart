@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import '../../domain/identifiers.dart';
 import '../../domain/public_models.dart';
@@ -7,6 +6,7 @@ import '../backup/control_plane_backup_models.dart';
 import '../ports/operation_ports.dart';
 import '../ports/workspace_lifecycle_ports.dart';
 import 'workspace_open_models.dart';
+import 'workspace_performance_trace.dart';
 
 /// Serializes fail-closed Workspace startup and deterministic shutdown.
 ///
@@ -122,7 +122,10 @@ final class WorkspaceOpenCoordinator {
 
     try {
       try {
-        _writerLease = await _tracePhase('writerLock', _writerLock.acquire);
+        _writerLease = await _tracePhase(
+          WorkspacePerformancePhase.writerLock,
+          _writerLock.acquire,
+        );
       } on Object {
         failure = WorkspaceOpenFailureCode.writerLockUnavailable;
       }
@@ -132,7 +135,7 @@ final class WorkspaceOpenCoordinator {
 
       try {
         primaryRecovery = await _tracePhase(
-          'controlPlaneRecovery',
+          WorkspacePerformancePhase.controlPlaneRecovery,
           _startupRecovery.recoverPrimaryForStartup,
         );
       } on Object {
@@ -150,7 +153,10 @@ final class WorkspaceOpenCoordinator {
       }
 
       try {
-        await _tracePhase('controlPlaneOpen', _controlPlane.open);
+        await _tracePhase(
+          WorkspacePerformancePhase.controlPlaneOpen,
+          _controlPlane.open,
+        );
         _controlPlaneOpened = true;
       } on Object {
         failure = WorkspaceOpenFailureCode.controlPlaneOpenFailed;
@@ -158,7 +164,10 @@ final class WorkspaceOpenCoordinator {
       if (failure != null) return await _finishFailedOpen(failure);
 
       try {
-        await _tracePhase('revisionWorkerStartup', _revisionWorker.start);
+        await _tracePhase(
+          WorkspacePerformancePhase.revisionWorkerStartup,
+          _revisionWorker.start,
+        );
         _revisionWorkerStarted = true;
       } on Object {
         failure = WorkspaceOpenFailureCode.revisionWorkerStartupFailed;
@@ -166,7 +175,9 @@ final class WorkspaceOpenCoordinator {
       if (failure != null) return await _finishFailedOpen(failure);
 
       try {
-        await _tracePhase<void>('revisionMaintenance', () async {
+        await _tracePhase<
+          void
+        >(WorkspacePerformancePhase.revisionMaintenance, () async {
           final selections = await _revisionMaintenance.selectedRevisions();
           for (final selection in selections) {
             selectedSkillIds.add(selection.managedSkillId);
@@ -193,7 +204,7 @@ final class WorkspaceOpenCoordinator {
 
       try {
         await _tracePhase<void>(
-          'journalRecovery',
+          WorkspacePerformancePhase.journalRecovery,
           () => _journalRecovery.recoverUnderWriterLock(
             armedBarrier: switch (primaryRecovery) {
               ControlPlaneArmedBarrierNeedsResolution(:final eligibility) =>
@@ -210,7 +221,7 @@ final class WorkspaceOpenCoordinator {
 
       try {
         await _tracePhase<void>(
-          'revisionReferenceReconciliation',
+          WorkspacePerformancePhase.revisionReferenceReconciliation,
           () => _reconciler.reconcileRevisionReferences(
             isolatedSkillIds: Set.unmodifiable(isolatedSkillIds),
           ),
@@ -230,7 +241,7 @@ final class WorkspaceOpenCoordinator {
       late final RepositorySnapshot snapshot;
       try {
         snapshot = await _tracePhase(
-          'snapshotRead',
+          WorkspacePerformancePhase.snapshotRead,
           () => _snapshots.readInitial(integrity: integrity),
         );
       } on Object {
@@ -240,7 +251,7 @@ final class WorkspaceOpenCoordinator {
 
       try {
         await _tracePhase(
-          'snapshotPublication',
+          WorkspacePerformancePhase.snapshotPublication,
           () => _snapshots.publishInitial(snapshot),
         );
         _snapshotPublished = true;
@@ -250,7 +261,10 @@ final class WorkspaceOpenCoordinator {
       if (failure != null) return await _finishFailedOpen(failure);
 
       try {
-        await _tracePhase('requestGateOpen', _requestGate.openForRequests);
+        await _tracePhase(
+          WorkspacePerformancePhase.requestGateOpen,
+          _requestGate.openForRequests,
+        );
         _requestGateOpened = true;
       } on Object {
         failure = WorkspaceOpenFailureCode.requestGateOpenFailed;
@@ -271,29 +285,18 @@ final class WorkspaceOpenCoordinator {
     }
   }
 
-  Future<T> _tracePhase<T>(String phase, Future<T> Function() operation) async {
-    final task = developer.TimelineTask()
-      ..start('skills_workspace.open.$phase');
-    final stopwatch = Stopwatch()..start();
+  Future<T> _tracePhase<T>(
+    WorkspacePerformancePhase phase,
+    Future<T> Function() operation,
+  ) async {
+    final trace = WorkspacePerformanceTrace(phase);
+    var failed = true;
     try {
       final result = await operation();
-      stopwatch.stop();
-      task.finish(
-        arguments: <String, Object>{
-          'elapsedMicros': stopwatch.elapsedMicroseconds,
-          'failed': false,
-        },
-      );
+      failed = false;
       return result;
-    } on Object {
-      stopwatch.stop();
-      task.finish(
-        arguments: <String, Object>{
-          'elapsedMicros': stopwatch.elapsedMicroseconds,
-          'failed': true,
-        },
-      );
-      rethrow;
+    } finally {
+      trace.finish(failed: failed);
     }
   }
 
