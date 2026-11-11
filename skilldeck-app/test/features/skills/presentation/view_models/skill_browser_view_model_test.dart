@@ -437,6 +437,11 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    final subscription = container.listen(
+      skillBrowserViewModelProvider,
+      (_, _) {},
+    );
+    addTearDown(subscription.close);
     final viewModel = container.read(skillBrowserViewModelProvider.notifier);
 
     await viewModel.load();
@@ -452,8 +457,7 @@ void main() {
         slotKey: 'renamed-alpha',
       ),
     );
-    await _settle();
-    await _settle();
+    await pumpEventQueue();
 
     expect(viewModel.selectedSkill?.id, skillId);
     expect(viewModel.selectedSkill?.slotKey, 'renamed-alpha');
