@@ -80,3 +80,18 @@ then equality after restart under both manual and scheduled checks, remains
 unperformed. The native fixture's fresh-process checks are narrower evidence.
 Issue #60 therefore remains incomplete for release acceptance. Private config,
 signing keys, production feeds, and installed user applications were not changed.
+
+## Remote dependency follow-up, 2026-11-12
+
+The updater platform/native and facade commits, and the release-tool commit,
+are now available on their scoped remote feature branches. The App passed
+frozen resolution from an initially empty Pub cache using its committed remote
+Git URLs and exact lockfile revisions, without local path overrides or URL
+rewrites. App strict analysis and 37 updater/identity tests passed afterward;
+the latter reused the verified sqlite3 native asset after a release-asset
+download failure. See the [combined follow-up](night-reviewed-2026-11-12.md#remote-dependency-follow-up-2026-11-12)
+for commands, exact hashes, fresh package checks, and persistent worktree paths.
+
+This follow-up completes remote dependency availability and resolution only.
+The final packaged identity and installed Windows upgrade acceptance described
+above remain open. No dependency branch was merged and no release was made.
