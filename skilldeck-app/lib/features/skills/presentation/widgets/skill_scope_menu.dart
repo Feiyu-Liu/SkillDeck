@@ -34,6 +34,7 @@ class SkillScopeMenu extends StatelessWidget {
     this.includeInactive = false,
     this.iconOnly = false,
     this.compact = false,
+    this.collapsedRadius,
     this.alignment = MorphingMenuAlignment.end,
     this.keyPrefix = 'scope',
     super.key,
@@ -46,6 +47,7 @@ class SkillScopeMenu extends StatelessWidget {
   final bool includeInactive;
   final bool iconOnly;
   final bool compact;
+  final double? collapsedRadius;
   final MorphingMenuAlignment alignment;
   final String keyPrefix;
 
@@ -87,6 +89,7 @@ class SkillScopeMenu extends StatelessWidget {
                 .clamp(110, 340)
                 .toDouble(),
         style: menuStyle.copyWith(
+          collapsedRadius: collapsedRadius,
           buttonHeight: AppSizes.controlHeight,
           minButtonWidth: AppSizes.controlHeight,
           triggerPadding: EdgeInsets.symmetric(

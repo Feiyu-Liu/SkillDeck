@@ -1,3 +1,4 @@
+import 'package:skills_manager/features/skills/presentation/widgets/repository_group_transition.dart';
 import 'package:skills_manager/features/command_host/presentation/command_line_activity.dart';
 import 'package:skills_manager/features/library/personal_tag_providers.dart';
 import 'package:skills_manager/features/library/presentation/widgets/personal_tag_controls.dart';
@@ -383,18 +384,26 @@ class _ReadyBodyState extends State<_ReadyBody> {
                   ),
                 ),
               ),
-              if (!widget.collapsedGroups.contains(group.identity.key))
-                const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              if (!widget.collapsedGroups.contains(group.identity.key))
-                AppPageSliverContent(
-                  key: ValueKey(
-                    'repository-members-sliver-${group.identity.key}',
+              AppPageSliverContent(
+                key: ValueKey(
+                  'repository-members-sliver-${group.identity.key}',
+                ),
+                sliver: RepositoryGroupTransition(
+                  collapsed: widget.collapsedGroups.contains(
+                    group.identity.key,
                   ),
-                  sliver: _memberSliver(
-                    group.skills,
-                    gridKey: ValueKey('skill-card-grid-${group.identity.key}'),
+                  searchQuery: widget.searchQuery,
+                  sliver: SliverPadding(
+                    padding: const EdgeInsets.only(top: 8),
+                    sliver: _memberSliver(
+                      group.skills,
+                      gridKey: ValueKey(
+                        'skill-card-grid-${group.identity.key}',
+                      ),
+                    ),
                   ),
                 ),
+              ),
               SliverToBoxAdapter(
                 key: ValueKey('repository-gap-${group.identity.key}'),
                 child: const SizedBox(height: 18),
@@ -496,12 +505,17 @@ class _RepositoryGroupHeader extends StatelessWidget {
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      collapsed
-                          ? LucideIcons.chevronRight
-                          : LucideIcons.chevronDown,
-                      size: 16,
-                      color: palette.bodyContent,
+                    AnimatedRotation(
+                      turns: collapsed ? -0.25 : 0,
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 350),
+                      curve: Curves.easeOutQuart,
+                      child: Icon(
+                        LucideIcons.chevronDown,
+                        size: 16,
+                        color: palette.bodyContent,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Icon(
@@ -1541,8 +1555,8 @@ class _SortMenuButton extends ConsumerWidget {
     final baseStyle = SkillsButtonTheme.morphingMenuFor(context).style;
     final menuStyle = baseStyle.copyWith(
       buttonHeight: AppSizes.controlHeight,
-      minButtonWidth: AppSizes.controlHeight,
       collapsedRadius: AppSizes.controlHeight / 2,
+      minButtonWidth: AppSizes.controlHeight,
       triggerPadding: const EdgeInsets.symmetric(horizontal: 10),
       textStyle: AppTypography.of(context).control.copyWith(fontSize: 12.5),
       collapsedBackgroundColor: filtering
@@ -1835,6 +1849,7 @@ class _ScopeMenuButton extends ConsumerWidget {
     final rootId = ref.watch(installedProjectRootFilterProvider);
     return SkillScopeMenu(
       compact: true,
+      collapsedRadius: AppSizes.controlHeight / 2,
       selection: switch (selected) {
         InstalledScopeFilter.inactive => const InactiveSkillScope(),
         InstalledScopeFilter.project when rootId != null => ProjectSkillScope(
@@ -2104,13 +2119,13 @@ class _FilterBarSkeleton extends StatelessWidget {
         _SkeletonBone(
           width: 62,
           height: AppSizes.controlHeight,
-          radius: AppRadii.lg,
+          radius: AppRadii.pill,
         ),
         SizedBox(width: AppSpacing.sm),
         _SkeletonBone(
           width: 66,
           height: AppSizes.controlHeight,
-          radius: AppRadii.lg,
+          radius: AppRadii.pill,
         ),
       ],
     ),
