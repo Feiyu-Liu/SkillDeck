@@ -4,79 +4,79 @@ import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 
 void main() {
   SkillSourceLink link(
-    String locator, {
+    String locator, [
     WorkspaceSourceKind kind = WorkspaceSourceKind.git,
-  }) => SkillSourceLink.fromSource(
+  ]) => SkillSourceLink.fromSource(
     SkillSourceProvenance(kind: kind, locator: locator),
   );
 
-  test(
-    'uses the exact webpage locator including resource path and safe query',
-    () {
-      for (final locator in [
-        'https://github.com/owner/repo',
-        'http://example.com/skills/alpha',
+  test('all nonempty kinds preserve the exact trimmed address for copying', () {
+    for (final kind in WorkspaceSourceKind.values) {
+      for (final address in [
         'https://github.com/owner/repo?tab=readme-ov-file#readme',
+        'https://user:password@example.com/repo?token=secret#private',
+        'git@github.com:owner/repo.git',
+        'ssh://git@github.com/owner/repo.git',
+        '/tmp/我的 skills:100%',
+        'an opaque address',
       ]) {
-        final value = link(locator);
-        expect(value.uri.toString(), locator);
-        expect(value.label, locator);
+        expect(link('  $address  ', kind).copyText, address);
       }
-    },
-  );
-
-  test(
-    'removes credentials and sensitive or unknown query and fragment values',
-    () {
-      for (final locator in [
-        'https://user:secret@example.com/repo',
-        'https://example.com/repo?token=secret',
-        'https://example.com/repo?signature=secret&tab=readme',
-        'https://example.com/repo?unknown=secret',
-        'https://example.com/repo#access_token=secret',
-        'https://example.com/repo#opaquesecret',
-        'https://example.com/repo?ref=secret',
-        'ssh://user:secret@example.com/repo',
-      ]) {
-        final value = link(locator);
-        expect(value.uri, isNull);
-        expect(value.label, isNot(contains('secret')));
-        expect(value.label, isNot(contains('user@')));
-      }
-    },
-  );
-
-  test('rejects control characters and backslashes in remote addresses', () {
-    for (final locator in [
-      'https://example.com/a\nb',
-      r'https://example.com/a\b',
-      'https://example.com/a b',
-    ]) {
-      expect(link(locator).uri, isNull);
     }
   });
 
-  test(
-    'local, SSH, invalid, and missing sources never invent a browser target',
-    () {
-      expect(
-        link('/tmp/alpha', kind: WorkspaceSourceKind.local).label,
-        '/tmp/alpha',
-      );
-      expect(
-        link('git@github.com:owner/repo.git').label,
-        'github.com:owner/repo.git',
-      );
-      for (final locator in [
-        'git@github.com:owner/repo.git',
-        'not a URL',
-        'file:///tmp/alpha',
-        'javascript:alert(1)',
-        'https://',
+  test('local and adopted paths stay readable without requiring a URL', () {
+    for (final kind in [
+      WorkspaceSourceKind.local,
+      WorkspaceSourceKind.adoptedSnapshot,
+    ]) {
+      for (final path in [
+        '/tmp/我的 skills:100%',
+        r'C:\Users\me\my skills',
+        r'\\server\share\my skills',
+        'adopted:opaque path 50%',
+        'relative skills',
       ]) {
-        expect(link(locator).uri, isNull);
+        expect(link(path, kind).label, path);
       }
-      expect(SkillSourceLink.fromSource(null).uri, isNull);
-    },
-  );
+    }
+  });
+
+  test('URL labels hide all credentials, queries and fragments', () {
+    for (final kind in WorkspaceSourceKind.values) {
+      final value = link(
+        'https://user:password@example.com/repo?token=secret#private',
+        kind,
+      );
+      expect(value.label, 'https://example.com/repo');
+      expect(
+        value.copyText,
+        'https://user:password@example.com/repo?token=secret#private',
+      );
+    }
+    expect(
+      link('ssh://git@github.com/owner/repo.git').label,
+      'ssh://github.com/owner/repo.git',
+    );
+    expect(
+      link('git@github.com:owner/repo.git').label,
+      'github.com:owner/repo.git',
+    );
+  });
+
+  test('malformed credentials and control characters never enter labels', () {
+    for (final address in [
+      'https://user:password@[invalid/repo',
+      'https://example.com/a\nb?token=secret',
+    ]) {
+      final value = link(address);
+      expect(value.label, isEmpty);
+      expect(value.copyText, address);
+    }
+  });
+
+  test('empty and missing sources have no copy target', () {
+    expect(SkillSourceLink.fromSource(null).copyText, isNull);
+    expect(link('  ').copyText, isNull);
+  });
 }

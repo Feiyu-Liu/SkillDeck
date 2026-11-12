@@ -55,7 +55,7 @@ class _AppNotificationToastState extends State<AppNotificationToast> {
         child: Container(
           key: const Key('app-notification-toast'),
           width: 360,
-          margin: const EdgeInsets.only(top: AppSizes.dragRegionHeight + 12),
+          margin: const EdgeInsets.only(bottom: 8),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.panel),
             child: BackdropFilter(

@@ -886,8 +886,9 @@
   "whatsNewOpenAppearanceSettings": "进入外观设置",
   "whatsNewDismiss": "知道了",
   "workspaceSourceUnavailable": "来源地址不可用",
-  "workspaceSourceNotWebLink": "此来源没有可安全打开的网页链接。",
-  "workspaceOpenSourceFailed": "无法打开来源链接。",
-  "workspaceOpenSource": "打开来源：{address}",
-  "@workspaceOpenSource": {"placeholders": {"address": {"type": "String"}}}
+  "workspaceCopySource": "复制来源：{address}",
+  "@workspaceCopySource": {"placeholders": {"address": {"type": "String"}}},
+  "workspaceSourceCopied": "已复制来源地址。",
+  "workspaceCopySourceFailed": "无法复制来源地址。",
+  "workspaceSourceAddress": "来源地址"
 }

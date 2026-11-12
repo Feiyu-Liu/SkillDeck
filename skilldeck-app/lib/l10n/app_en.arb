@@ -917,8 +917,9 @@
   "whatsNewOpenAppearanceSettings": "Appearance Settings",
   "whatsNewDismiss": "Got It",
   "workspaceSourceUnavailable": "Source address unavailable",
-  "workspaceSourceNotWebLink": "This source has no supported safe web link.",
-  "workspaceOpenSourceFailed": "The source link could not be opened.",
-  "workspaceOpenSource": "Open source: {address}",
-  "@workspaceOpenSource": {"placeholders": {"address": {"type": "String"}}}
+  "workspaceCopySource": "Copy source: {address}",
+  "@workspaceCopySource": {"placeholders": {"address": {"type": "String"}}},
+  "workspaceSourceCopied": "Source address copied.",
+  "workspaceCopySourceFailed": "The source address could not be copied.",
+  "workspaceSourceAddress": "Source address"
 }

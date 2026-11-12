@@ -81,6 +81,8 @@ String _localizeMessage(
     l10n.notificationExternalSkillsAdopted,
   AppNotificationMessage.externalSkillsPartiallyAdopted =>
     l10n.notificationExternalSkillsPartiallyAdopted,
+  AppNotificationMessage.sourceCopied => l10n.workspaceSourceCopied,
+  AppNotificationMessage.sourceCopyFailed => l10n.workspaceCopySourceFailed,
   AppNotificationMessage.openLocationFailed =>
     l10n.notificationOpenLocationFailed,
   AppNotificationMessage.translationStarted =>

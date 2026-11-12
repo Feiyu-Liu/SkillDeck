@@ -2906,15 +2906,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspaceSourceUnavailable => 'Source address unavailable';
 
   @override
-  String get workspaceSourceNotWebLink =>
-      'This source has no supported safe web link.';
-
-  @override
-  String get workspaceOpenSourceFailed =>
-      'The source link could not be opened.';
-
-  @override
-  String workspaceOpenSource(String address) {
-    return 'Open source: $address';
+  String workspaceCopySource(String address) {
+    return 'Copy source: $address';
   }
+
+  @override
+  String get workspaceSourceCopied => 'Source address copied.';
+
+  @override
+  String get workspaceCopySourceFailed =>
+      'The source address could not be copied.';
+
+  @override
+  String get workspaceSourceAddress => 'Source address';
 }

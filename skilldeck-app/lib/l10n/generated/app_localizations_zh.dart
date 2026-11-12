@@ -2659,13 +2659,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workspaceSourceUnavailable => '来源地址不可用';
 
   @override
-  String get workspaceSourceNotWebLink => '此来源没有可安全打开的网页链接。';
-
-  @override
-  String get workspaceOpenSourceFailed => '无法打开来源链接。';
-
-  @override
-  String workspaceOpenSource(String address) {
-    return '打开来源：$address';
+  String workspaceCopySource(String address) {
+    return '复制来源：$address';
   }
+
+  @override
+  String get workspaceSourceCopied => '已复制来源地址。';
+
+  @override
+  String get workspaceCopySourceFailed => '无法复制来源地址。';
+
+  @override
+  String get workspaceSourceAddress => '来源地址';
 }
