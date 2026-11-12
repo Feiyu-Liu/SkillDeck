@@ -4855,23 +4855,29 @@ abstract class AppLocalizations {
   /// **'Source address unavailable'**
   String get workspaceSourceUnavailable;
 
-  /// No description provided for @workspaceSourceNotWebLink.
+  /// No description provided for @workspaceCopySource.
   ///
   /// In en, this message translates to:
-  /// **'This source has no supported safe web link.'**
-  String get workspaceSourceNotWebLink;
+  /// **'Copy source: {address}'**
+  String workspaceCopySource(String address);
 
-  /// No description provided for @workspaceOpenSourceFailed.
+  /// No description provided for @workspaceSourceCopied.
   ///
   /// In en, this message translates to:
-  /// **'The source link could not be opened.'**
-  String get workspaceOpenSourceFailed;
+  /// **'Source address copied.'**
+  String get workspaceSourceCopied;
 
-  /// No description provided for @workspaceOpenSource.
+  /// No description provided for @workspaceCopySourceFailed.
   ///
   /// In en, this message translates to:
-  /// **'Open source: {address}'**
-  String workspaceOpenSource(String address);
+  /// **'The source address could not be copied.'**
+  String get workspaceCopySourceFailed;
+
+  /// No description provided for @workspaceSourceAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Source address'**
+  String get workspaceSourceAddress;
 }
 
 class _AppLocalizationsDelegate

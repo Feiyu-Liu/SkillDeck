@@ -1,54 +1,51 @@
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 
-/// A display address and an optional browser target derived only from provenance.
+/// A safe display label and the original address for explicit copying.
 final class SkillSourceLink {
-  const SkillSourceLink._({required this.label, this.uri});
+  const SkillSourceLink._({required this.label, this.copyText});
 
   final String label;
-  final Uri? uri;
+
+  /// Trimmed only at its edges. Never include this value in UI or diagnostics.
+  final String? copyText;
 
   static SkillSourceLink fromSource(SkillSourceProvenance? source) {
-    if (source == null) return const SkillSourceLink._(label: '');
-    final locator = source.locator.trim();
-    final parsed = Uri.tryParse(locator);
-    if (source.kind == WorkspaceSourceKind.local &&
-        (parsed == null || !parsed.hasAuthority)) {
-      return SkillSourceLink._(label: locator);
-    }
-    if (RegExp(r'[\x00-\x20\x7f\\]').hasMatch(locator)) {
-      return const SkillSourceLink._(label: '');
-    }
-    if (parsed == null || parsed.host.isEmpty) {
-      // SCP-style Git locators have no web URL. Remove their SSH user, too.
-      final ssh = RegExp(r'^(?:[^@/\s]+@)?([\w.-]+):([^\s?#]+)$')
-          .firstMatch(locator);
-      return SkillSourceLink._(label: ssh == null ? '' : '${ssh[1]}:${ssh[2]}');
-    }
+    final locator = source?.locator.trim() ?? '';
+    if (locator.isEmpty) return const SkillSourceLink._(label: '');
+    SkillSourceLink value(String label) =>
+        SkillSourceLink._(label: label, copyText: locator);
+    if (RegExp(r'[\x00-\x1f\x7f]').hasMatch(locator)) return value('');
 
-    // This is not a generic token detector. Only GitHub's fixed README UI
-    // locator is recognized; every other query or fragment is hidden and makes
-    // the original locator ineligible for opening. Never open a rewritten URL.
-    final githubRepository =
-        source.kind == WorkspaceSourceKind.git &&
-        parsed.host == 'github.com' &&
-        parsed.pathSegments.length == 2;
-    final safeQuery =
-        !parsed.hasQuery ||
-        (githubRepository && parsed.query == 'tab=readme-ov-file');
-    final safeFragment =
-        !parsed.hasFragment ||
-        (githubRepository && parsed.fragment == 'readme');
-    final safe = parsed.replace(
-      userInfo: '',
-      query: safeQuery ? null : '',
-      fragment: safeFragment ? null : '',
-    );
-    final web =
-        source.kind != WorkspaceSourceKind.local &&
-        (parsed.scheme == 'http' || parsed.scheme == 'https') &&
-        parsed.userInfo.isEmpty &&
-        safeQuery &&
-        safeFragment;
-    return SkillSourceLink._(label: safe.toString(), uri: web ? parsed : null);
+    final local =
+        source!.kind == WorkspaceSourceKind.local ||
+        source.kind == WorkspaceSourceKind.adoptedSnapshot;
+    // Local paths and adoption locators are not required to be valid web URLs.
+    if (local && !locator.contains('://')) {
+      return value(locator);
+    }
+    final parsed = Uri.tryParse(locator);
+    if (parsed != null && parsed.host.isNotEmpty) {
+      final label = parsed
+          .replace(userInfo: '')
+          .toString()
+          .split(RegExp(r'[?#]'))
+          .first;
+      return value(label);
+    }
+    if (local &&
+        parsed?.scheme == 'file' &&
+        !parsed!.hasQuery &&
+        !parsed.hasFragment) {
+      try {
+        final path = parsed.toFilePath();
+        if (!RegExp(r'[\x00-\x1f\x7f]').hasMatch(path)) return value(path);
+      } on Object {
+        // Malformed file addresses still support copying, with a generic label.
+      }
+    }
+    final ssh = locator.contains('://')
+        ? null
+        : RegExp(r'^(?:[^@/\s]+@)?([\w.-]+):([^\s?#]+)').firstMatch(locator);
+    return value(ssh == null ? '' : '${ssh[1]}:${ssh[2]}');
   }
 }

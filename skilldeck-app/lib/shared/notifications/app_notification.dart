@@ -17,6 +17,8 @@ enum AppNotificationMessage {
   externalSkillsAdopted,
   externalSkillsPartiallyAdopted,
   openLocationFailed,
+  sourceCopied,
+  sourceCopyFailed,
   translationStarted,
   translationProgress,
   translationCancelling,
