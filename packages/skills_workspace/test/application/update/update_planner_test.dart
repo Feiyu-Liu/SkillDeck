@@ -523,6 +523,17 @@ void main() {
 
       final plan = result.valueOrNull!;
       expect(plan.kind, PreparedUpdatePlanKind.published);
+      final skillMutation = plan.businessChanges.mutations
+          .whereType<PutManagedSkill>()
+          .single;
+      expect(
+        skillMutation.createdAtMicros,
+        preflight.intent.managedSkillCreatedAtMicros,
+      );
+      expect(
+        skillMutation.updatedAtMicros,
+        greaterThan(skillMutation.createdAtMicros),
+      );
       expect(plan.revisionSelectionChanges, hasLength(1));
       final selection = plan.revisionSelectionChanges.single;
       expect(selection.previousUpstream?.objectId, _object('1'));

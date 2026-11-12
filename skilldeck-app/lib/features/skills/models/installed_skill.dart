@@ -8,6 +8,7 @@ final class InstalledSkill {
     required this.description,
     required this.contentHash,
     required this.activationCount,
+    this.createdAt,
     this.declaredName = '',
     this.source,
     this.currentRevision,
@@ -17,6 +18,7 @@ final class InstalledSkill {
     this.personalTagIds = const [],
   });
 
+  final DateTime? createdAt;
   final WorkspaceSkillId id;
   final String slotKey;
   final String declaredName;
@@ -36,6 +38,7 @@ final class InstalledSkill {
       identical(this, other) ||
       other is InstalledSkill &&
           id == other.id &&
+          createdAt == other.createdAt &&
           slotKey == other.slotKey &&
           displayName == other.displayName &&
           description == other.description &&
@@ -47,6 +50,7 @@ final class InstalledSkill {
   int get hashCode => Object.hash(
     slotKey,
     id,
+    createdAt,
     displayName,
     description,
     contentHash,

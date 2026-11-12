@@ -557,6 +557,7 @@ final class ManagedSkill {
     this.note,
     List<String> personalTagIds = const [],
     List<SkillActivation> activations = const [],
+    this.createdAt,
     this.draft,
     this.updateCandidate,
   }) : personalTagIds = List.unmodifiable(personalTagIds),
@@ -571,6 +572,11 @@ final class ManagedSkill {
       allowEmpty: true,
     );
   }
+
+  /// When this managed identity was first added to the Workspace.
+  ///
+  /// Null when a caller-supplied projection has no reliable historical time.
+  final DateTime? createdAt;
 
   final ManagedSkillId id;
   final String slotKey;
@@ -591,6 +597,7 @@ final class ManagedSkill {
       identical(this, other) ||
       other is ManagedSkill &&
           id == other.id &&
+          createdAt == other.createdAt &&
           slotKey == other.slotKey &&
           declaredName == other.declaredName &&
           displayName == other.displayName &&
@@ -607,6 +614,7 @@ final class ManagedSkill {
   @override
   int get hashCode => Object.hashAll([
     id,
+    createdAt,
     slotKey,
     declaredName,
     displayName,

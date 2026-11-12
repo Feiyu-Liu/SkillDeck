@@ -115,11 +115,31 @@ class ReleaseWrapperTests(unittest.TestCase):
         (self.backend / "scripts/release_desktop.py").write_text("raise SystemExit(7)\n")
         self.assertEqual(self.invoke("prepare", "--publish").returncode, 7)
 
+    def test_new_windows_run_requires_the_generated_installed_identity(self):
+        for key in (None, "WRONG_BUILD_VERSION"):
+            config = {"targets": {"windows-x64": {"platform": "windows"}}}
+            if key is not None:
+                config["build_version_define"] = key
+            self.config.write_text(json.dumps(config))
+            for command in ("plan", "prepare"):
+                with self.subTest(command=command, key=key):
+                    result = self.invoke(command, "--target", "windows-x64")
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("build_version_define=SKILLDECK_BUILD_VERSION", result.stderr)
+                    self.assertNotIn("fake-backend", result.stdout)
+        self.config.write_text(json.dumps({
+            "targets": {"windows-x64": {"platform": "windows"}},
+            "build_version_define": "SKILLDECK_BUILD_VERSION",
+        }))
+        self.assertEqual(self.forwarded("plan", "--target", "windows-x64")[:3],
+                         ["plan", "--target", "windows-x64"])
+
     def test_example_schema_and_destinations(self):
         config = json.loads((ROOT / "release/desktop.example.json").read_text())
         self.assertEqual(config["schema_version"], 1)
         self.assertEqual(config["project_root"], "..")
         self.assertEqual(config["public_base_url"], "https://download.example.com")
+        self.assertEqual(config["build_version_define"], "SKILLDECK_BUILD_VERSION")
         self.assertEqual(config["bucket"], "example-release-bucket")
         self.assertEqual(config["object_prefix"], "example/stable")
         self.assertEqual(config["sparkle_account"], "example-sparkle-account")

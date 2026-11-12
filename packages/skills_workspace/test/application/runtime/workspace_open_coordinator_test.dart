@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:logging/logging.dart';
 
 import 'package:skills_workspace/src/application/backup/control_plane_backup_models.dart';
 import 'package:skills_workspace/src/application/ports/operation_ports.dart';
@@ -50,6 +53,77 @@ void main() {
         hasLength(1),
       );
       await harness.coordinator.close();
+    },
+  );
+
+  test(
+    '85 selected Stores retain mandatory maintenance with zero projection scans',
+    () async {
+      final harness = _Harness(
+        revisionResults: {
+          for (var index = 1; index <= 85; index++)
+            _skillId(index): WorkspaceRevisionMaintenanceDisposition.healthy,
+        },
+      );
+      harness.journal.block = Completer<void>();
+      final opening = harness.coordinator.open();
+      await harness.journal.entered.future;
+      expect(
+        harness.calls.where((call) => call.startsWith('revision.maintain:')),
+        hasLength(85),
+      );
+      expect(harness.calls, isNot(contains('snapshot.publish')));
+      expect(harness.calls, isNot(contains('gate.open')));
+      harness.journal.block!.complete();
+      final outcome = await opening as WorkspaceOpened;
+      expect(outcome.snapshot.integrity.skills, hasLength(85));
+      expect(
+        harness.calls.where((call) => call == 'reconcile.materializations'),
+        isEmpty,
+      );
+      expect(harness.calls.where((call) => call == 'gate.open'), hasLength(1));
+      await harness.coordinator.close();
+    },
+  );
+
+  test(
+    'startup logs every phase and a failed phase without raw errors',
+    () async {
+      final events = <Map<String, Object?>>[];
+      final subscription = Logger('skills_workspace.performance').onRecord
+          .listen((record) {
+            expect(record.error, isNull);
+            events.add(jsonDecode(record.message) as Map<String, Object?>);
+          });
+      addTearDown(subscription.cancel);
+      final healthy = _Harness();
+      await healthy.coordinator.open();
+      await healthy.coordinator.close();
+      expect(events.map((event) => event['phase']), [
+        'writerLock',
+        'controlPlaneRecovery',
+        'controlPlaneOpen',
+        'revisionWorkerStartup',
+        'revisionMaintenance',
+        'journalRecovery',
+        'revisionReferenceReconciliation',
+        'snapshotRead',
+        'snapshotPublication',
+        'requestGateOpen',
+      ]);
+      expect(events.every((event) => event['failed'] == false), isTrue);
+      expect(events.every((event) => event['elapsedMicros'] is int), isTrue);
+      events.clear();
+      final failed = _Harness();
+      failed.worker.failStart = true;
+      expect(await failed.coordinator.open(), isA<WorkspaceOpenFailed>());
+      expect(events.last['phase'], 'revisionWorkerStartup');
+      expect(events.last['failed'], isTrue);
+      expect(jsonEncode(events), isNot(contains('startup failed')));
+      expect(
+        events.any((event) => event['phase'] == 'requestGateOpen'),
+        isFalse,
+      );
     },
   );
 

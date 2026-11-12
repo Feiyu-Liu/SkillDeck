@@ -88,6 +88,20 @@ if args and args[0] in ("plan", "prepare") and not any(
     if not Path(option(args, "--config")).is_file():
         sys.exit("Release configuration missing; configure keys/desktop-release.json "
                  "or pass --config <path>; see release/README.md")
+    # New Windows runs must compile the identity before enabling their feed.
+    # Saved runs keep their frozen automation and inputs when resumed.
+    try:
+        selected_config = json.loads(Path(option(args, "--config")).read_text())
+        targets = selected_config.get("targets", {})
+        selected_target = targets.get(option(args, "--target"), {})
+        if not isinstance(selected_target, dict):
+            raise ValueError()
+    except (OSError, ValueError, AttributeError):
+        sys.exit("Release configuration is unreadable or not valid JSON")
+    if (selected_target.get("platform") == "windows"
+            and selected_config.get("build_version_define") != "SKILLDECK_BUILD_VERSION"):
+        sys.exit("Windows release configuration requires "
+                 "build_version_define=SKILLDECK_BUILD_VERSION")
 
 local = root / "keys/release-tools.json"
 settings = json.loads(local.read_text()) if local.exists() else {}

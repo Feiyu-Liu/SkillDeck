@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:skills_manager/features/skills/presentation/widgets/skill_source_link.dart';
+
 import 'package:skills_manager/features/command_host/presentation/command_line_activity.dart';
 import 'package:skills_manager/features/library/presentation/widgets/skill_tag_editor.dart';
 import 'package:skills_manager/features/skills/presentation/widgets/skill_scope_menu.dart';
@@ -732,7 +734,8 @@ class _MetaBar extends StatelessWidget {
             child: _MetaCol(
               key: const Key('skill-source-meta'),
               label: context.l10n.workspaceSource,
-              value: source?.locator ?? '',
+              value: '',
+              valueWidget: SkillSourceLinkValue(source: source),
               leading: source == null
                   ? null
                   : _SourceKindTag(kind: source!.kind),
@@ -795,12 +798,14 @@ class _MetaCol extends StatelessWidget {
     required this.label,
     required this.value,
     this.leading,
+    this.valueWidget,
     super.key,
   });
 
   final String label;
   final String value;
   final Widget? leading;
+  final Widget? valueWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -820,14 +825,16 @@ class _MetaCol extends StatelessWidget {
               const SizedBox(width: 4),
             ],
             Expanded(
-              child: Text(
-                value,
-                style: AppTypography.of(context).mono.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppPalette.of(context).textPrimary,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              child:
+                  valueWidget ??
+                  Text(
+                    value,
+                    style: AppTypography.of(context).mono.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppPalette.of(context).textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
             ),
           ],
         ),

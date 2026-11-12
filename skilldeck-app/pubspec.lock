@@ -29,8 +29,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/auto_updater"
-      ref: 0f05a998a9cc6fac8e2c3100514c55321e549d1f
-      resolved-ref: 0f05a998a9cc6fac8e2c3100514c55321e549d1f
+      ref: 04fc94e9e023976f04ff2ae01ba26a9925ac2033
+      resolved-ref: 04fc94e9e023976f04ff2ae01ba26a9925ac2033
       url: "https://github.com/Feiyu-Liu/auto_updater.git"
     source: git
     version: "1.0.0"
@@ -47,8 +47,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/auto_updater_platform_interface"
-      ref: "8c4543b"
-      resolved-ref: "8c4543bd7d079a1702800646e3b61dde980deb70"
+      ref: dae29523565f0230c02708893c31579b18468eea
+      resolved-ref: dae29523565f0230c02708893c31579b18468eea
       url: "https://github.com/Feiyu-Liu/auto_updater.git"
     source: git
     version: "1.0.0"
@@ -56,8 +56,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/auto_updater_windows"
-      ref: "8c4543b"
-      resolved-ref: "8c4543bd7d079a1702800646e3b61dde980deb70"
+      ref: dae29523565f0230c02708893c31579b18468eea
+      resolved-ref: dae29523565f0230c02708893c31579b18468eea
       url: "https://github.com/Feiyu-Liu/auto_updater.git"
     source: git
     version: "1.0.0"

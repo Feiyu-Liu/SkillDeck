@@ -153,6 +153,7 @@ final class WorkspaceSnapshotReader
       managedSkills.add(
         domain.ManagedSkill(
           id: managedSkillId,
+          createdAt: _utc(skill.createdAtMicros),
           slotKey: skill.slotKey,
           declaredName: skill.declaredName,
           displayName: skill.displayName,

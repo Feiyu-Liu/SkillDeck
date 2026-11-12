@@ -26,6 +26,21 @@ defines and signing material under ignored `keys/`; do not commit them.
 They also accept `--config /absolute/path/to/config.json` or
 `--config=/absolute/path/to/config.json`; there is no automatic example fallback.
 
+Windows releases require `"build_version_define": "SKILLDECK_BUILD_VERSION"`
+in the local release config and the matching release-tool implementation. New
+Windows `plan`/`prepare` commands fail before invoking the backend when this
+contract is missing; saved-run resume retains its frozen inputs. The
+runner generates `x.y.z+n` from the same version/build inputs as both Windows
+appcast fields. The App awaits this compiled installed identity before updater
+initialization; a configured Windows updater refuses to start if it is absent
+or invalid. Development without an update feed needs no release identity.
+ProductVersion remains `x.y.z+n`, and FileVersion remains `x.y.z.n`.
+
+The Windows build receipt records the generated build-input comparison identity and resolved Git dependency
+revisions. Metadata creation requires the receipt identity to match the feed.
+These build-input checks do not replace testing the actual installed App. See
+`docs/validation/windows-comparison-version.md` for current evidence and gaps.
+
 Once per machine, set `MACOS_RELEASE_SKILL` to the maintained
 `macos-signed-release` checkout, or store `{"skill_root":"/absolute/skill/path"}`
 in ignored `keys/release-tools.json`. Configure your own local checkout path.

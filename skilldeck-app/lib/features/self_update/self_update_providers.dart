@@ -41,6 +41,10 @@ const appVersion = String.fromEnvironment(
   defaultValue: '1.0.0',
 );
 
+/// Immutable installed comparison identity generated from release version/build.
+/// Empty in development; a configured Windows updater fails closed without it.
+const appBuildVersion = String.fromEnvironment('SKILLDECK_BUILD_VERSION');
+
 final appVersionProvider = Provider<AsyncValue<String>>(
   (ref) => const AsyncData(appVersion),
 );
@@ -81,8 +85,12 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
   AppUpdateCoordinator({
     required this.configuration,
     this.onQuitForUpdate,
+    String installedReleaseVersion = appBuildVersion,
+    bool? isWindows,
     Duration checkTimeout = _defaultUpdateCheckTimeout,
   }) : _platform = null,
+       _installedReleaseVersion = installedReleaseVersion,
+       _isWindows = isWindows ?? Platform.isWindows,
        _checkTimeout = checkTimeout {
     autoUpdater.addListener(this);
   }
@@ -92,6 +100,8 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
     required AutoUpdaterPlatform platform,
     this.onQuitForUpdate,
     AppUpdateConfiguration? configuration,
+    String installedReleaseVersion = appBuildVersion,
+    bool isWindows = false,
     Duration checkTimeout = _defaultUpdateCheckTimeout,
   }) : configuration =
            configuration ??
@@ -99,6 +109,8 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
              feedUrl: Uri.parse('https://updates.example.com/appcast.xml'),
            ),
        _platform = platform,
+       _installedReleaseVersion = installedReleaseVersion,
+       _isWindows = isWindows,
        _checkTimeout = checkTimeout {
     _platformSubscription = platform.sparkleEvents.listen(_handlePlatformEvent);
   }
@@ -106,6 +118,8 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
   final AppUpdateConfiguration configuration;
   final AsyncCallback? onQuitForUpdate;
   final AutoUpdaterPlatform? _platform;
+  final String _installedReleaseVersion;
+  final bool _isWindows;
   final Duration _checkTimeout;
   StreamSubscription<Map<Object?, Object?>>? _platformSubscription;
   Timer? _checkTimeoutTimer;
@@ -136,6 +150,19 @@ final class AppUpdateCoordinator extends ChangeNotifier with UpdaterListener {
     _initializing = true;
     try {
       final platform = _platform;
+      if (_isWindows) {
+        if (!RegExp(r'^\d+\.\d+\.\d+\+\d+$')
+            .hasMatch(_installedReleaseVersion)) {
+          throw StateError(
+            'A Windows updater requires its installed release identity.',
+          );
+        }
+        if (platform != null) {
+          await platform.setAppBuildVersion(_installedReleaseVersion);
+        } else {
+          await autoUpdater.setAppBuildVersion(_installedReleaseVersion);
+        }
+      }
       if (platform != null) {
         await platform.setScheduledCheckInterval(
           configuration.checkInterval.inSeconds,

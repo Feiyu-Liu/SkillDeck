@@ -915,5 +915,10 @@
   "whatsNewDarkModeTitle": "Now in dark mode",
   "whatsNewDarkModeBody": "Choose Light or Dark in Settings › Appearance, or let SkillDeck follow your system.",
   "whatsNewOpenAppearanceSettings": "Appearance Settings",
-  "whatsNewDismiss": "Got It"
+  "whatsNewDismiss": "Got It",
+  "workspaceSourceUnavailable": "Source address unavailable",
+  "workspaceSourceNotWebLink": "This source has no supported safe web link.",
+  "workspaceOpenSourceFailed": "The source link could not be opened.",
+  "workspaceOpenSource": "Open source: {address}",
+  "@workspaceOpenSource": {"placeholders": {"address": {"type": "String"}}}
 }

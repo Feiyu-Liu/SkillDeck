@@ -258,6 +258,8 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
   var _refreshing = false;
   var _documentRequest = 0;
   var _documentCatalogRequest = 0;
+  var _workspaceSelectionRequest = 0;
+  Future<void>? _workspaceSelectionFuture;
   WorkspaceSkillId? _loadingSelectionId;
   StreamSubscription<InstalledSkillCatalog>? _catalogSubscription;
 
@@ -288,9 +290,15 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
     if (_usesWorkspaceSnapshot) {
       ref.listen(workspaceInstalledSkillCatalogProvider, (previous, next) {
         next.whenData((catalog) {
-          if (ref.mounted) {
-            unawaited(_reconcileWorkspaceSelection(catalog));
-          }
+          // A widget read can lazily flush this catalog during build. Defer
+          // selection/filter mutations, and discard superseded notifications.
+          final request = ++_workspaceSelectionRequest;
+          _documentRequest += 1;
+          _documentCatalogRequest += 1;
+          _workspaceSelectionFuture = Future<void>.microtask(() async {
+            if (!ref.mounted || request != _workspaceSelectionRequest) return;
+            await _reconcileWorkspaceSelection(catalog);
+          });
         });
       }, fireImmediately: true);
     } else {
@@ -301,6 +309,7 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
       });
     }
     ref.onDispose(() {
+      _workspaceSelectionRequest += 1;
       _documentRequest += 1;
       _documentCatalogRequest += 1;
       unawaited(_catalogSubscription?.cancel());
@@ -320,6 +329,8 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
     if (_usesWorkspaceSnapshot) {
       try {
         await ref.read(workspaceSnapshotProvider.future);
+        ref.read(workspaceInstalledSkillCatalogProvider);
+        await _workspaceSelectionFuture;
       } on Object {
         // The root Snapshot listener already captures the typed failure.
       }
@@ -456,7 +467,7 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
     try {
       final completion = await _repository.listDocuments(selected);
       if (!ref.mounted || catalogRequest != _documentCatalogRequest) {
-        _finishSkillLoad(selected);
+        _finishSkillLoad(selected, catalogRequest);
         return true;
       }
       List<SkillDocumentEntry>? documents;
@@ -495,7 +506,7 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
       }
     } on Object catch (error, stackTrace) {
       if (!ref.mounted || catalogRequest != _documentCatalogRequest) {
-        _finishSkillLoad(selected);
+        _finishSkillLoad(selected, catalogRequest);
         return true;
       }
       state = state.copyWith(
@@ -522,12 +533,13 @@ final class SkillBrowserViewModel extends Notifier<SkillBrowserState> {
             ),
       );
     }
-    _finishSkillLoad(selected);
+    _finishSkillLoad(selected, catalogRequest);
     return true;
   }
 
-  void _finishSkillLoad(InstalledSkill selected) {
-    if (_loadingSelectionId == selected.id) {
+  void _finishSkillLoad(InstalledSkill selected, int catalogRequest) {
+    if (catalogRequest == _documentCatalogRequest &&
+        _loadingSelectionId == selected.id) {
       _loadingSelectionId = null;
     }
   }

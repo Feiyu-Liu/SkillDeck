@@ -10,6 +10,7 @@ InstalledSkillCatalog installedSkillCatalogFromWorkspace(
     for (final skill in snapshot.skills)
       InstalledSkill(
         id: skill.id,
+        createdAt: skill.createdAt,
         slotKey: skill.slotKey,
         declaredName: skill.declaredName,
         displayName: skill.displayName,
