@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:skills_manager/features/library/personal_tag_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skills_manager/features/library/presentation/widgets/personal_tag_controls.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_browser_view_model.dart';
@@ -11,6 +13,102 @@ import '../../support/fake_skills_workspace_repository.dart';
 import '../../support/skills_manager_test_app.dart';
 
 void main() {
+  testWidgets(
+    '450 by 500 scrolls the whole panel with many tags and keeps editing accessible',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1360, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final base = _workspace().current;
+      final workspace = FakeSkillsWorkspaceRepository(
+        snapshot: SkillsWorkspaceSnapshot(
+          revision: base.revision,
+          skills: base.skills,
+          projectRoots: base.projectRoots,
+          personalTags: [
+            ...base.personalTags,
+            for (var index = 0; index < 20; index++)
+              _tag('extra$index', 'Extra $index'),
+          ],
+        ),
+      );
+      await tester.pumpWidget(_app(workspace));
+      await tester.pumpAndSettle();
+      final container = ProviderScope.containerOf(
+        tester.element(_skill('alpha')),
+      );
+      // Exercise the breakpoint transition as well as the compact endpoint.
+      await tester.binding.setSurfaceSize(const Size(450, 500));
+      await tester.pumpAndSettle();
+      await _openSortCard(tester, roomy: false);
+      final wholeScroll = find.byKey(const Key('skill-filter-panel-scroll'));
+      expect(wholeScroll, findsOneWidget);
+      final grouping = find.byKey(
+        const Key('skill-grouping-option-repository'),
+      );
+      await tester.ensureVisible(grouping);
+      await tester.pumpAndSettle();
+      expect(grouping.hitTestable(), findsOneWidget);
+      await tester.ensureVisible(_filterTag('writing'));
+      await tester.pumpAndSettle();
+      await tester.tap(_filterTag('writing'));
+      await tester.pumpAndSettle();
+      expect(container.read(personalTagFilterProvider), {'writing'});
+      await tester.ensureVisible(find.byKey(const Key('tag-filter-clear')));
+      await tester.tap(find.byKey(const Key('tag-filter-clear')));
+      await tester.pumpAndSettle();
+      expect(container.read(personalTagFilterProvider), isEmpty);
+      await tester.ensureVisible(find.byKey(const Key('tag-filter-create')));
+      await tester.tap(find.byKey(const Key('tag-filter-create')));
+      await tester.pumpAndSettle();
+      final nameField = find.byKey(const Key('personal-tag-name-field'));
+      await tester.ensureVisible(nameField);
+      await tester.enterText(nameField, 'Ops');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(workspace.createdPersonalTags.single.name, 'Ops');
+      await tester.ensureVisible(_filterTag('docs'));
+      await tester.tap(_filterTag('docs'), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('personal-tag-editor')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'roomy panel keeps fixed options and scrolls many tags independently',
+    (tester) async {
+      final base = _workspace().current;
+      final workspace = FakeSkillsWorkspaceRepository(
+        snapshot: SkillsWorkspaceSnapshot(
+          revision: base.revision,
+          skills: base.skills,
+          projectRoots: base.projectRoots,
+          personalTags: [
+            ...base.personalTags,
+            for (var index = 0; index < 20; index++)
+              _tag('extra$index', 'Extra $index'),
+          ],
+        ),
+      );
+      await tester.pumpWidget(_app(workspace));
+      await tester.pumpAndSettle();
+      await _openSortCard(tester);
+      expect(find.byKey(const Key('skill-filter-panel-scroll')), findsNothing);
+      final grouping = find.byKey(
+        const Key('skill-grouping-option-repository'),
+      );
+      final top = tester.getTopLeft(grouping);
+      await tester.drag(
+        find.byKey(const Key('tag-filter-list')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(grouping), top);
+      expect(_filterTag('writing').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('sort card tags filter Skills that carry every selected tag', (
     tester,
   ) async {
@@ -260,7 +358,14 @@ Finder get _triggerChips => find.descendant(
 
 Finder _filterTag(String id) => find.byKey(ValueKey('tag-filter-$id'));
 
-Future<void> _openSortCard(WidgetTester tester) async {
+Future<void> _openSortCard(WidgetTester tester, {bool roomy = true}) async {
+  // This suite's existing tag actions use a roomy menu; compact scrolling is
+  // exercised separately at the minimum window size.
+  if (roomy) {
+    await tester.binding.setSurfaceSize(const Size(1360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpAndSettle();
+  }
   await tester.tap(find.byKey(const Key('skill-sort-button')));
   await tester.pumpAndSettle();
 }

@@ -12,6 +12,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show kPrimaryButton;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -36,6 +37,8 @@ import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_browser_view_model.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/installed_agent_filter.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_list_layout.dart';
+import 'package:skills_manager/features/skills/presentation/view_models/skill_list_grouping.dart';
+import 'package:skills_manager/features/skills/presentation/view_models/skill_repository_groups.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_list_sort.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_operations_view_model.dart';
 import 'package:skills_manager/features/skills/presentation/widgets/activation_takeover_dialog.dart';
@@ -66,6 +69,13 @@ class SkillBrowserScreen extends ConsumerWidget {
       ),
     );
     final layout = ref.watch(skillListLayoutProvider);
+    final groupingMode =
+        ref.watch(skillListGroupingProvider)[sortPage] ??
+        SkillListGroupingMode.none;
+    final folds = ref.watch(skillListGroupFoldsProvider)[sortPage];
+    final collapsedGroups =
+        (searchQuery.isEmpty ? folds?.browsing : folds?.searching) ??
+        const <String>{};
     final scopeFilter = ref.watch(installedScopeFilterProvider);
     final projectRootFilter = ref.watch(installedProjectRootFilterProvider);
     final locationFilter = ref.watch(installedLocationFilterProvider);
@@ -136,7 +146,19 @@ class SkillBrowserScreen extends ConsumerWidget {
         onSortSelected: (mode) =>
             ref.read(skillListSortProvider.notifier).select(sortPage, mode),
         layout: layout,
-        onSearchChanged: ref.read(skillSearchQueryProvider.notifier).setQuery,
+        groupingMode: groupingMode,
+        collapsedGroups: collapsedGroups,
+        onGroupToggled: (key) => ref
+            .read(skillListGroupFoldsProvider.notifier)
+            .toggle(sortPage, key, searching: searchQuery.isNotEmpty),
+        onGroupingSelected: (mode) =>
+            ref.read(skillListGroupingProvider.notifier).select(sortPage, mode),
+        onSearchChanged: (value) {
+          if (value != searchQuery) {
+            ref.read(skillListGroupFoldsProvider.notifier).searchChanged();
+          }
+          ref.read(skillSearchQueryProvider.notifier).setQuery(value);
+        },
         onSkillTapped: (skillId) => context.pushNamed(
           AppRouteNames.skillDetail,
           pathParameters: {'skillId': skillId.value},
@@ -190,6 +212,10 @@ class _ReadyBody extends StatefulWidget {
     required this.searchQuery,
     required this.sortMode,
     required this.onSortSelected,
+    required this.groupingMode,
+    required this.onGroupingSelected,
+    required this.collapsedGroups,
+    required this.onGroupToggled,
     required this.layout,
     required this.onSearchChanged,
     required this.onSkillTapped,
@@ -206,6 +232,10 @@ class _ReadyBody extends StatefulWidget {
   final String searchQuery;
   final SkillListSortMode sortMode;
   final ValueChanged<SkillListSortMode> onSortSelected;
+  final SkillListGroupingMode groupingMode;
+  final ValueChanged<SkillListGroupingMode> onGroupingSelected;
+  final Set<String> collapsedGroups;
+  final ValueChanged<String> onGroupToggled;
   final SkillListLayout layout;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<WorkspaceSkillId> onSkillTapped;
@@ -229,6 +259,19 @@ class _ReadyBodyState extends State<_ReadyBody> {
     _scrollController = AppScrollControllers.create(
       debugLabel: 'installed-skills',
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReadyBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.groupingMode != widget.groupingMode &&
+        _scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
+      });
+    }
   }
 
   @override
@@ -287,6 +330,8 @@ class _ReadyBodyState extends State<_ReadyBody> {
                 onSearchChanged: widget.onSearchChanged,
                 sortMode: widget.sortMode,
                 onSortSelected: widget.onSortSelected,
+                groupingMode: widget.groupingMode,
+                onGroupingSelected: widget.onGroupingSelected,
               ),
             ),
           ),
@@ -317,43 +362,182 @@ class _ReadyBodyState extends State<_ReadyBody> {
             ),
           )
         else ...[
-          AppPageSliverContent(
-            sliver: switch (widget.layout) {
-              SkillListLayout.list => SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final skill = filteredSkills[index];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      top: index == 0 ? 0 : _SkillRow.gap,
-                    ),
-                    child: _SkillRow(
-                      skill: skill,
-                      onTap: () => widget.onSkillTapped(skill.id),
-                    ),
-                  );
-                }, childCount: filteredSkills.length),
+          if (widget.groupingMode == SkillListGroupingMode.none)
+            AppPageSliverContent(
+              sliver: _memberSliver(
+                filteredSkills,
+                gridKey: const Key('skill-card-grid'),
               ),
-              SkillListLayout.cards => SliverGrid(
-                key: const Key('skill-card-grid'),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: _SkillCard.maxWidth,
-                  mainAxisExtent: _SkillCard.height,
-                  mainAxisSpacing: _SkillCard.gap,
-                  crossAxisSpacing: _SkillCard.gap,
+            )
+          else
+            for (final group in groupSkillsByRepository(filteredSkills)) ...[
+              AppPageSliverContent(
+                key: ValueKey('repository-header-sliver-${group.identity.key}'),
+                sliver: SliverToBoxAdapter(
+                  child: _RepositoryGroupHeader(
+                    group: group,
+                    collapsed: widget.collapsedGroups.contains(
+                      group.identity.key,
+                    ),
+                    onPressed: () => widget.onGroupToggled(group.identity.key),
+                  ),
                 ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final skill = filteredSkills[index];
-                  return _SkillCard(
-                    skill: skill,
-                    onTap: () => widget.onSkillTapped(skill.id),
-                  );
-                }, childCount: filteredSkills.length),
               ),
-            },
-          ),
+              if (!widget.collapsedGroups.contains(group.identity.key))
+                const SliverToBoxAdapter(child: SizedBox(height: 8)),
+              if (!widget.collapsedGroups.contains(group.identity.key))
+                AppPageSliverContent(
+                  key: ValueKey(
+                    'repository-members-sliver-${group.identity.key}',
+                  ),
+                  sliver: _memberSliver(
+                    group.skills,
+                    gridKey: ValueKey('skill-card-grid-${group.identity.key}'),
+                  ),
+                ),
+              SliverToBoxAdapter(
+                key: ValueKey('repository-gap-${group.identity.key}'),
+                child: const SizedBox(height: 18),
+              ),
+            ],
           const SliverToBoxAdapter(child: SizedBox(height: 28)),
         ],
       ],
+    );
+  }
+
+  Widget _memberSliver(List<InstalledSkill> skills, {required Key gridKey}) =>
+      switch (widget.layout) {
+        SkillListLayout.list => SliverList(
+          key: gridKey,
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final skill = skills[index];
+            return Padding(
+              key: ValueKey('skill-member-${skill.slotKey}'),
+              padding: EdgeInsets.only(top: index == 0 ? 0 : _SkillRow.gap),
+              child: _SkillRow(
+                skill: skill,
+                onTap: () => widget.onSkillTapped(skill.id),
+              ),
+            );
+          }, childCount: skills.length),
+        ),
+        SkillListLayout.cards => SliverGrid(
+          key: gridKey,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: _SkillCard.maxWidth,
+            mainAxisExtent: _SkillCard.height,
+            mainAxisSpacing: _SkillCard.gap,
+            crossAxisSpacing: _SkillCard.gap,
+          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final skill = skills[index];
+            return _SkillCard(
+              key: ValueKey('skill-member-${skill.slotKey}'),
+              skill: skill,
+              onTap: () => widget.onSkillTapped(skill.id),
+            );
+          }, childCount: skills.length),
+        ),
+      };
+}
+
+class _RepositoryGroupHeader extends StatelessWidget {
+  const _RepositoryGroupHeader({
+    required this.group,
+    required this.collapsed,
+    required this.onPressed,
+  });
+
+  final SkillRepositoryGroup group;
+  final bool collapsed;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final identity = group.identity;
+    final l10n = context.l10n;
+    final title = switch (identity.bucket) {
+      SkillRepositoryBucket.repository => identity.title,
+      SkillRepositoryBucket.local => l10n.browserLocalSources,
+      SkillRepositoryBucket.web => l10n.browserWebSources,
+      SkillRepositoryBucket.unknown => l10n.browserUnknownSources,
+    };
+    final palette = AppPalette.of(context);
+    final typography = AppTypography.of(context);
+    final count = Text(
+      l10n.browserGroupSkillCount(group.skills.length),
+      style: typography.caption,
+    );
+    return Semantics(
+      expanded: !collapsed,
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.enter): onPressed,
+          const SingleActivator(LogicalKeyboardKey.space): onPressed,
+        },
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: AppGhostButton(
+            key: ValueKey('repository-group-${identity.key}'),
+            onPressed: onPressed,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 500;
+                final titleWidget = AppTooltip(
+                  message: identity.tooltip ?? title,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: typography.subtitle,
+                  ),
+                );
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      collapsed
+                          ? LucideIcons.chevronRight
+                          : LucideIcons.chevronDown,
+                      size: 16,
+                      color: palette.bodyContent,
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      switch (identity.bucket) {
+                        SkillRepositoryBucket.repository =>
+                          identity.key.startsWith('git:local:')
+                              ? LucideIcons.folderGit2
+                              : LucideIcons.gitBranch,
+                        SkillRepositoryBucket.local => LucideIcons.folder,
+                        SkillRepositoryBucket.web => LucideIcons.link,
+                        SkillRepositoryBucket.unknown => LucideIcons.circleHelp,
+                      },
+                      size: 16,
+                      color: palette.bodyContent,
+                    ),
+                    const SizedBox(width: 8),
+                    if (compact)
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [titleWidget, count],
+                        ),
+                      )
+                    else ...[
+                      Flexible(child: titleWidget),
+                      const SizedBox(width: 10),
+                      count,
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -419,7 +603,7 @@ class _SkillRow extends ConsumerWidget {
 }
 
 class _SkillCard extends ConsumerWidget {
-  const _SkillCard({required this.skill, required this.onTap});
+  const _SkillCard({required this.skill, required this.onTap, super.key});
 
   // The grid keeps three columns until the content area is about 614
   // points wide (it was 734), so two columns no longer stretch into very
@@ -1253,6 +1437,8 @@ class _FilterBar extends StatelessWidget {
     required this.onSearchChanged,
     required this.sortMode,
     required this.onSortSelected,
+    required this.groupingMode,
+    required this.onGroupingSelected,
   });
 
   static const _scopeMenuMaxWidth = 320.0;
@@ -1264,6 +1450,8 @@ class _FilterBar extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final SkillListSortMode sortMode;
   final ValueChanged<SkillListSortMode> onSortSelected;
+  final SkillListGroupingMode groupingMode;
+  final ValueChanged<SkillListGroupingMode> onGroupingSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -1271,11 +1459,16 @@ class _FilterBar extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 600;
         final condensed = constraints.maxWidth < 320;
+        // Recreate compact triggers when crossing the breakpoint: their new
+        // width must not animate with the previous, wider trigger padding.
         final scopeSelector = ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: compact ? _compactScopeMenuMaxWidth : _scopeMenuMaxWidth,
           ),
-          child: _ScopeMenuButton(iconOnly: condensed),
+          child: KeyedSubtree(
+            key: ValueKey('scope-trigger-condensed-$condensed'),
+            child: _ScopeMenuButton(iconOnly: condensed),
+          ),
         );
         return SizedBox(
           key: const Key('installed-filter-row'),
@@ -1285,7 +1478,10 @@ class _FilterBar extends StatelessWidget {
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: _AgentMenuButton(iconOnly: condensed),
+                  child: KeyedSubtree(
+                    key: ValueKey('agent-trigger-condensed-$condensed'),
+                    child: _AgentMenuButton(iconOnly: condensed),
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1295,7 +1491,13 @@ class _FilterBar extends StatelessWidget {
                 onChanged: onSearchChanged,
               ),
               const SizedBox(width: AppSpacing.sm),
-              _SortMenuButton(sortMode: sortMode, onSelected: onSortSelected),
+              _SortMenuButton(
+                compactTrigger: condensed,
+                sortMode: sortMode,
+                onSelected: onSortSelected,
+                groupingMode: groupingMode,
+                onGroupingSelected: onGroupingSelected,
+              ),
               const SizedBox(width: AppSpacing.sm),
               scopeSelector,
             ],
@@ -1307,8 +1509,15 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _SortMenuButton extends ConsumerWidget {
-  const _SortMenuButton({required this.sortMode, required this.onSelected});
+  const _SortMenuButton({
+    required this.sortMode,
+    required this.onSelected,
+    required this.groupingMode,
+    required this.onGroupingSelected,
+    this.compactTrigger = false,
+  });
 
+  final bool compactTrigger;
   static const _menuWidth = 252.0;
   static const _maxTriggerTags = 2;
   static const _sortHeaderHeight = 26.0;
@@ -1318,6 +1527,8 @@ class _SortMenuButton extends ConsumerWidget {
 
   final SkillListSortMode sortMode;
   final ValueChanged<SkillListSortMode> onSelected;
+  final SkillListGroupingMode groupingMode;
+  final ValueChanged<SkillListGroupingMode> onGroupingSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1354,7 +1565,7 @@ class _SortMenuButton extends ConsumerWidget {
           const SizedBox(width: 8),
           Container(width: 1, height: 14, color: AppPalette.of(context).border),
           const SizedBox(width: 8),
-          if (!filtering)
+          if (!filtering || compactTrigger)
             Icon(
               LucideIcons.tag,
               size: 14,
@@ -1372,7 +1583,7 @@ class _SortMenuButton extends ConsumerWidget {
         ],
       ),
       label: null,
-      semanticsLabel: context.l10n.browserSort,
+      semanticsLabel: context.l10n.browserSortGroupingTags,
       enableDragResize: false,
       direction: MorphingMenuDirection.down,
       alignment: MorphingMenuAlignment.end,
@@ -1380,9 +1591,50 @@ class _SortMenuButton extends ConsumerWidget {
       expandedHeight:
           _panelInset +
           sortHeight +
+          9 +
+          _sortHeaderHeight +
+          2 * _optionHeight +
           PersonalTagFilterPanel.tagSectionHeight(tags.length),
       style: menuStyle,
       contentBuilder: (menuContext, close) => PersonalTagFilterPanel(
+        fixedSectionsHeight:
+            sortHeight + 9 + _sortHeaderHeight + 2 * _optionHeight,
+        groupingSection: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: _sortHeaderHeight,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    context.l10n.browserGrouping,
+                    style: AppTypography.of(context).sectionLabel,
+                  ),
+                ),
+              ),
+            ),
+            for (final mode in SkillListGroupingMode.values)
+              AppMorphingMenuOption(
+                key: ValueKey('skill-grouping-option-${mode.name}'),
+                label: mode == SkillListGroupingMode.none
+                    ? context.l10n.browserGroupingNone
+                    : context.l10n.browserGroupingRepository,
+                leading: Icon(
+                  mode == SkillListGroupingMode.none
+                      ? LucideIcons.list
+                      : LucideIcons.folderGit2,
+                  size: 16,
+                ),
+                selected: mode == groupingMode,
+                onPressed: () {
+                  onGroupingSelected(mode);
+                  close();
+                },
+              ),
+          ],
+        ),
         sortSection: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

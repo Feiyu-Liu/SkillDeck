@@ -4878,6 +4878,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Source address'**
   String get workspaceSourceAddress;
+
+  /// No description provided for @browserGrouping.
+  ///
+  /// In en, this message translates to:
+  /// **'Grouping'**
+  String get browserGrouping;
+
+  /// No description provided for @browserGroupingNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No grouping'**
+  String get browserGroupingNone;
+
+  /// No description provided for @browserGroupingRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'By source repository'**
+  String get browserGroupingRepository;
+
+  /// No description provided for @browserLocalSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get browserLocalSources;
+
+  /// No description provided for @browserWebSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Web sources'**
+  String get browserWebSources;
+
+  /// No description provided for @browserUnknownSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown source'**
+  String get browserUnknownSources;
+
+  /// No description provided for @browserSortGroupingTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort, grouping and tags'**
+  String get browserSortGroupingTags;
+
+  /// No description provided for @browserGroupSkillCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Skill} other{{count} Skills}}'**
+  String browserGroupSkillCount(int count);
 }
 
 class _AppLocalizationsDelegate

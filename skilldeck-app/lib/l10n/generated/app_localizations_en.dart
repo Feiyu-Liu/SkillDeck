@@ -2919,4 +2919,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceSourceAddress => 'Source address';
+
+  @override
+  String get browserGrouping => 'Grouping';
+
+  @override
+  String get browserGroupingNone => 'No grouping';
+
+  @override
+  String get browserGroupingRepository => 'By source repository';
+
+  @override
+  String get browserLocalSources => 'Local';
+
+  @override
+  String get browserWebSources => 'Web sources';
+
+  @override
+  String get browserUnknownSources => 'Unknown source';
+
+  @override
+  String get browserSortGroupingTags => 'Sort, grouping and tags';
+
+  @override
+  String browserGroupSkillCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Skills',
+      one: '1 Skill',
+    );
+    return '$_temp0';
+  }
 }

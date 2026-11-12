@@ -890,5 +890,14 @@
   "@workspaceCopySource": {"placeholders": {"address": {"type": "String"}}},
   "workspaceSourceCopied": "已复制来源地址。",
   "workspaceCopySourceFailed": "无法复制来源地址。",
-  "workspaceSourceAddress": "来源地址"
+  "workspaceSourceAddress": "来源地址",
+  "browserGrouping": "分组",
+  "browserGroupingNone": "不分组",
+  "browserGroupingRepository": "按来源仓库",
+  "browserLocalSources": "本地",
+  "browserWebSources": "网页来源",
+  "browserUnknownSources": "来源未知",
+  "browserSortGroupingTags": "排序、分组与标签",
+"browserGroupSkillCount": "{count} Skills",
+"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}}
 }

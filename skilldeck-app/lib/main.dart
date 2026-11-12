@@ -23,6 +23,7 @@ import 'package:skills_manager/features/skills/skills_providers.dart';
 import 'package:skills_manager/features/skills/workspace_snapshot_providers.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_browser_view_model.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_list_layout.dart';
+import 'package:skills_manager/features/skills/presentation/view_models/skill_list_grouping.dart';
 import 'package:skills_manager/features/skills/presentation/view_models/skill_source_input_mode.dart';
 import 'package:skills_manager/features/skills/data/services/agent_root_ownership_repair_service.dart';
 import 'package:skills_manager/features/skills/presentation/views/agent_root_ownership_review_dialog.dart';
@@ -113,6 +114,8 @@ Future<void> main(List<String> args) async {
   final initialTranslationScope = await translationScopePreferenceStore.read();
   final skillListLayoutStore = SkillListLayoutStore();
   final initialSkillListLayout = await skillListLayoutStore.read();
+  final skillListGroupingStore = SkillListGroupingStore();
+  final initialSkillListGrouping = await skillListGroupingStore.read();
   final skillSourceInputModeStore = SkillSourceInputModeStore();
   final initialSkillSourceInputMode = await skillSourceInputModeStore.read();
   final whatsNewStore = WhatsNewStore();
@@ -187,6 +190,12 @@ Future<void> main(List<String> args) async {
         appearanceModeStoreProvider.overrideWithValue(appearanceModeStore),
         initialAppearanceModeProvider.overrideWithValue(initialAppearanceMode),
         skillListLayoutStoreProvider.overrideWithValue(skillListLayoutStore),
+        skillListGroupingStoreProvider.overrideWithValue(
+          skillListGroupingStore,
+        ),
+        initialSkillListGroupingProvider.overrideWithValue(
+          initialSkillListGrouping,
+        ),
         initialSkillListLayoutProvider.overrideWithValue(
           initialSkillListLayout,
         ),

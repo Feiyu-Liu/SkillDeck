@@ -921,5 +921,14 @@
   "@workspaceCopySource": {"placeholders": {"address": {"type": "String"}}},
   "workspaceSourceCopied": "Source address copied.",
   "workspaceCopySourceFailed": "The source address could not be copied.",
-  "workspaceSourceAddress": "Source address"
+  "workspaceSourceAddress": "Source address",
+  "browserGrouping": "Grouping",
+  "browserGroupingNone": "No grouping",
+  "browserGroupingRepository": "By source repository",
+  "browserLocalSources": "Local",
+  "browserWebSources": "Web sources",
+  "browserUnknownSources": "Unknown source",
+  "browserSortGroupingTags": "Sort, grouping and tags",
+"browserGroupSkillCount": "{count, plural, =1{1 Skill} other{{count} Skills}}",
+"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}}
 }

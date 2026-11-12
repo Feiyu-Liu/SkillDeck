@@ -17,7 +17,12 @@ import 'package:skills_manager/shared/theme/app_theme.dart';
 /// card for that tag's editor. Management stays inside the card because the
 /// card closes on any tap outside it, which a separate menu would be.
 class PersonalTagFilterPanel extends ConsumerStatefulWidget {
-  const PersonalTagFilterPanel({required this.sortSection, super.key});
+  const PersonalTagFilterPanel({
+    required this.sortSection,
+    this.groupingSection,
+    this.fixedSectionsHeight = 178,
+    super.key,
+  });
 
   static const _dividerHeight = 9.0;
   static const _headerHeight = 26.0;
@@ -35,6 +40,8 @@ class PersonalTagFilterPanel extends ConsumerStatefulWidget {
       _hintHeight;
 
   final Widget sortSection;
+  final Widget? groupingSection;
+  final double fixedSectionsHeight;
 
   @override
   ConsumerState<PersonalTagFilterPanel> createState() =>
@@ -67,118 +74,158 @@ class _PersonalTagFilterPanelState
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        widget.sortSection,
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-          child: SizedBox(
-            height: 1,
-            child: ColoredBox(color: AppPalette.of(context).border),
-          ),
-        ),
-        SizedBox(
-          height: PersonalTagFilterPanel._headerHeight,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10, right: 2),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.tagsFilterTitle,
-                    style: AppTypography.of(context).sectionLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scrollWholePanel =
+            constraints.maxHeight <
+            widget.fixedSectionsHeight +
+                PersonalTagFilterPanel.tagSectionHeight(1);
+        final tagList = ListView(
+          key: const Key('tag-filter-list'),
+          shrinkWrap: scrollWholePanel,
+          physics: scrollWholePanel
+              ? const NeverScrollableScrollPhysics()
+              : null,
+          padding: EdgeInsets.zero,
+          children: _tagRows(context, tags, counts, selected, filter),
+        );
+        final content = Column(
+          mainAxisSize: scrollWholePanel ? MainAxisSize.min : MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            widget.sortSection,
+            if (widget.groupingSection != null) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: SizedBox(
+                  height: 1,
+                  child: ColoredBox(color: AppPalette.of(context).border),
                 ),
-                if (selected.isNotEmpty)
-                  CupertinoButton(
-                    key: const Key('tag-filter-clear'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                    ),
-                    minimumSize: Size.zero,
-                    onPressed: filter.clear,
-                    child: Text(
-                      l10n.tagsClear,
-                      style: AppTypography.of(context).caption,
-                    ),
-                  ),
-                AppIconButton(
-                  key: const Key('tag-filter-create'),
-                  icon: LucideIcons.plus,
-                  tooltip: l10n.tagsCreate,
-                  style: NeoButtonVariant.ghost,
-                  size: 22,
-                  iconSize: AppSizes.iconXs,
-                  onPressed: () => setState(() => _creating = true),
-                ),
-              ],
+              ),
+              widget.groupingSection!,
+            ],
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              child: SizedBox(
+                height: 1,
+                child: ColoredBox(color: AppPalette.of(context).border),
+              ),
             ),
-          ),
-        ),
-        Expanded(
-          child: ListView(
-            key: const Key('tag-filter-list'),
-            padding: EdgeInsets.zero,
-            children: [
-              if (_creating)
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xs),
-                  child: PersonalTagNameField(
-                    onSubmit: (name) async {
-                      final failure = await _commands.create(name);
-                      if (failure == null && mounted) {
-                        setState(() => _creating = false);
-                      }
-                      return failure;
-                    },
-                    onCancel: () => setState(() => _creating = false),
-                  ),
-                ),
-              if (tags.isEmpty && !_creating)
-                SizedBox(
-                  height: PersonalTagFilterPanel._rowHeight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
+            SizedBox(
+              height: PersonalTagFilterPanel._headerHeight,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10, right: 2),
+                child: Row(
+                  children: [
+                    Expanded(
                       child: Text(
-                        l10n.tagsNoneAssigned,
-                        style: AppTypography.of(context).bodyMuted,
+                        l10n.tagsFilterTitle,
+                        style: AppTypography.of(context).sectionLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
+                    if (selected.isNotEmpty)
+                      CupertinoButton(
+                        key: const Key('tag-filter-clear'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                        ),
+                        minimumSize: Size.zero,
+                        onPressed: filter.clear,
+                        child: Text(
+                          l10n.tagsClear,
+                          style: AppTypography.of(context).caption,
+                        ),
+                      ),
+                    AppIconButton(
+                      key: const Key('tag-filter-create'),
+                      icon: LucideIcons.plus,
+                      tooltip: l10n.tagsCreate,
+                      style: NeoButtonVariant.ghost,
+                      size: 22,
+                      iconSize: AppSizes.iconXs,
+                      onPressed: () => setState(() => _creating = true),
+                    ),
+                  ],
                 ),
-              for (final tag in tags)
-                _TagFilterRow(
-                  tag: tag,
-                  count: counts[tag.id] ?? 0,
-                  selected: selected.contains(tag.id),
-                  onTap: () => filter.toggle(tag.id),
-                  onSecondaryTap: () => setState(() {
-                    _creating = false;
-                    _editingId = tag.id;
-                  }),
+              ),
+            ),
+            if (scrollWholePanel) tagList else Expanded(child: tagList),
+            SizedBox(
+              height: PersonalTagFilterPanel._hintHeight,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10, top: 6),
+                child: Text(
+                  l10n.tagsManageHint,
+                  style: AppTypography.of(context).caption
+                      .copyWith(fontSize: 11.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-            ],
+              ),
+            ),
+          ],
+        );
+        return scrollWholePanel
+            ? SingleChildScrollView(
+                key: const Key('skill-filter-panel-scroll'),
+                child: content,
+              )
+            : content;
+      },
+    );
+  }
+
+  List<Widget> _tagRows(
+    BuildContext context,
+    List<WorkspacePersonalTag> tags,
+    Map<String, int> counts,
+    Set<String> selected,
+    PersonalTagFilterController filter,
+  ) {
+    final l10n = context.l10n;
+    return [
+      if (_creating)
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          child: PersonalTagNameField(
+            onSubmit: (name) async {
+              final failure = await _commands.create(name);
+              if (failure == null && mounted) {
+                setState(() => _creating = false);
+              }
+              return failure;
+            },
+            onCancel: () => setState(() => _creating = false),
           ),
         ),
+      if (tags.isEmpty && !_creating)
         SizedBox(
-          height: PersonalTagFilterPanel._hintHeight,
+          height: PersonalTagFilterPanel._rowHeight,
           child: Padding(
-            padding: const EdgeInsets.only(left: 10, top: 6),
-            child: Text(
-              l10n.tagsManageHint,
-              style: AppTypography.of(context).caption.copyWith(fontSize: 11.5),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            padding: const EdgeInsets.only(left: 10),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                l10n.tagsNoneAssigned,
+                style: AppTypography.of(context).bodyMuted,
+              ),
             ),
           ),
         ),
-      ],
-    );
+      for (final tag in tags)
+        _TagFilterRow(
+          tag: tag,
+          count: counts[tag.id] ?? 0,
+          selected: selected.contains(tag.id),
+          onTap: () => filter.toggle(tag.id),
+          onSecondaryTap: () => setState(() {
+            _creating = false;
+            _editingId = tag.id;
+          }),
+        ),
+    ];
   }
 }
 

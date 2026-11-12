@@ -2671,4 +2671,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workspaceSourceAddress => '来源地址';
+
+  @override
+  String get browserGrouping => '分组';
+
+  @override
+  String get browserGroupingNone => '不分组';
+
+  @override
+  String get browserGroupingRepository => '按来源仓库';
+
+  @override
+  String get browserLocalSources => '本地';
+
+  @override
+  String get browserWebSources => '网页来源';
+
+  @override
+  String get browserUnknownSources => '来源未知';
+
+  @override
+  String get browserSortGroupingTags => '排序、分组与标签';
+
+  @override
+  String browserGroupSkillCount(int count) {
+    return '$count Skills';
+  }
 }

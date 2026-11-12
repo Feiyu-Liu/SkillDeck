@@ -361,6 +361,61 @@ class AppButton extends StatelessWidget {
   }
 }
 
+/// A themed ghost button for content richer than a single label.
+class AppGhostButton extends StatefulWidget {
+  const AppGhostButton({
+    required this.child,
+    required this.onPressed,
+    super.key,
+  });
+
+  final Widget child;
+  final VoidCallback onPressed;
+
+  @override
+  State<AppGhostButton> createState() => _AppGhostButtonState();
+}
+
+class _AppGhostButtonState extends State<AppGhostButton> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = NeoButtonTheme.of(context);
+    final style = SkillsButtonTheme.resolveStyle(
+      context,
+      NeoButtonVariant.ghost,
+    ).withHover(_hovered || _focused ? 1 : 0);
+    return Focus(
+      canRequestFocus: false,
+      onFocusChange: (value) => setState(() => _focused = value),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: NeoPressable(
+          onPressed: widget.onPressed,
+          child: NeoSurface(
+            style: style,
+            borderRadius: AppRadii.pill,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: theme.small.height),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: theme.small.horizontalPadding,
+                  vertical: 4,
+                ),
+                child: widget.child,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AppIconButton extends StatelessWidget {
   const AppIconButton({
     required this.icon,
