@@ -11,7 +11,7 @@ import 'package:skills_manager/features/skills/presentation/widgets/agent_logo.d
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

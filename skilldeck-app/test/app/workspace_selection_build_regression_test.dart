@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/features/skills/models/installed_skill.dart';
@@ -82,7 +82,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const CupertinoApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: SettingsScreen(),
         ),

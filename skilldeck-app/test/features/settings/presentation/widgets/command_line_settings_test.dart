@@ -1,6 +1,8 @@
+import 'package:skills_manager/l10n/l10n.dart';
+
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/features/command_host/data/command_line_distribution.dart';
@@ -10,7 +12,6 @@ import 'package:skills_manager/features/command_host/presentation/command_line_d
 import 'package:skills_manager/features/settings/presentation/widgets/command_line_settings.dart';
 import 'package:skills_manager/features/skills/device_agents_providers.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 import 'package:skills_manager/shared/failures/app_failure.dart';
 
 import '../../../command_host/support/read_fixtures.dart';
@@ -90,7 +91,7 @@ void main() {
         ],
         child: const CupertinoApp(
           locale: Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: CupertinoPageScaffold(
             child: SingleChildScrollView(

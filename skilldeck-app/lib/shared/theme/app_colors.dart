@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 /// Raw and semantic colors used by the Skills Manager interface.
 ///

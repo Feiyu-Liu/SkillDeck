@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 import 'package:skills_manager/shared/widgets/app_page_content.dart';
 import 'package:skills_manager/shared/widgets/app_selection_area.dart';

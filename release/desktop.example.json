@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project_root": "..",
   "flutter_project": "skilldeck-app",
-  "flutter_version": "3.47.5",
+  "flutter_version": "3.50.0",
   "artifact_name": "SkillDeck",
   "define_file": "keys/release-defines.json",
   "feed_define": "SKILLDECK_UPDATE_FEED_URL",

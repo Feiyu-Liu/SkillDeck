@@ -14,7 +14,7 @@ import 'package:skills_manager/features/skills/presentation/widgets/activation_l
 
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_md/flutter_md.dart';
 import 'package:go_router/go_router.dart';

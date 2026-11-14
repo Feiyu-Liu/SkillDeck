@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:skills_manager/features/library/personal_tag_palette.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';

@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 /// Lets the reader drag-select and copy the text inside [child].
 ///

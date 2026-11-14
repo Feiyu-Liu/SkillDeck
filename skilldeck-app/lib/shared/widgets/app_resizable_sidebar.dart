@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 
 class AppResizableSidebar extends StatefulWidget {

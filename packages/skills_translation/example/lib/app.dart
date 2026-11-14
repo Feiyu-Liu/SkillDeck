@@ -1,3 +1,5 @@
+// Keep the SDK library for the example's Flutter 3.29 compatibility floor.
+// ignore: deprecated_member_use
 import 'package:flutter/cupertino.dart';
 import 'package:skills_translation_example/application/translation_demo_controller.dart';
 import 'package:skills_translation_example/presentation/translation_demo_screen.dart';

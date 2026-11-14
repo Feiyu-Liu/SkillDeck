@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_md/flutter_md.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 

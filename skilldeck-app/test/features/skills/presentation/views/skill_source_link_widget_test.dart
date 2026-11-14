@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -357,7 +357,7 @@ Widget _fixture(
   overrides: [appNotificationPresenterProvider.overrideWithValue(presenter)],
   child: CupertinoApp(
     theme: SkillsTheme.theme,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('en'),
     home: NeoButtonTheme(

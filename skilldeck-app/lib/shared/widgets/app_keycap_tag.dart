@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:next_ui/next_ui.dart';
 import 'package:smooth_corner/smooth_corner.dart';
 

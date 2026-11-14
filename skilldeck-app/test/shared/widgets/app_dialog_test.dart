@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'package:skills_manager/l10n/l10n.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:next_ui/next_ui.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 import 'package:skills_manager/shared/widgets/app_dialog.dart';
 
@@ -218,7 +218,7 @@ void main() {
       CupertinoApp(
         navigatorKey: navigatorKey,
         locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: AppDialogScaffold(
           width: AppDialogWidths.confirm,
@@ -325,7 +325,7 @@ void main() {
 
 Widget _testApp(Widget child) => CupertinoApp(
   locale: const Locale('en'),
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: child,
 );

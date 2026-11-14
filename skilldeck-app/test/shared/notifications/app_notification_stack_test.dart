@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/shared/notifications/app_notification.dart';
 import 'package:skills_manager/shared/notifications/app_notification_presenter.dart';

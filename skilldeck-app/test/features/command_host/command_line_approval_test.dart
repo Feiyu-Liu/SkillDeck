@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:skills_manager/l10n/l10n.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -10,7 +11,6 @@ import 'package:skills_manager/features/skills/device_agents_providers.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/skills_providers.dart';
 import 'package:skills_manager/features/skills/workspace_snapshot_providers.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_skills_workspace_repository.dart';
 import 'support/read_fixtures.dart';
@@ -145,7 +145,7 @@ void main() {
           child: CupertinoApp(
             navigatorKey: rootNavigatorKey,
             locale: const Locale('en'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Consumer(
               builder: (context, ref, _) {

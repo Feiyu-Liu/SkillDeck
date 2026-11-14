@@ -67,7 +67,7 @@ Requests such as deletion and source replacement require approval in the App; no
 
 ### Prerequisites
 
-Use **Flutter 3.47.5 / Dart 3.13.4** and install the Flutter desktop toolchain for your platform. Run `flutter doctor -v` to check your environment.
+Use **Flutter 3.50.0 / Dart 3.14.0** and install the Flutter desktop toolchain for your platform. Run `flutter doctor -v` to check your environment.
 
 | Platform | Build dependencies |
 | --- | --- |
@@ -127,7 +127,7 @@ The `-j 1` option prevents native compilation and parallel test workers from com
 
 CI is path-filtered by component. Pull requests run Linux quick checks (formatting, strict analysis, complete unit tests, plus Workspace generation and native integration). Pushes to `main` add macOS arm64 (`macos-15`), Windows x64 (`windows-2022`), and Linux x64 (`ubuntu-24.04`) verification. App desktop E2E runs only on macOS and Windows; Linux App checks are unit/static checks, not a delivery target. Workspace desktop integration also runs headlessly on Linux. macOS Intel verification remains deferred.
 
-The SDK is pinned to Flutter **3.47.5 / Dart 3.13.4**. Translation and its example additionally analyze and test on Flutter **3.29.3**, including an example Linux Debug build. Main verification includes Workspace's 85% coverage and native ABI gates, and translation example Debug builds on all three platforms.
+The SDK is pinned to Flutter **3.50.0 / Dart 3.14.0**. Translation and its example additionally analyze and test on Flutter **3.29.3**, including an example Linux Debug build. Main verification includes Workspace's 85% coverage and native ABI gates, and translation example Debug builds on all three platforms.
 
 Workspace and App workflows accept manual `quick` or `merge` verification from the Actions tab; CLI and Translation manual runs verify all supported platforms. There are **no tag-triggered release, signing, notarization, deployment, or publication jobs**, and no private UI credentials are required. macOS tests use only a local ad-hoc Debug identity. Stale PR runs are canceled; main runs are not. No build artifacts or private logs are uploaded.
 

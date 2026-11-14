@@ -1,14 +1,14 @@
-import 'package:flutter/cupertino.dart';
+import 'package:skills_manager/l10n/l10n.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/features/skills/models/activation_location_group.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/presentation/widgets/activation_location_label.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 
 Widget host(Widget child, {Locale locale = const Locale('en')}) => CupertinoApp(
   locale: locale,
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: CupertinoPageScaffold(
     child: Center(child: SizedBox(width: 360, child: child)),

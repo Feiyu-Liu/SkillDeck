@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:skills_manager/shared/widgets/app_collapsing_page_frame.dart';
 import 'package:skills_manager/shared/widgets/app_collapsing_page_header.dart';
 

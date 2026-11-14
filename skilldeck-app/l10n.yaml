@@ -7,3 +7,7 @@ nullable-getter: false
 preferred-supported-locales:
   - zh
   - en
+# Flutter 3.50 gen-l10n still emits legacy design localization delegates.
+# The app registers the standalone Cupertino delegate explicitly.
+header: |
+  // ignore_for_file: deprecated_member_use

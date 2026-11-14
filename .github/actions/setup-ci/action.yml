@@ -2,7 +2,7 @@ name: Set up hosted CI
 description: Pinned Flutter SDK and native dependencies on standard GitHub runners.
 inputs:
   flutter-version:
-    default: '3.47.5'
+    default: '3.50.0'
     description: Flutter SDK version (3.29.3 is the translation compatibility floor).
   native:
     default: 'true'
@@ -54,5 +54,5 @@ runs:
         EXPECTED_FLUTTER: ${{ inputs.flutter-version }}
       run: |
         flutter --version --machine > "$RUNNER_TEMP/flutter-version.json"
-        python -c 'import json, os; from pathlib import Path; text = (Path(os.environ["RUNNER_TEMP"]) / "flutter-version.json").read_text(); v = json.loads(text[text.index("{"):]); assert v["frameworkVersion"] == os.environ["EXPECTED_FLUTTER"], v; assert os.environ["EXPECTED_FLUTTER"] != "3.47.5" or v["dartSdkVersion"].split()[0] == "3.13.4", v; print(v["frameworkVersion"], v["dartSdkVersion"])'
+        python -c 'import json, os; from pathlib import Path; text = (Path(os.environ["RUNNER_TEMP"]) / "flutter-version.json").read_text(); v = json.loads(text[text.index("{"):]); assert v["frameworkVersion"] == os.environ["EXPECTED_FLUTTER"], v; assert os.environ["EXPECTED_FLUTTER"] != "3.50.0" or v["dartSdkVersion"].split()[0] == "3.14.0", v; print(v["frameworkVersion"], v["dartSdkVersion"])'
         dart --version

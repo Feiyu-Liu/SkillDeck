@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 abstract final class SkillsColors {
   static const warningSurface = Color(0xFFFFF8F0);

@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +46,7 @@ void main() {
       CupertinoApp.router(
         routerConfig: router,
         locale: locale ?? const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
       ),
     );

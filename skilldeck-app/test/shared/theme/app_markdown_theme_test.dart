@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_md/flutter_md.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';

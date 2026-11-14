@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:skills_workspace/skills_workspace.dart';
 import 'package:skills_workspace/src/native/revision_engine/revision_native_engine.dart';
 

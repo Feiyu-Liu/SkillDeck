@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 
 /// Title and one-line explanation at the top of a Settings section.

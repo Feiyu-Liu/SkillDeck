@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +89,7 @@ Widget _host({required bool toolReady, required bool skillActive}) =>
       ],
       child: const CupertinoApp(
         locale: Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Align(
           alignment: Alignment.topRight,

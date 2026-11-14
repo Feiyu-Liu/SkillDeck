@@ -106,6 +106,6 @@ class WorkflowPolicyTest < Minitest::Test
     assert_equal 2, translation.dig('strategy', 'matrix', 'package').length
     assert translation.fetch('steps').any? { |step| step.dig('with', 'flutter-version') == '3.29.3' }
     setup = YAML.load_file(File.join(ROOT, 'actions/setup-ci/action.yml'))
-    assert_equal '3.47.5', setup.dig('inputs', 'flutter-version', 'default')
+    assert_equal '3.50.0', setup.dig('inputs', 'flutter-version', 'default')
   end
 end

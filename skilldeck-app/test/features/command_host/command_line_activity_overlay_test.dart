@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:skills_manager/l10n/l10n.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:skills_manager/features/command_host/presentation/command_line_activity.dart';
 import 'package:skills_manager/features/command_host/presentation/widgets/command_line_activity_overlay.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 import 'package:skills_manager/l10n/generated/app_localizations_en.dart';
 import 'package:skills_manager/shared/navigation/app_routes.dart';
 
@@ -46,7 +46,7 @@ void main() {
         child: CupertinoApp.router(
           routerConfig: router,
           locale: const Locale('en'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
         ),
       ),

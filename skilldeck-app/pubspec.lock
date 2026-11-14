@@ -29,8 +29,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/auto_updater"
-      ref: 04fc94e9e023976f04ff2ae01ba26a9925ac2033
-      resolved-ref: 04fc94e9e023976f04ff2ae01ba26a9925ac2033
+      ref: "04fc94e9e023976f04ff2ae01ba26a9925ac2033"
+      resolved-ref: "04fc94e9e023976f04ff2ae01ba26a9925ac2033"
       url: "https://github.com/Feiyu-Liu/auto_updater.git"
     source: git
     version: "1.0.0"
@@ -165,6 +165,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.9"
+  cupertino_ui:
+    dependency: "direct main"
+    description:
+      name: cupertino_ui
+      sha256: "369e39a1c5c030a6212589c3da1809920b1c2cfade7b02aade7695bfa4b88c3a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.6"
   device_info_plus:
     dependency: transitive
     description:
@@ -662,6 +670,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_ui:
+    dependency: "direct main"
+    description:
+      name: material_ui
+      sha256: "474c135fd46b56ff1d35ca982155e8863d28fbc6464d1192acf4ee53a738680e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.0"
   matomo_tracker:
     dependency: "direct main"
     description:
@@ -1101,10 +1117,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11"
+      sha256: "0a10344e901e5b2e63819567951cb6a06673ed6b84f40462188ff5a0c41f371f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.12"
+    version: "0.7.14"
   toastification:
     dependency: "direct main"
     description:
@@ -1315,4 +1331,4 @@ packages:
     version: "3.1.4"
 sdks:
   dart: ">=3.13.0 <4.0.0"
-  flutter: ">=3.47.0"
+  flutter: ">=3.50.0"

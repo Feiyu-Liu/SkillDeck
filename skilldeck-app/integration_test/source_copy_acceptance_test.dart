@@ -4,7 +4,7 @@
 // Uses synthetic addresses only; never opens a browser or directory.
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,7 +42,7 @@ void main() {
           ProviderScope(
             child: CupertinoApp(
               theme: SkillsTheme.theme,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              localizationsDelegates: appLocalizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
               locale: const Locale('en'),
               home: NeoButtonTheme(

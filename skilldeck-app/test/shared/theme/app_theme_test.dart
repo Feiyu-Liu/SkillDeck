@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 import 'package:smooth_corner/smooth_corner.dart';
@@ -155,7 +155,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(CupertinoButton), findsOneWidget);
+      expect(find.byType(AppButton), findsOneWidget);
       await tester.tap(find.text('Install'));
       expect(pressed, isTrue);
     },

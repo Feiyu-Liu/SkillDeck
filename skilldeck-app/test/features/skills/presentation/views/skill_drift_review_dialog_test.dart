@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:next_ui/next_ui.dart';
@@ -650,6 +650,8 @@ void main() {
       await tester.tap(find.byKey(const Key('skill-drift-restore')));
       await tester.pumpAndSettle();
       expect(
+        // Support the pinned Riverpod 3.4 API and local 3.5 overrides.
+        // ignore: deprecated_member_use
         container.exists(skillDriftReviewViewModelProvider(driftWidgetSkillId)),
         isFalse,
       );
@@ -714,6 +716,8 @@ void main() {
       await tester.tap(find.byKey(const Key('skill-drift-close')));
       await tester.pumpAndSettle();
       expect(
+        // Support the pinned Riverpod 3.4 API and local 3.5 overrides.
+        // ignore: deprecated_member_use
         container.exists(skillDriftReviewViewModelProvider(driftWidgetSkillId)),
         isFalse,
       );
@@ -802,6 +806,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('skill-drift-review-dialog')), findsNothing);
       expect(
+        // Support the pinned Riverpod 3.4 API and local 3.5 overrides.
+        // ignore: deprecated_member_use
         container.exists(skillDriftReviewViewModelProvider(driftWidgetSkillId)),
         isFalse,
       );

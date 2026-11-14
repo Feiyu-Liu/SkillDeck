@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:skills_manager/l10n/l10n.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
-import 'package:skills_manager/l10n/generated/app_localizations.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
 import 'package:skills_manager/shared/widgets/app_failure_view.dart';
 
@@ -96,7 +96,7 @@ void main() {
 
 Widget _testApp(Widget child) => CupertinoApp(
   locale: const Locale('en'),
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: child,
 );

@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:next_ui/next_ui.dart';
@@ -148,11 +147,7 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
           return const Locale('en');
         },
         onGenerateTitle: (context) => context.l10n.appTitle,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: SkillsTheme.forBrightness(brightness),
         routerConfig: ref.watch(skillsRouterProvider),
@@ -160,27 +155,32 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
         // next_ui widgets all resolve from the platform brightness below.
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(platformBrightness: brightness),
-          child: NeoButtonTheme(
-            data: SkillsButtonTheme.neo,
-            child: Builder(
-              builder: (context) => MorphingMenuButtonTheme(
-                data: SkillsButtonTheme.morphingMenuFor(context),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    AppNotificationHost(
-                      child: child ?? const SizedBox.shrink(),
-                    ),
-                    if (finalization.canRetry)
-                      _WorkspaceFinalizationRetryBanner(
-                        recovering: finalization.isRecovering,
-                        onRetry: () => ref
-                            .read(
-                              workspaceFinalizationCoordinatorProvider.notifier,
-                            )
-                            .retryFailed(),
+          // next_ui and flutter_md still use SDK Cupertino widgets.
+          // ignore: deprecated_member_use
+          child: CupertinoUiCompatibilityBridge(
+            child: NeoButtonTheme(
+              data: SkillsButtonTheme.neo,
+              child: Builder(
+                builder: (context) => MorphingMenuButtonTheme(
+                  data: SkillsButtonTheme.morphingMenuFor(context),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      AppNotificationHost(
+                        child: child ?? const SizedBox.shrink(),
                       ),
-                  ],
+                      if (finalization.canRetry)
+                        _WorkspaceFinalizationRetryBanner(
+                          recovering: finalization.isRecovering,
+                          onRetry: () => ref
+                              .read(
+                                workspaceFinalizationCoordinatorProvider
+                                    .notifier,
+                              )
+                              .retryFailed(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

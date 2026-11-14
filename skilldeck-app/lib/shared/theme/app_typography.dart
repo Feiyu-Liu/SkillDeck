@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 
 import 'app_colors.dart';
 import 'app_palette.dart';

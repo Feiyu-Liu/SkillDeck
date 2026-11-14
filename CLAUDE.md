@@ -27,10 +27,13 @@ compatibility reference; this repository never delegates its runtime to it.
 
 ## Toolchain
 
-Development and release evidence use **Dart 3.13.4 and Flutter 3.47.5**, and all
+Development and release evidence use **Dart 3.14.0 and Flutter 3.50.0**, and all
 lockfiles are release input because generated Drift, ffigen, Native Assets,
 SQLite, and native-link output are version sensitive. Resolve with
 `--enforce-lockfile`.
+
+The App uses standalone `material_ui` and `cupertino_ui`. Keep the Cupertino
+compatibility bridge while dependencies still use SDK design widgets.
 
 `skills_translation` is the exception: it must also build, analyze, and test on
 **Flutter 3.29.3**, which CI enforces as a separate job. Do not use APIs newer

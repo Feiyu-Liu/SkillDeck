@@ -1,6 +1,6 @@
 import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:next_ui/next_ui.dart';

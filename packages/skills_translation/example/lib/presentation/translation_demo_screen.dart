@@ -1,3 +1,5 @@
+// Keep the SDK library for the example's Flutter 3.29 compatibility floor.
+// ignore: deprecated_member_use
 import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart' as p;
 import 'package:skills_translation/skills_translation.dart';
