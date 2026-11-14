@@ -33,6 +33,13 @@ void main() {
       await Directory(p.join(project, 'scripts')).create(recursive: true);
       script = p.join(project, 'scripts', 'bundle_skilldeck_cli.sh');
       await File('macos/scripts/bundle_skilldeck_cli.sh').copy(script);
+      for (final name in [
+        'bundle_skilldeck_universal_cli.sh',
+        'universal_cli_launcher.c',
+      ]) {
+        await File('macos/scripts/$name')
+            .copy(p.join(project, 'scripts', name));
+      }
       await File('macos/scripts/skilldeck_cli.entitlements')
           .copy(p.join(project, 'scripts', 'skilldeck_cli.entitlements'));
       final commandDirectory = await Directory(
@@ -42,14 +49,18 @@ void main() {
       await dart.writeAsString(r'''#!/bin/bash
 set -eu
 if [[ "$1" == --suppress-analytics ]]; then shift; fi
-if [[ "$1" == --version ]]; then echo 'test Dart version'; exit 0; fi
+if [[ "$1" == --version ]]; then echo 'Dart SDK version: 3.14.0 (stable)'; exit 0; fi
 printf '%s\n' "$1" >> "$TEST_CALLS"
 if [[ -f "$TEST_FAILURE" && "$(cat "$TEST_FAILURE")" == "$1" ]]; then
   echo 'private tool output which must not enter the build log' >&2
   exit 1
 fi
 if [[ "$1" == compile ]]; then
-  [[ "$*" == *"--target-arch=$TEST_ARCH"* ]]
+  if [[ "${TEST_EXPECT_AOT:-}" == 1 ]]; then
+    [[ "$2" == aot-snapshot ]]
+  else
+    [[ "$*" == *"--target-arch=$TEST_ARCH"* ]]
+  fi
   while [[ "$1" != -o ]]; do shift; done
   shift
   printf '%s' "$TEST_COMPILED_CLI" > "$1"
@@ -91,6 +102,8 @@ grep -q allow-unsigned-executable-memory "$2"
       environment = {
         'PROJECT_DIR': project,
         'ARCHS': 'arm64',
+        'SKILLDECK_CLI_X86_64': '',
+        'DESKTOP_RELEASE_ARCHITECTURE': 'universal',
         'ONLY_ACTIVE_ARCH': 'NO',
         'FLUTTER_ROOT': p.dirname(commandDirectory.path),
         'DERIVED_FILE_DIR': p.join(temp.path, 'derived'),
@@ -109,6 +122,84 @@ grep -q allow-unsigned-executable-memory "$2"
 
     Future<ProcessResult> run() =>
         Process.run('/bin/bash', [script], environment: environment);
+
+    Future<void> universalInputs() async {
+      environment['ARCHS'] = 'arm64 x86_64';
+      environment['TEST_COMPILED_CLI'] = r'''#!/bin/bash
+echo "${TEST_RUNTIME_HELP:-Usage: skilldeck <command>}"
+''';
+      final intel = File(p.join(temp.path, 'skilldeck.x86_64'));
+      await intel.writeAsString(compiledCli);
+      await Process.run('/bin/chmod', ['755', intel.path]);
+      environment['SKILLDECK_CLI_X86_64'] = intel.path;
+      final commands = p.join(environment['FLUTTER_ROOT']!, 'bin');
+      await File(p.join(commands, 'lipo')).writeAsString(r'''#!/bin/bash
+set -eu
+[[ "$1" == -archs ]]
+echo x86_64
+''');
+      final host = File(p.join(commands, 'uname'));
+      await host.writeAsString('#!/bin/bash\necho arm64\n');
+      await Process.run('/bin/chmod', ['755', host.path]);
+      final compiler = File(p.join(commands, 'xcrun'));
+      await compiler.writeAsString(r'''#!/bin/bash
+set -eu
+while [[ "$1" != -o ]]; do shift; done
+cat > "$2" <<'LAUNCHER'
+#!/bin/bash
+exec "$(dirname "$0")/SkillDeckCLI/skilldeck.arm64" "$@"
+LAUNCHER
+''');
+      await Process.run('/bin/chmod', ['755', compiler.path]);
+    }
+
+    test(
+      'universal rejects missing Intel input before replacing a helper',
+      () async {
+        environment['ARCHS'] = 'arm64 x86_64';
+        final result = await run();
+        expect(result.exitCode, isNot(0));
+        expect(result.stderr, contains('native x86_64 SkillDeck executable'));
+        expect(await File(output).exists(), isFalse);
+      },
+    );
+
+    test(
+      'universal bundles both CLIs, caches and restores deleted payloads',
+      () async {
+        await universalInputs();
+        expect((await run()).exitCode, 0);
+        final payload = Directory(p.join(p.dirname(output), 'SkillDeckCLI'));
+        expect(
+          File(p.join(payload.path, 'skilldeck.arm64')).existsSync(),
+          isTrue,
+        );
+        expect(
+          File(p.join(payload.path, 'skilldeck.x86_64')).existsSync(),
+          isTrue,
+        );
+        await payload.delete(recursive: true);
+        expect((await run()).exitCode, 0);
+        expect(await calls.readAsLines(), ['pub', 'compile']);
+        final help = await Process.run(output, ['--help']);
+        expect(help.stdout, contains('Usage: skilldeck'));
+        await File(environment['SKILLDECK_CLI_X86_64']!)
+            .writeAsString('changed Intel executable');
+        expect((await run()).exitCode, 0);
+        expect(await calls.readAsLines(), ['pub', 'compile', 'pub', 'compile']);
+      },
+    );
+
+    test('universal rejects VM help even when its exit code is zero', () async {
+      await universalInputs();
+      expect((await run()).exitCode, 0);
+      await File(output).writeAsString('previous helper');
+      environment['TEST_RUNTIME_HELP'] = 'Usage: dartvm [vm-flags]';
+      final result = await run();
+      expect(result.exitCode, isNot(0));
+      expect(result.stderr, contains('did not execute the SkillDeck CLI'));
+      expect(await File(output).readAsString(), 'previous helper');
+    });
 
     test(
       'bundles, caches compilation and restores a deleted bundle output',
@@ -168,6 +259,18 @@ grep -q allow-unsigned-executable-memory "$2"
         expect(await calls.readAsLines(), ['pub', 'compile']);
       },
     );
+
+    test('single-architecture release extraction keeps a thin CLI', () async {
+      environment['ARCHS'] = 'arm64 x86_64';
+      environment['DESKTOP_RELEASE_ARCHITECTURE'] = 'x86_64';
+      environment['TEST_ARCH'] = 'x64';
+      final stale = Directory(p.join(p.dirname(output), 'SkillDeckCLI'));
+      await stale.create(recursive: true);
+      await File(p.join(stale.path, 'skilldeck.arm64')).writeAsString('stale');
+      expect((await run()).exitCode, 0);
+      expect(await calls.readAsLines(), ['pub', 'compile']);
+      expect(await stale.exists(), isFalse);
+    });
 
     test('detects source additions and deletions', () async {
       expect((await run()).exitCode, 0);

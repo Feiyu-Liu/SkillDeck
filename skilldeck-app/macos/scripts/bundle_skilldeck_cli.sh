@@ -16,6 +16,15 @@ architectures="${ARCHS:-$(uname -m)}"
 if [[ "$architectures" == *' '* && "${ONLY_ACTIVE_ARCH:-NO}" == YES ]]; then
   architectures="${NATIVE_ARCH_ACTUAL:-$(uname -m)}"
 fi
+# The release packager may build both App slices before extracting one target.
+case "${DESKTOP_RELEASE_ARCHITECTURE:-universal}" in
+  arm64|x86_64) architectures="$DESKTOP_RELEASE_ARCHITECTURE" ;;
+esac
+# Executable Dart snapshots cannot be lipo-merged: their trailing payload
+# offsets are relative to the original file, not a slice inside a fat binary.
+if [[ "$architectures" == *arm64* && "$architectures" == *x86_64* ]]; then
+  exec bash "$PROJECT_DIR/scripts/bundle_skilldeck_universal_cli.sh"
+fi
 # Dart cannot cross-compile a macOS executable, so an arm64 release host takes
 # the x86_64 slice from an Intel Mac that compiled the same commit natively.
 prebuilt_x86_64="${SKILLDECK_CLI_X86_64:-}"
@@ -103,4 +112,6 @@ if [[ " $(lipo -archs "$staged") " == *" $(uname -m) "* ]] &&
   exit 1
 fi
 mkdir -p "$(dirname "$output")"
+# Switching from a Universal build must not retain its other-CPU payload.
+rm -rf "$(dirname "$output")/SkillDeckCLI"
 mv -f "$staged" "$output"

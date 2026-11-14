@@ -24,13 +24,26 @@
     "applications_position": [570, 225]
   },
   "targets": {
+    "macos-universal": {
+      "platform": "macos",
+      "architecture": "universal",
+      "disable_impeller": false,
+      "appcast_key": "example/stable/macos-universal/appcast.xml",
+      "latest_key": "example/stable/latest-universal.json",
+      "architecture_specific_binaries": {
+        "Contents/Helpers/SkillDeckCLI/skilldeck.arm64": "arm64",
+        "Contents/Helpers/SkillDeckCLI/skilldeck.x86_64": "x86_64"
+      }
+    },
     "macos-arm64": {
       "platform": "macos",
       "architecture": "arm64",
       "disable_impeller": false,
       "appcast_key": "example/stable/macos-arm64/appcast.xml",
       "latest_key": "example/stable/latest.json",
-      "compatibility_appcasts": ["example/stable/appcast.xml"]
+      "compatibility_appcasts": [
+        "example/stable/appcast.xml"
+      ]
     },
     "macos-x86_64": {
       "platform": "macos",
@@ -54,7 +67,9 @@
       "appcast_key": "example/stable/appcast.xml",
       "shared_appcast": true,
       "latest_key": "example/stable/latest-windows.json",
-      "initialize_indexes": ["example/stable/latest-windows.json"]
+      "initialize_indexes": [
+        "example/stable/latest-windows.json"
+      ]
     }
   }
 }

@@ -435,6 +435,8 @@
 			files = ();
 			inputPaths = (
 				"$(PROJECT_DIR)/scripts/bundle_skilldeck_cli.sh",
+				"$(PROJECT_DIR)/scripts/bundle_skilldeck_universal_cli.sh",
+				"$(PROJECT_DIR)/scripts/universal_cli_launcher.c",
 				"$(PROJECT_DIR)/../../packages/skilldeck_cli/lib",
 				"$(PROJECT_DIR)/../../packages/skilldeck_cli/bin",
 				"$(PROJECT_DIR)/../../packages/skilldeck_cli/pubspec.yaml",

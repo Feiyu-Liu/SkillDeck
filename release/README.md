@@ -87,6 +87,33 @@ If an existing installation uses an older feed hostname, preserve that hostname
 and its feed objects while those installations remain supported. Publication
 writes bucket keys, not hostnames.
 
+The example configuration also provides `macos-universal` (arm64 + x86_64,
+Impeller enabled). It uses a dedicated appcast and manifest. Preview its
+configuration without building or publishing:
+
+```sh
+python3 tool/release.py plan --config release/desktop.example.json --target macos-universal --version 1.1.8 --build-number 30
+```
+
+A Universal build needs the same native Intel CLI input described below. Verify
+`App.framework`, Native Assets, plugins and the public `Contents/Helpers/skilldeck`
+launcher contain both architectures. Dart executables cannot be merged directly
+with `lipo`: their appended AOT payload would be misplaced. The Universal launcher
+therefore selects `Contents/Helpers/SkillDeckCLI/skilldeck.arm64` or
+`skilldeck.x86_64`. The example target declares these two internal executables
+using `architecture_specific_binaries`; the release tool verifies each exact
+slice and rejects a missing payload. All other Mach-O files must remain Universal.
+Test `skilldeck --help` on both hosts and require SkillDeck usage, not Dart VM
+usage. Acceptance must use the same final Release archive on both Apple Silicon and Intel; a Debug-only result is insufficient.
+
+Existing arm64 and Intel installations still use their old updater feeds. Keep
+those URLs served until their clients have migrated. The current release runner
+requires a dedicated feed for Universal targets and rejects shared or
+compatibility appcasts on that target: preparing the Universal package does not
+migrate the old feeds. A bridge update and website download-route changes must be
+validated before production cutover, preserving the Windows item in the shared
+appcast. The separate targets below remain available for that transition.
+
 Other targets are `macos-x86_64` (Skia, `FLTEnableImpeller=false`) and
 `windows-x64` (unsigned Authenticode, signed WinSparkle installer). Windows
 builds the exact commit in a separate worktree over SSH, returns a hash-checked
@@ -97,11 +124,14 @@ Inno/Visual Studio, and the signing host needs Python 3.9+, the existing macOS
 release tools, OpenSSL and authenticated Wrangler v4.
 
 Dart cannot cross-compile the bundled `skilldeck` CLI for macOS, so an arm64
-host preparing `macos-x86_64` needs its x86_64 slice from an Intel Mac. Compile
+host preparing `macos-x86_64` or `macos-universal` needs its x86_64 CLI from an
+Intel Mac. Compile
 `packages/skilldeck_cli` there from the release commit with the pinned Dart
 (`dart compile exe bin/skilldeck.dart --target-os=macos --target-arch=x64`),
 copy the binary back, and pass its absolute path as `SKILLDECK_CLI_X86_64` to
-`prepare`. The build uses it unsigned and signs the merged helper itself.
+`prepare`. The build signs the helper and, for Universal, both internal CLI
+executables itself. `DESKTOP_RELEASE_ARCHITECTURE` is passed by the maintained
+packager so legacy single-architecture targets still bundle a thin CLI.
 
 Private build defines come from the config's `define_file`, by default
 `keys/release-defines.json`. Create it locally with the build settings your app
