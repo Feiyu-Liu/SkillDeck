@@ -186,44 +186,74 @@ Future<SkillsResult<MutationReport>> _executeInitialImport({
   required InitialImportPlanner initialImports,
   required InitialImportOperationPlanPort plans,
 }) async {
-  final InitialImportPreflight preflight;
   switch (planned) {
     case InitialImportPlanningSuccess(:final value):
-      preflight = value;
+      return _executePreparedInitialImport(
+        preflight: value,
+        initialWarnings: initialWarnings,
+        context: context,
+        snapshots: snapshots,
+        operations: operations,
+        initialImports: initialImports,
+        plans: plans,
+      );
     case InitialImportPlanningFailure():
       return _initialImportFailure<MutationReport>(planned);
     case InitialImportPlanningTakeoverRequired(:final takeover):
       // Install consumes takeover inspections before reaching this executor.
-      return SkillsFailure<MutationReport>(
-        code: SkillsErrorCode.activationUnavailable,
-        context: <String, Object?>{
-          'reason': 'adoptionTargetOccupied',
-          'slotKey': takeover.preflight.subjects.single.skill.slotKey,
-          'occupant': takeover.occupancies.first.adoptionOccupant.name,
-          'occupantFailureCode':
-              ?takeover.occupancies.first.occupantFailureCode,
-          'occupantFailureReason':
-              ?takeover.occupancies.first.occupantFailureReason,
-          'occupants': [
-            for (final occupancy in takeover.occupancies)
-              {
-                'targetPath': occupancy.targetPath,
-                'occupant': occupancy.adoptionOccupant.name,
-                'occupantFailureCode': ?occupancy.occupantFailureCode,
-                'occupantFailureReason': ?occupancy.occupantFailureReason,
-              },
-          ],
-          'targetPaths': [
-            for (final occupancy in takeover.occupancies) occupancy.targetPath,
-          ],
-        },
-        warnings: <SkillsWarning>[
-          ...initialWarnings,
-          ..._sourceWarnings(takeover.preflight.sourceWarnings),
-          ..._activationWarnings(takeover.preflight.activationWarnings),
-        ],
-      );
+      return _adoptionTargetOccupied(takeover, initialWarnings);
   }
+}
+
+// Keep this collection-heavy map out of the async state machine, including
+// in release builds where the optimizer would otherwise inline it again.
+@pragma('vm:never-inline')
+SkillsFailure<MutationReport> _adoptionTargetOccupied(
+  InitialImportTakeoverInspection takeover,
+  List<SkillsWarning> initialWarnings,
+) {
+  return SkillsFailure<MutationReport>(
+    code: SkillsErrorCode.activationUnavailable,
+    context: <String, Object?>{
+      'reason': 'adoptionTargetOccupied',
+      'slotKey': takeover.preflight.subjects.single.skill.slotKey,
+      'occupant': takeover.occupancies.first.adoptionOccupant.name,
+      'occupantFailureCode': ?takeover.occupancies.first.occupantFailureCode,
+      'occupantFailureReason':
+          ?takeover.occupancies.first.occupantFailureReason,
+      'occupants': [
+        for (final occupancy in takeover.occupancies)
+          {
+            'targetPath': occupancy.targetPath,
+            'occupant': occupancy.adoptionOccupant.name,
+            'occupantFailureCode': ?occupancy.occupantFailureCode,
+            'occupantFailureReason': ?occupancy.occupantFailureReason,
+          },
+      ],
+      'targetPaths': [
+        for (final occupancy in takeover.occupancies) occupancy.targetPath,
+      ],
+    },
+    warnings: <SkillsWarning>[
+      ...initialWarnings,
+      ..._sourceWarnings(takeover.preflight.sourceWarnings),
+      ..._activationWarnings(takeover.preflight.activationWarnings),
+    ],
+  );
+}
+
+// Pass a resolved preflight into the async executor instead of capturing a
+// switch-assigned local across its suspension point. Dart 3.14's AOT
+// allocator crashes on the combined dispatch/execution function.
+Future<SkillsResult<MutationReport>> _executePreparedInitialImport({
+  required InitialImportPreflight preflight,
+  required List<SkillsWarning> initialWarnings,
+  required SkillsCommandContext context,
+  required WorkspaceSnapshotPublisher snapshots,
+  required OperationCoordinator operations,
+  required InitialImportPlanner initialImports,
+  required InitialImportOperationPlanPort plans,
+}) async {
   InitialImportPlanningFailure<InitialImportPlan>? preparationFailure;
   context.reportProgress(OperationProgressPhase.preparing);
   final outcome = await operations.executeDeferred<InitialImportPlan>(
