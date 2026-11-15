@@ -1,0 +1,1918 @@
+{
+  "schemaVersion": 1,
+  "fixtureVersion": "sync-service-2026-11-15-v3",
+  "normalization": "Only server-minted opaque IDs, page cursors and synthetic test-only repository credentials/remotes are aliased. SHA-1 objects, decimal sequences, user text, nulls and envelopes are real service output. Auth contexts are private test harness state, not HTTP actor fields. No usable authentication token is present.",
+  "cases": [
+    {
+      "name": "prepare",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits/prepare",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-upload",
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "uploadId": "upload-fixture-1",
+            "state": "ready",
+            "expiresAt": 1700000060000
+          }
+        }
+      }
+    },
+    {
+      "name": "writeTransferLease",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/transfers",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-transfer-write",
+            "scope": "write",
+            "uploadId": "upload-fixture-1"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-transfer-write",
+            "scope": "write",
+            "remote": "https://git.fixture.example.invalid/repository-fixture.git",
+            "token": "synthetic-repository-token-fixture-1",
+            "expiresAt": 1700000600000,
+            "uploadId": "upload-fixture-1"
+          }
+        }
+      }
+    },
+    {
+      "name": "transferPlaintextIsNotReplayed",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/transfers",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-transfer-write",
+            "scope": "write",
+            "uploadId": "upload-fixture-1"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "transferAlreadyIssued",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "commitLargeSequence",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-upload",
+            "uploadId": "upload-fixture-1",
+            "baseCommitId": null,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-upload",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "commitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "sequence": "9007199254740993",
+            "outcome": "committed",
+            "receiptExpiresAt": 1700086400000,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "replay",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-upload",
+            "uploadId": "upload-fixture-1",
+            "baseCommitId": null,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-upload",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "commitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "sequence": "9007199254740993",
+            "outcome": "replay",
+            "receiptExpiresAt": 1700086400000,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "readTransferLease",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/transfers",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-transfer-read",
+            "scope": "read",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-transfer-read",
+            "scope": "read",
+            "remote": "https://git.fixture.example.invalid/repository-fixture.git",
+            "token": "synthetic-repository-token-fixture-2",
+            "expiresAt": 1700000600000,
+            "lineageId": "lineage-fixture-1",
+            "generation": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "transferScopePayloadConflict",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/transfers",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-transfer-read",
+            "scope": "write",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "operationConflict",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "createUnassignedPersonalTag",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "tagCreate",
+            "operationId": "wire-tag",
+            "name": "Unassigned 标签",
+            "color": "#11AaBB"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-tag",
+            "kind": "tagCreate",
+            "lineageId": null,
+            "generation": null,
+            "tagId": "tag-fixture-1",
+            "sequence": "9007199254740994",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "clearFavoriteAndNote",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "fields",
+            "operationId": "wire-clear",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "patch": {
+              "favorite": null,
+              "note": null
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-clear",
+            "kind": "fields",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": null,
+            "sequence": "9007199254740995",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "changesWithGlobalTag",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740992"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254740992",
+            "highWatermark": "9007199254740995",
+            "nextCursor": "9007199254740994",
+            "entries": [
+              {
+                "sequence": "9007199254740993",
+                "payload": {
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "selectedCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "slotKey": "sample",
+                  "sourceDescriptor": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/owner/repository.git",
+                      "ref": "main",
+                      "repositorySubpath": "skills",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "metadata": {
+                    "favorite": false,
+                    "note": "",
+                    "tags": []
+                  },
+                  "contentManifestVersion": 1,
+                  "contentStatus": "ready",
+                  "contentManifest": {
+                    "schemaVersion": 1,
+                    "objectFormat": "sha1",
+                    "source": {
+                      "kind": "git",
+                      "payloadSchemaVersion": 1,
+                      "payload": {
+                        "locator": "https://example.invalid/owner/repository.git",
+                        "ref": "main",
+                        "repositorySubpath": "skills",
+                        "skillPath": "sample"
+                      }
+                    },
+                    "slotKey": "sample",
+                    "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+                    "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "publishedHistory": [
+                      {
+                        "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                        "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                        "kind": "install",
+                        "publishedAtMicros": "1700000000000000",
+                        "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                      }
+                    ]
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "revision"
+              },
+              {
+                "sequence": "9007199254740994",
+                "payload": {
+                  "kind": "tagCreate",
+                  "tagId": "tag-fixture-1",
+                  "name": "Unassigned 标签",
+                  "color": "#11AaBB",
+                  "createdAt": 1700000000000,
+                  "updatedAt": 1700000000000
+                },
+                "lineageId": null,
+                "generation": null,
+                "kind": "personalTag"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "changesWithClearPatch",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740994&highWatermark=9007199254740995"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254740994",
+            "highWatermark": "9007199254740995",
+            "nextCursor": "9007199254740995",
+            "entries": [
+              {
+                "sequence": "9007199254740995",
+                "payload": {
+                  "kind": "fields",
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "patch": {
+                    "favorite": null,
+                    "note": null
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "metadata"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "snapshotLineagePage",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/snapshots",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "snapshotId": "snapshot-fixture-1",
+            "highWatermark": "9007199254740995",
+            "pageCursor": null,
+            "nextPageCursor": "page-fixture-1",
+            "complete": false,
+            "items": [
+              {
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "selectedCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                "slotKey": "sample",
+                "sourceDescriptor": {
+                  "kind": "git",
+                  "payloadSchemaVersion": 1,
+                  "payload": {
+                    "locator": "https://example.invalid/owner/repository.git",
+                    "ref": "main",
+                    "repositorySubpath": "skills",
+                    "skillPath": "sample"
+                  }
+                },
+                "metadata": {
+                  "favorite": null,
+                  "note": null,
+                  "tags": []
+                },
+                "contentManifestVersion": 1,
+                "contentStatus": "ready",
+                "contentManifest": {
+                  "schemaVersion": 1,
+                  "objectFormat": "sha1",
+                  "source": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/owner/repository.git",
+                      "ref": "main",
+                      "repositorySubpath": "skills",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "slotKey": "sample",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+                  "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "publishedHistory": [
+                    {
+                      "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                      "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                      "kind": "install",
+                      "publishedAtMicros": "1700000000000000",
+                      "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                    }
+                  ]
+                }
+              }
+            ],
+            "personalTags": []
+          }
+        }
+      }
+    },
+    {
+      "name": "snapshotVocabularyPage",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/snapshots/snapshot-fixture-1?protocolVersion=1&pageCursor=page-fixture-1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "snapshotId": "snapshot-fixture-1",
+            "highWatermark": "9007199254740995",
+            "pageCursor": "page-fixture-1",
+            "nextPageCursor": null,
+            "complete": true,
+            "items": [],
+            "personalTags": [
+              {
+                "tagId": "tag-fixture-1",
+                "name": "Unassigned 标签",
+                "color": "#11AaBB",
+                "createdAt": 1700000000000,
+                "updatedAt": 1700000000000
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "staleGeneration",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-stale",
+            "lineageId": "lineage-fixture-1",
+            "generation": 2,
+            "baseCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "lifecycleMismatch",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "noncanonicalSequence",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740992%0A"
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "invalidRequest",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "bodyCannotChooseActor",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits/prepare",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-bad-actor",
+            "accountId": "attacker-account",
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "invalidRequest",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "unsupportedVersion",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 0,
+          "requestId": "wire-request",
+          "data": {}
+        }
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "protocolVersionUnsupported",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "literalFalseAndEmptyNote",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "fields",
+            "operationId": "wire-literal",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "patch": {
+              "favorite": false,
+              "note": ""
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-literal",
+            "kind": "fields",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": null,
+            "sequence": "9007199254740996",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "patchPersonalTag",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "tagPatch",
+            "operationId": "wire-tag-rename",
+            "tagId": "tag-fixture-1",
+            "patch": {
+              "name": "Renamed 标签",
+              "color": null
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-tag-rename",
+            "kind": "tagPatch",
+            "lineageId": null,
+            "generation": null,
+            "tagId": "tag-fixture-1",
+            "sequence": "9007199254740997",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "addTagAssignment",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "assignment",
+            "operationId": "wire-tag-add",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": "tag-fixture-1",
+            "action": "add"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-tag-add",
+            "kind": "assignment",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": "tag-fixture-1",
+            "sequence": "9007199254740998",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "removeTagAssignment",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "assignment",
+            "operationId": "wire-tag-remove",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": "tag-fixture-1",
+            "action": "remove"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-tag-remove",
+            "kind": "assignment",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "tagId": "tag-fixture-1",
+            "sequence": "9007199254740999",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "deletePersonalTag",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "tagDelete",
+            "operationId": "wire-tag-delete",
+            "tagId": "tag-fixture-1"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-tag-delete",
+            "kind": "tagDelete",
+            "lineageId": null,
+            "generation": null,
+            "tagId": "tag-fixture-1",
+            "sequence": "9007199254741000",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "changesAfterVocabularyOperations1",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740995"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254740995",
+            "highWatermark": "9007199254741000",
+            "nextCursor": "9007199254740997",
+            "entries": [
+              {
+                "sequence": "9007199254740996",
+                "payload": {
+                  "kind": "fields",
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "patch": {
+                    "favorite": false,
+                    "note": ""
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "metadata"
+              },
+              {
+                "sequence": "9007199254740997",
+                "payload": {
+                  "kind": "tagPatch",
+                  "tagId": "tag-fixture-1",
+                  "patch": {
+                    "name": "Renamed 标签",
+                    "color": null
+                  },
+                  "updatedAt": 1700000000000
+                },
+                "lineageId": null,
+                "generation": null,
+                "kind": "personalTag"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "changesAfterVocabularyOperations2",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740997&highWatermark=9007199254741000"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254740997",
+            "highWatermark": "9007199254741000",
+            "nextCursor": "9007199254740999",
+            "entries": [
+              {
+                "sequence": "9007199254740998",
+                "payload": {
+                  "kind": "assignment",
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "tagId": "tag-fixture-1",
+                  "action": "add"
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "metadata"
+              },
+              {
+                "sequence": "9007199254740999",
+                "payload": {
+                  "kind": "assignment",
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "tagId": "tag-fixture-1",
+                  "action": "remove"
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "metadata"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "changesAfterVocabularyOperations3",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254740999&highWatermark=9007199254741000"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254740999",
+            "highWatermark": "9007199254741000",
+            "nextCursor": "9007199254741000",
+            "entries": [
+              {
+                "sequence": "9007199254741000",
+                "payload": {
+                  "kind": "tagDelete",
+                  "tagId": "tag-fixture-1",
+                  "deletedAt": 1700000000000
+                },
+                "lineageId": null,
+                "generation": null,
+                "kind": "personalTag"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "operationPayloadConflict",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "fields",
+            "operationId": "wire-clear",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "patch": {
+              "favorite": false
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "operationConflict",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "deletedTagCannotRename",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/metadata",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "tagPatch",
+            "operationId": "wire-dead-tag",
+            "tagId": "tag-fixture-1",
+            "patch": {
+              "name": "cannot revive"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 410,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "tagDeleted",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "repairNeededEvent",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254741000"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254741000",
+            "highWatermark": "9007199254741001",
+            "nextCursor": "9007199254741001",
+            "entries": [
+              {
+                "sequence": "9007199254741001",
+                "payload": {
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "selectedCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "slotKey": "sample",
+                  "sourceDescriptor": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/owner/repository.git",
+                      "ref": "main",
+                      "repositorySubpath": "skills",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "metadata": {
+                    "favorite": false,
+                    "note": "",
+                    "tags": []
+                  },
+                  "contentManifestVersion": 1,
+                  "contentStatus": "needsReupload",
+                  "contentManifest": {
+                    "schemaVersion": 1,
+                    "objectFormat": "sha1",
+                    "source": {
+                      "kind": "git",
+                      "payloadSchemaVersion": 1,
+                      "payload": {
+                        "locator": "https://example.invalid/owner/repository.git",
+                        "ref": "main",
+                        "repositorySubpath": "skills",
+                        "skillPath": "sample"
+                      }
+                    },
+                    "slotKey": "sample",
+                    "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+                    "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "publishedHistory": [
+                      {
+                        "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                        "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                        "kind": "install",
+                        "publishedAtMicros": "1700000000000000",
+                        "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                      }
+                    ]
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "repairNeeded"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "verifiedRepairReady",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/repair",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "repair",
+            "contentManifestVersion": 1,
+            "operationId": "wire-repair",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "baseCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-repair",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "commitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "sequence": "9007199254741002",
+            "outcome": "committed",
+            "receiptExpiresAt": 1700086400000,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "repairReadyEvent",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254741001"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254741001",
+            "highWatermark": "9007199254741002",
+            "nextCursor": "9007199254741002",
+            "entries": [
+              {
+                "sequence": "9007199254741002",
+                "payload": {
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 1,
+                  "selectedCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "slotKey": "sample",
+                  "sourceDescriptor": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/owner/repository.git",
+                      "ref": "main",
+                      "repositorySubpath": "skills",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "metadata": {
+                    "favorite": false,
+                    "note": "",
+                    "tags": []
+                  },
+                  "contentManifestVersion": 1,
+                  "contentStatus": "ready",
+                  "contentManifest": {
+                    "schemaVersion": 1,
+                    "objectFormat": "sha1",
+                    "source": {
+                      "kind": "git",
+                      "payloadSchemaVersion": 1,
+                      "payload": {
+                        "locator": "https://example.invalid/owner/repository.git",
+                        "ref": "main",
+                        "repositorySubpath": "skills",
+                        "skillPath": "sample"
+                      }
+                    },
+                    "slotKey": "sample",
+                    "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+                    "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                    "publishedHistory": [
+                      {
+                        "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                        "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                        "kind": "install",
+                        "publishedAtMicros": "1700000000000000",
+                        "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                      }
+                    ]
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "kind": "repairReady"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "replacementPrepare",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits/prepare",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "contentManifestVersion": 1,
+            "operationId": "wire-replacement",
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/replacement.git",
+                  "ref": "main",
+                  "repositorySubpath": "",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf",
+              "currentUpstream": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "currentEffective": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a86a8d4aa0fa5f4238ef6d4220382ca2aaa5559a643c8e114fac68e35c097ac7",
+                  "revision": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf"
+                }
+              ]
+            },
+            "replacement": {
+              "lineageId": "lineage-fixture-1",
+              "generation": 1,
+              "baseCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "uploadId": "upload-fixture-2",
+            "state": "ready",
+            "expiresAt": 1700000060000
+          }
+        }
+      }
+    },
+    {
+      "name": "sourceReplacement",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/lifecycle",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "replacement",
+            "contentManifestVersion": 1,
+            "operationId": "wire-replacement",
+            "uploadId": "upload-fixture-2",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1,
+            "baseCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/replacement.git",
+                  "ref": "main",
+                  "repositorySubpath": "",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf",
+              "currentUpstream": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "currentEffective": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a86a8d4aa0fa5f4238ef6d4220382ca2aaa5559a643c8e114fac68e35c097ac7",
+                  "revision": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-replacement",
+            "lineageId": "lineage-fixture-1",
+            "generation": 2,
+            "commitId": "2de204d719b4c6e54594bfb2116ecdf304319757",
+            "sequence": "9007199254741003",
+            "outcome": "committed",
+            "receiptExpiresAt": 1700086400000,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/replacement.git",
+                  "ref": "main",
+                  "repositorySubpath": "",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf",
+              "currentUpstream": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "currentEffective": "2de204d719b4c6e54594bfb2116ecdf304319757",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a86a8d4aa0fa5f4238ef6d4220382ca2aaa5559a643c8e114fac68e35c097ac7",
+                  "revision": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "replacementEvent",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254741002"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254741002",
+            "highWatermark": "9007199254741003",
+            "nextCursor": "9007199254741003",
+            "entries": [
+              {
+                "sequence": "9007199254741003",
+                "payload": {
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 2,
+                  "previousGeneration": 1,
+                  "selectedCommitId": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                  "slotKey": "sample",
+                  "sourceDescriptor": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/replacement.git",
+                      "ref": "main",
+                      "repositorySubpath": "",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "metadata": {
+                    "favorite": false,
+                    "note": "",
+                    "tags": []
+                  },
+                  "contentManifestVersion": 1,
+                  "contentStatus": "ready",
+                  "contentManifest": {
+                    "schemaVersion": 1,
+                    "objectFormat": "sha1",
+                    "source": {
+                      "kind": "git",
+                      "payloadSchemaVersion": 1,
+                      "payload": {
+                        "locator": "https://example.invalid/replacement.git",
+                        "ref": "main",
+                        "repositorySubpath": "",
+                        "skillPath": "sample"
+                      }
+                    },
+                    "slotKey": "sample",
+                    "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf",
+                    "currentUpstream": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                    "currentEffective": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                    "publishedHistory": [
+                      {
+                        "eventFingerprint": "a86a8d4aa0fa5f4238ef6d4220382ca2aaa5559a643c8e114fac68e35c097ac7",
+                        "revision": "2de204d719b4c6e54594bfb2116ecdf304319757",
+                        "kind": "install",
+                        "publishedAtMicros": "1700000000000000",
+                        "contentHash": "d9661aa583919b492a91418d42d3c9713744e43abd692281b1fbe6d2302e9caf"
+                      }
+                    ]
+                  }
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 2,
+                "kind": "replacement"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "oldGenerationTransferRejected",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/transfers",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-old-generation",
+            "scope": "write",
+            "lineageId": "lineage-fixture-1",
+            "generation": 1
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "lifecycleMismatch",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "removal",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/lifecycle",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "kind": "removal",
+            "operationId": "wire-removal",
+            "lineageId": "lineage-fixture-1",
+            "generation": 2
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "operationId": "wire-removal",
+            "kind": "removal",
+            "lineageId": "lineage-fixture-1",
+            "generation": 2,
+            "tagId": null,
+            "sequence": "9007199254741004",
+            "receiptExpiresAt": 1700086400000,
+            "outcome": "committed"
+          }
+        }
+      }
+    },
+    {
+      "name": "changesWithRemoval",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1&after=9007199254741003"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "after": "9007199254741003",
+            "highWatermark": "9007199254741004",
+            "nextCursor": "9007199254741004",
+            "entries": [
+              {
+                "sequence": "9007199254741004",
+                "payload": {
+                  "lineageId": "lineage-fixture-1",
+                  "generation": 2,
+                  "removedAt": 1700000000000
+                },
+                "lineageId": "lineage-fixture-1",
+                "generation": 2,
+                "kind": "removal"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "frozenSnapshotAfterRemoval",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/snapshots/snapshot-fixture-1?protocolVersion=1"
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "protocolVersion": 1,
+          "data": {
+            "snapshotId": "snapshot-fixture-1",
+            "highWatermark": "9007199254740995",
+            "pageCursor": null,
+            "nextPageCursor": "page-fixture-1",
+            "complete": false,
+            "items": [
+              {
+                "lineageId": "lineage-fixture-1",
+                "generation": 1,
+                "selectedCommitId": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                "slotKey": "sample",
+                "sourceDescriptor": {
+                  "kind": "git",
+                  "payloadSchemaVersion": 1,
+                  "payload": {
+                    "locator": "https://example.invalid/owner/repository.git",
+                    "ref": "main",
+                    "repositorySubpath": "skills",
+                    "skillPath": "sample"
+                  }
+                },
+                "metadata": {
+                  "favorite": null,
+                  "note": null,
+                  "tags": []
+                },
+                "contentManifestVersion": 1,
+                "contentStatus": "ready",
+                "contentManifest": {
+                  "schemaVersion": 1,
+                  "objectFormat": "sha1",
+                  "source": {
+                    "kind": "git",
+                    "payloadSchemaVersion": 1,
+                    "payload": {
+                      "locator": "https://example.invalid/owner/repository.git",
+                      "ref": "main",
+                      "repositorySubpath": "skills",
+                      "skillPath": "sample"
+                    }
+                  },
+                  "slotKey": "sample",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+                  "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "publishedHistory": [
+                    {
+                      "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                      "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                      "kind": "install",
+                      "publishedAtMicros": "1700000000000000",
+                      "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                    }
+                  ]
+                }
+              }
+            ],
+            "personalTags": []
+          }
+        }
+      }
+    },
+    {
+      "name": "expiredReceiptNeedsReconciliation",
+      "authContext": "validDevice",
+      "request": {
+        "method": "POST",
+        "path": "/v1/sync/commits",
+        "body": {
+          "protocolVersion": 1,
+          "requestId": "wire-request",
+          "data": {
+            "operationId": "wire-upload",
+            "uploadId": "upload-fixture-1",
+            "baseCommitId": null,
+            "contentManifestVersion": 1,
+            "contentManifest": {
+              "schemaVersion": 1,
+              "objectFormat": "sha1",
+              "source": {
+                "kind": "git",
+                "payloadSchemaVersion": 1,
+                "payload": {
+                  "locator": "https://example.invalid/owner/repository.git",
+                  "ref": "main",
+                  "repositorySubpath": "skills",
+                  "skillPath": "sample"
+                }
+              },
+              "slotKey": "sample",
+              "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21",
+              "currentUpstream": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "currentEffective": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+              "publishedHistory": [
+                {
+                  "eventFingerprint": "a98ac75b5af2ede3e45d3c90850407629a4f25b9adfe71d3553743c8cf816ecf",
+                  "revision": "705a6f6de2dca42b1fc6a82acbdcf31c409db594",
+                  "kind": "install",
+                  "publishedAtMicros": "1700000000000000",
+                  "contentHash": "58b9e0f18fbfa01399593842fbdcb31807f8aa345a4ca077d9e96e7c4f7bdb21"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "reconciliationRequired",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "expiredSnapshot",
+      "authContext": "validDevice",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/snapshots/snapshot-fixture-1?protocolVersion=1"
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "snapshotExpired",
+            "retryable": false
+          }
+        }
+      }
+    },
+    {
+      "name": "unauthorizedActor",
+      "authContext": "invalidSession",
+      "request": {
+        "method": "GET",
+        "path": "/v1/sync/changes?protocolVersion=1"
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "protocolVersion": 1,
+          "error": {
+            "code": "unauthorized",
+            "retryable": false
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+name: skills_cloud
+description: Personal Cloud authentication and bounded Sync protocol client.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=3.13.0 <4.0.0'
+
+dependencies:
+  crypto: ^3.0.7
+  sqlite3: 3.5.2
+
+dev_dependencies:
+  coverage: ^1.15.0
+  lints: ^6.0.0
+  test: ^1.28.0

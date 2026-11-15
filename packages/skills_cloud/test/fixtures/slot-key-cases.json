@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "source": "Workspace deriveSlotKeyValue, Dart 3.14.0 actual output",
+  "cases": [
+    { "name": "İ", "expected": "i" },
+    { "name": "İx", "expected": "ix" },
+    { "name": "K", "expected": "k" },
+    { "name": "K.x", "expected": "k.x" },
+    { "name": "中文", "expected": null },
+    { "name": "_name", "expected": "_name" },
+    { "name": "__", "expected": "__" },
+    { "name": ".-_name-.", "expected": "_name" },
+    { "name": "CON", "expected": null },
+    {
+      "name": "name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.",
+      "expected": "name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name.name."
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.x",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-x",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-"
+    }
+  ]
+}
