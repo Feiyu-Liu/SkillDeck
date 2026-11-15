@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:skills_manager/features/cloud/cloud_configuration.dart';
+import 'package:skills_manager/features/cloud/presentation/cloud_settings.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -239,6 +241,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       dirty: _isFormDirty,
       showSectionHeader: showSectionHeader,
     ),
+    SettingsSection.cloud => CloudSettings(
+      showSectionHeader: showSectionHeader,
+    ),
     SettingsSection.commandLine => CommandLineSettings(
       showSectionHeader: showSectionHeader,
     ),
@@ -456,6 +461,7 @@ String _sectionTitle(BuildContext context, SettingsSection section) =>
       SettingsSection.appearance => context.l10n.settingsAppearanceTitle,
       SettingsSection.agents => context.l10n.settingsAgentsTitle,
       SettingsSection.translation => context.l10n.translationSettingsTitle,
+      SettingsSection.cloud => context.l10n.cloudSettingsTitle,
       SettingsSection.commandLine => context.l10n.settingsCommandLineTitle,
       SettingsSection.maintenance => context.l10n.settingsMaintenanceTitle,
       SettingsSection.about => context.l10n.settingsAboutSectionTitle,
@@ -466,6 +472,7 @@ IconData _sectionIcon(SettingsSection section) => switch (section) {
   SettingsSection.appearance => LucideIcons.palette,
   SettingsSection.agents => LucideIcons.bot,
   SettingsSection.translation => LucideIcons.languages,
+  SettingsSection.cloud => LucideIcons.cloud,
   SettingsSection.commandLine => LucideIcons.terminal,
   SettingsSection.maintenance => LucideIcons.wrench,
   SettingsSection.about => LucideIcons.info,
@@ -501,6 +508,8 @@ class _SettingsSectionList extends StatelessWidget {
           _item(context, SettingsSection.general),
           _item(context, SettingsSection.agents),
           _item(context, SettingsSection.translation),
+          if (CloudConfiguration.fromBuild().enabled)
+            _item(context, SettingsSection.cloud),
           _item(context, SettingsSection.commandLine),
         ],
       ),

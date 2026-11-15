@@ -1022,6 +1022,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  skills_cloud:
+    dependency: "direct main"
+    description:
+      path: "../packages/skills_cloud"
+      relative: true
+    source: path
+    version: "0.0.1"
   skills_translation:
     dependency: "direct main"
     description:

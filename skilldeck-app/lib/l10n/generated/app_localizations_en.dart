@@ -2953,4 +2953,194 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get cloudSettingsTitle => 'Cloud account';
+
+  @override
+  String get cloudSettingsDescription =>
+      'Connect this device to your SkillDeck account.';
+
+  @override
+  String get cloudUnavailable => 'Cloud is unavailable in this build.';
+
+  @override
+  String get cloudAccountGroup => 'Account';
+
+  @override
+  String get cloudConnected => 'This device is connected';
+
+  @override
+  String get cloudDisconnected => 'Not connected';
+
+  @override
+  String get cloudWaitingForBrowser => 'Complete sign-in in your browser.';
+
+  @override
+  String get cloudSignInDescription =>
+      'Sign in with email to connect this device.';
+
+  @override
+  String get cloudSignIn => 'Sign in with email';
+
+  @override
+  String get cloudSignOut => 'Sign out';
+
+  @override
+  String get cloudRestore => 'Restore connection';
+
+  @override
+  String get cloudLoginDoesNotEnableSync =>
+      'Signing in does not enable sync or upload any Skills.';
+
+  @override
+  String get cloudDevicesGroup => 'Devices';
+
+  @override
+  String get cloudRefreshDevices => 'Refresh';
+
+  @override
+  String get cloudNoDevices => 'No devices to show.';
+
+  @override
+  String get cloudAccessRevoked => 'Access revoked';
+
+  @override
+  String get cloudThisDevice => 'This device';
+
+  @override
+  String get cloudRevokeDevice => 'Revoke';
+
+  @override
+  String get cloudNeedsReconciliation =>
+      'Local sync records need to be checked again.';
+
+  @override
+  String get cloudDeviceConnected => 'Device connected.';
+
+  @override
+  String get cloudConnectionRestored => 'Connection restored.';
+
+  @override
+  String get cloudNoSavedSession => 'No saved connection found.';
+
+  @override
+  String get cloudSignedOut => 'Signed out on this device.';
+
+  @override
+  String get cloudDeviceRevoked => 'Device access revoked.';
+
+  @override
+  String get cloudRevocationPending =>
+      'Device revoked. Remote access cleanup is pending.';
+
+  @override
+  String get cloudFailed =>
+      'Could not complete the Cloud request. Please try again.';
+
+  @override
+  String get cloudStorageFailed => 'Could not update secure sign-in storage.';
+
+  @override
+  String get cloudTimedOut => 'Sign-in timed out. Please try again.';
+
+  @override
+  String get cloudUnauthorized => 'Connection expired. Sign in again.';
+
+  @override
+  String get cloudDeviceLimit => 'Account device limit reached.';
+
+  @override
+  String get cloudRestoring => 'Restoring connection…';
+
+  @override
+  String get cloudCancelling => 'Cancelling…';
+
+  @override
+  String get cloudSyncGroup => 'Personal sync';
+
+  @override
+  String get cloudSyncChoose => 'Choose Skills';
+
+  @override
+  String get cloudSyncChooseDescription =>
+      'Choose the Skills to sync on this device.';
+
+  @override
+  String get cloudSyncChooseAction => 'Choose';
+
+  @override
+  String get cloudSyncNow => 'Sync now';
+
+  @override
+  String get cloudSyncStop => 'Pause sync';
+
+  @override
+  String get cloudSyncResume => 'Resume sync';
+
+  @override
+  String get cloudSyncEnabled => 'Sync is enabled';
+
+  @override
+  String get cloudSyncPaused => 'Sync is paused';
+
+  @override
+  String get cloudSyncReady => 'No changes are waiting.';
+
+  @override
+  String get cloudSyncPending => 'Some changes need attention.';
+
+  @override
+  String get cloudSyncDirty =>
+      'Publish or discard the local Draft, then sync again.';
+
+  @override
+  String get cloudSyncConflict =>
+      'Some changes conflict with this device. Review them before continuing.';
+
+  @override
+  String get cloudSyncUnsupported => 'This local source cannot be synced.';
+
+  @override
+  String get cloudSyncExisting => 'A Skill with this slot already exists.';
+
+  @override
+  String get cloudSyncFromDevice => 'From this device';
+
+  @override
+  String get cloudSyncFromCloud => 'From your cloud';
+
+  @override
+  String get cloudSyncConfirmTitle => 'Enable sync for selected Skills?';
+
+  @override
+  String get cloudSyncConfirmDescription =>
+      'Sync committed revisions, favorites, notes and tag assignments for the selected Skills. Your personal tag list is also synced. Drafts stay on this device.';
+
+  @override
+  String get cloudSyncConfirmAction => 'Enable sync';
+
+  @override
+  String get cloudSyncPauseDescription =>
+      'Pausing keeps your local Skills and cloud data.';
+
+  @override
+  String get cloudSyncMetadataConflict =>
+      'Some notes, favorites or tag assignments differ. Your local values are kept.';
+
+  @override
+  String get cloudSyncSelected => 'Selected';
+
+  @override
+  String get cloudSyncSelect => 'Select';
+
+  @override
+  String get cloudSyncEnableSelected => 'Enable selected Skills';
+
+  @override
+  String get cloudSyncWorking => 'Syncing…';
+
+  @override
+  String get cloudSyncRetryLater =>
+      'The last sync could not finish. It will retry later.';
 }

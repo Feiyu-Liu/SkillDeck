@@ -2699,4 +2699,182 @@ class AppLocalizationsZh extends AppLocalizations {
   String browserGroupSkillCount(int count) {
     return '$count Skills';
   }
+
+  @override
+  String get cloudSettingsTitle => '云端账号';
+
+  @override
+  String get cloudSettingsDescription => '将此设备连接到你的 SkillDeck 账号。';
+
+  @override
+  String get cloudUnavailable => '此版本暂不提供云端功能。';
+
+  @override
+  String get cloudAccountGroup => '账号';
+
+  @override
+  String get cloudConnected => '此设备已连接';
+
+  @override
+  String get cloudDisconnected => '尚未连接';
+
+  @override
+  String get cloudWaitingForBrowser => '请在浏览器中完成登录。';
+
+  @override
+  String get cloudSignInDescription => '使用邮箱登录并连接此设备。';
+
+  @override
+  String get cloudSignIn => '使用邮箱登录';
+
+  @override
+  String get cloudSignOut => '退出登录';
+
+  @override
+  String get cloudRestore => '恢复连接';
+
+  @override
+  String get cloudLoginDoesNotEnableSync => '登录不会开启同步，也不会上传任何 Skill。';
+
+  @override
+  String get cloudDevicesGroup => '设备';
+
+  @override
+  String get cloudRefreshDevices => '刷新';
+
+  @override
+  String get cloudNoDevices => '暂无可显示的设备。';
+
+  @override
+  String get cloudAccessRevoked => '访问权限已撤销';
+
+  @override
+  String get cloudThisDevice => '此设备';
+
+  @override
+  String get cloudRevokeDevice => '撤销';
+
+  @override
+  String get cloudNeedsReconciliation => '本地同步记录需要重新核对。';
+
+  @override
+  String get cloudDeviceConnected => '设备已连接。';
+
+  @override
+  String get cloudConnectionRestored => '连接已恢复。';
+
+  @override
+  String get cloudNoSavedSession => '没有找到已保存的连接。';
+
+  @override
+  String get cloudSignedOut => '已在此设备退出登录。';
+
+  @override
+  String get cloudDeviceRevoked => '已撤销设备访问权限。';
+
+  @override
+  String get cloudRevocationPending => '已撤销设备，远程访问权限仍在清理中。';
+
+  @override
+  String get cloudFailed => '云端请求未完成，请重试。';
+
+  @override
+  String get cloudStorageFailed => '无法更新安全登录状态。';
+
+  @override
+  String get cloudTimedOut => '登录超时，请重试。';
+
+  @override
+  String get cloudUnauthorized => '连接已过期，请重新登录。';
+
+  @override
+  String get cloudDeviceLimit => '已达到账号设备数量上限。';
+
+  @override
+  String get cloudRestoring => '正在恢复连接…';
+
+  @override
+  String get cloudCancelling => '正在取消…';
+
+  @override
+  String get cloudSyncGroup => '个人同步';
+
+  @override
+  String get cloudSyncChoose => '选择 Skill';
+
+  @override
+  String get cloudSyncChooseDescription => '选择要在此设备上同步的 Skill。';
+
+  @override
+  String get cloudSyncChooseAction => '选择';
+
+  @override
+  String get cloudSyncNow => '立即同步';
+
+  @override
+  String get cloudSyncStop => '暂停同步';
+
+  @override
+  String get cloudSyncResume => '继续同步';
+
+  @override
+  String get cloudSyncEnabled => '同步已启用';
+
+  @override
+  String get cloudSyncPaused => '同步已暂停';
+
+  @override
+  String get cloudSyncReady => '没有待处理的变更。';
+
+  @override
+  String get cloudSyncPending => '部分变更需要处理。';
+
+  @override
+  String get cloudSyncDirty => '请先发布或丢弃本地草稿，再次同步。';
+
+  @override
+  String get cloudSyncConflict => '部分变更与此设备冲突，请检查后继续。';
+
+  @override
+  String get cloudSyncUnsupported => '此本地来源暂不支持同步。';
+
+  @override
+  String get cloudSyncExisting => '此位置已有 Skill。';
+
+  @override
+  String get cloudSyncFromDevice => '来自此设备';
+
+  @override
+  String get cloudSyncFromCloud => '来自云端';
+
+  @override
+  String get cloudSyncConfirmTitle => '为所选 Skill 启用同步？';
+
+  @override
+  String get cloudSyncConfirmDescription =>
+      '同步所选 Skill 已提交的版本、收藏、笔记及标签关联，同时同步你的个人标签列表。草稿保留在本设备。';
+
+  @override
+  String get cloudSyncConfirmAction => '启用同步';
+
+  @override
+  String get cloudSyncPauseDescription => '暂停会保留本地 Skill 和云端数据。';
+
+  @override
+  String get cloudSyncMetadataConflict => '部分笔记、收藏或标签关联存在差异，已保留你的本地内容。';
+
+  @override
+  String get cloudSyncSelected => '已选择';
+
+  @override
+  String get cloudSyncSelect => '选择';
+
+  @override
+  String get cloudSyncEnableSelected => '启用所选 Skill';
+
+  @override
+  String get cloudSyncWorking => '正在同步…';
+
+  @override
+  String get cloudSyncRetryLater => '上次同步未完成，稍后会自动重试。';
 }

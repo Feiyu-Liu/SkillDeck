@@ -4928,6 +4928,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 Skill} other{{count} Skills}}'**
   String browserGroupSkillCount(int count);
+
+  /// No description provided for @cloudSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud account'**
+  String get cloudSettingsTitle;
+
+  /// No description provided for @cloudSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect this device to your SkillDeck account.'**
+  String get cloudSettingsDescription;
+
+  /// No description provided for @cloudUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud is unavailable in this build.'**
+  String get cloudUnavailable;
+
+  /// No description provided for @cloudAccountGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get cloudAccountGroup;
+
+  /// No description provided for @cloudConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is connected'**
+  String get cloudConnected;
+
+  /// No description provided for @cloudDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get cloudDisconnected;
+
+  /// No description provided for @cloudWaitingForBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete sign-in in your browser.'**
+  String get cloudWaitingForBrowser;
+
+  /// No description provided for @cloudSignInDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email to connect this device.'**
+  String get cloudSignInDescription;
+
+  /// No description provided for @cloudSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with email'**
+  String get cloudSignIn;
+
+  /// No description provided for @cloudSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get cloudSignOut;
+
+  /// No description provided for @cloudRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore connection'**
+  String get cloudRestore;
+
+  /// No description provided for @cloudLoginDoesNotEnableSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing in does not enable sync or upload any Skills.'**
+  String get cloudLoginDoesNotEnableSync;
+
+  /// No description provided for @cloudDevicesGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get cloudDevicesGroup;
+
+  /// No description provided for @cloudRefreshDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get cloudRefreshDevices;
+
+  /// No description provided for @cloudNoDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices to show.'**
+  String get cloudNoDevices;
+
+  /// No description provided for @cloudAccessRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Access revoked'**
+  String get cloudAccessRevoked;
+
+  /// No description provided for @cloudThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get cloudThisDevice;
+
+  /// No description provided for @cloudRevokeDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get cloudRevokeDevice;
+
+  /// No description provided for @cloudNeedsReconciliation.
+  ///
+  /// In en, this message translates to:
+  /// **'Local sync records need to be checked again.'**
+  String get cloudNeedsReconciliation;
+
+  /// No description provided for @cloudDeviceConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Device connected.'**
+  String get cloudDeviceConnected;
+
+  /// No description provided for @cloudConnectionRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection restored.'**
+  String get cloudConnectionRestored;
+
+  /// No description provided for @cloudNoSavedSession.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved connection found.'**
+  String get cloudNoSavedSession;
+
+  /// No description provided for @cloudSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out on this device.'**
+  String get cloudSignedOut;
+
+  /// No description provided for @cloudDeviceRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Device access revoked.'**
+  String get cloudDeviceRevoked;
+
+  /// No description provided for @cloudRevocationPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Device revoked. Remote access cleanup is pending.'**
+  String get cloudRevocationPending;
+
+  /// No description provided for @cloudFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the Cloud request. Please try again.'**
+  String get cloudFailed;
+
+  /// No description provided for @cloudStorageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update secure sign-in storage.'**
+  String get cloudStorageFailed;
+
+  /// No description provided for @cloudTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in timed out. Please try again.'**
+  String get cloudTimedOut;
+
+  /// No description provided for @cloudUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection expired. Sign in again.'**
+  String get cloudUnauthorized;
+
+  /// No description provided for @cloudDeviceLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Account device limit reached.'**
+  String get cloudDeviceLimit;
+
+  /// No description provided for @cloudRestoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring connection…'**
+  String get cloudRestoring;
+
+  /// No description provided for @cloudCancelling.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get cloudCancelling;
+
+  /// No description provided for @cloudSyncGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal sync'**
+  String get cloudSyncGroup;
+
+  /// No description provided for @cloudSyncChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Skills'**
+  String get cloudSyncChoose;
+
+  /// No description provided for @cloudSyncChooseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the Skills to sync on this device.'**
+  String get cloudSyncChooseDescription;
+
+  /// No description provided for @cloudSyncChooseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get cloudSyncChooseAction;
+
+  /// No description provided for @cloudSyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get cloudSyncNow;
+
+  /// No description provided for @cloudSyncStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause sync'**
+  String get cloudSyncStop;
+
+  /// No description provided for @cloudSyncResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume sync'**
+  String get cloudSyncResume;
+
+  /// No description provided for @cloudSyncEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is enabled'**
+  String get cloudSyncEnabled;
+
+  /// No description provided for @cloudSyncPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is paused'**
+  String get cloudSyncPaused;
+
+  /// No description provided for @cloudSyncReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes are waiting.'**
+  String get cloudSyncReady;
+
+  /// No description provided for @cloudSyncPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes need attention.'**
+  String get cloudSyncPending;
+
+  /// No description provided for @cloudSyncDirty.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish or discard the local Draft, then sync again.'**
+  String get cloudSyncDirty;
+
+  /// No description provided for @cloudSyncConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Some changes conflict with this device. Review them before continuing.'**
+  String get cloudSyncConflict;
+
+  /// No description provided for @cloudSyncUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This local source cannot be synced.'**
+  String get cloudSyncUnsupported;
+
+  /// No description provided for @cloudSyncExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'A Skill with this slot already exists.'**
+  String get cloudSyncExisting;
+
+  /// No description provided for @cloudSyncFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'From this device'**
+  String get cloudSyncFromDevice;
+
+  /// No description provided for @cloudSyncFromCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'From your cloud'**
+  String get cloudSyncFromCloud;
+
+  /// No description provided for @cloudSyncConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable sync for selected Skills?'**
+  String get cloudSyncConfirmTitle;
+
+  /// No description provided for @cloudSyncConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync committed revisions, favorites, notes and tag assignments for the selected Skills. Your personal tag list is also synced. Drafts stay on this device.'**
+  String get cloudSyncConfirmDescription;
+
+  /// No description provided for @cloudSyncConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable sync'**
+  String get cloudSyncConfirmAction;
+
+  /// No description provided for @cloudSyncPauseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pausing keeps your local Skills and cloud data.'**
+  String get cloudSyncPauseDescription;
+
+  /// No description provided for @cloudSyncMetadataConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Some notes, favorites or tag assignments differ. Your local values are kept.'**
+  String get cloudSyncMetadataConflict;
+
+  /// No description provided for @cloudSyncSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get cloudSyncSelected;
+
+  /// No description provided for @cloudSyncSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get cloudSyncSelect;
+
+  /// No description provided for @cloudSyncEnableSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable selected Skills'**
+  String get cloudSyncEnableSelected;
+
+  /// No description provided for @cloudSyncWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get cloudSyncWorking;
+
+  /// No description provided for @cloudSyncRetryLater.
+  ///
+  /// In en, this message translates to:
+  /// **'The last sync could not finish. It will retry later.'**
+  String get cloudSyncRetryLater;
 }
 
 class _AppLocalizationsDelegate

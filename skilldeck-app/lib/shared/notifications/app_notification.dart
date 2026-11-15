@@ -39,6 +39,18 @@ enum AppNotificationMessage {
   updateCandidateAbandoned,
   operationCancelled,
   completedWithWarnings,
+  cloudDeviceConnected,
+  cloudConnectionRestored,
+  cloudNoSavedSession,
+  cloudSignedOut,
+  cloudDeviceRevoked,
+  cloudRevocationPending,
+  cloudFailed,
+  cloudStorageFailed,
+  cloudTimedOut,
+  cloudUnauthorized,
+  cloudDeviceLimit,
+  cloudNeedsReconciliation,
 }
 
 final class AppNotification {

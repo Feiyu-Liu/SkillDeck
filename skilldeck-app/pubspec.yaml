@@ -63,6 +63,8 @@ dependencies:
     path: ../packages/skilldeck_cli
   skills_workspace:
     path: ../packages/skills_workspace
+  skills_cloud:
+    path: ../packages/skills_cloud
   skills_translation:
     path: ../packages/skills_translation
   flutter_secure_storage: 11.0.0

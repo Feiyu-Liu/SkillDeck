@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:skills_manager/features/cloud/cloud_providers.dart';
+
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -65,6 +67,9 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
       // or Skill content. It is a no-op while the 24h TTL is unexpired.
       unawaited(_scheduleSkillUpdateSweep());
       unawaited(_startTranslationCacheMaintenance());
+      if (ref.read(cloudConfigurationProvider).configured) {
+        unawaited(_startCloudSync());
+      }
     });
     if (widget.captureUnhandledErrors) {
       _errorBoundary = AppUnhandledErrorBoundary(
@@ -90,6 +95,15 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        mounted &&
+        ref.read(cloudConfigurationProvider).configured) {
+      ref.read(cloudSettingsControllerProvider.notifier).foreground();
+    }
+  }
+
+  @override
   void didChangePlatformBrightness() {
     if (mounted) setState(() {});
   }
@@ -107,6 +121,20 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
     }
     if (!mounted) return;
     await ref.read(skillUpdateStatusProvider.notifier).startupSweep();
+  }
+
+  Future<void> _startCloudSync() async {
+    if (!ref.read(cloudConfigurationProvider).configured) return;
+    try {
+      await ref.read(workspaceSnapshotProvider.future);
+    } on Object {
+      return;
+    }
+    if (mounted && ref.read(cloudConfigurationProvider).configured) {
+      await ref
+          .read(cloudSettingsControllerProvider.notifier)
+          .restoreOptedInBackground();
+    }
   }
 
   Future<void> _startTranslationCacheMaintenance() async {

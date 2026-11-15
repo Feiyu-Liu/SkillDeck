@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skills_manager/features/settings/data/skills_manager_runtime.dart';
@@ -38,6 +39,8 @@ void main() {
         ),
       };
       expect(opened.revision, 0);
+      expect(runtime.cloudWorkspaceBackend, isNotNull);
+      expect(runtime.cloudWorkspaceBackend!.isOpen, isTrue);
 
       const nextSettings = AppSettings(
         localePreference: AppLocalePreference.zh,
@@ -48,9 +51,39 @@ void main() {
       expect(runtime.settings.localePreference, AppLocalePreference.zh);
 
       await runtime.close();
+      expect(runtime.cloudWorkspaceBackend!.isOpen, isFalse);
       await runtime.close();
     },
   );
+
+  test('shutdown drains every registered resource even after failure before closing the shared Workspace once', () async {
+    final diagnostics = AppDiagnostics.disabled(),
+        workspace = FakeSkillsWorkspaceRepository();
+    final runtime = SkillsManagerRuntime(
+      repositoryRoot: '/unused-injected-workspace',
+      settings: const AppSettings(),
+      diagnostics: diagnostics,
+      failureReporter: AppFailureReporter(diagnostics),
+      workspace: workspace,
+    );
+    final entered = Completer<void>(), drained = Completer<void>();
+    runtime.addBeforeClose(() async {
+      throw StateError('resource failure');
+    });
+    runtime.addBeforeClose(() async {
+      entered.complete();
+      await drained.future;
+    });
+    final closing = runtime.close();
+    await entered.future;
+    expect(workspace.closeCalls, 0);
+    expect(runtime.cloudWorkspaceBackend, isNull);
+    drained.complete();
+    await expectLater(closing, throwsStateError);
+    expect(workspace.closeCalls, 1);
+    await expectLater(runtime.close(), throwsStateError);
+    expect(workspace.closeCalls, 1);
+  });
 
   test(
     'retains committed Custom Agent settings while finalization is pending',

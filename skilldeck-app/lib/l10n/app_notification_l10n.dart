@@ -130,4 +130,18 @@ String _localizeMessage(
     l10n.notificationOperationCancelled,
   AppNotificationMessage.completedWithWarnings =>
     l10n.notificationCompletedWithWarnings,
+  AppNotificationMessage.cloudDeviceConnected => l10n.cloudDeviceConnected,
+  AppNotificationMessage.cloudConnectionRestored =>
+    l10n.cloudConnectionRestored,
+  AppNotificationMessage.cloudNoSavedSession => l10n.cloudNoSavedSession,
+  AppNotificationMessage.cloudSignedOut => l10n.cloudSignedOut,
+  AppNotificationMessage.cloudDeviceRevoked => l10n.cloudDeviceRevoked,
+  AppNotificationMessage.cloudRevocationPending => l10n.cloudRevocationPending,
+  AppNotificationMessage.cloudFailed => l10n.cloudFailed,
+  AppNotificationMessage.cloudStorageFailed => l10n.cloudStorageFailed,
+  AppNotificationMessage.cloudTimedOut => l10n.cloudTimedOut,
+  AppNotificationMessage.cloudUnauthorized => l10n.cloudUnauthorized,
+  AppNotificationMessage.cloudDeviceLimit => l10n.cloudDeviceLimit,
+  AppNotificationMessage.cloudNeedsReconciliation =>
+    l10n.cloudNeedsReconciliation,
 };

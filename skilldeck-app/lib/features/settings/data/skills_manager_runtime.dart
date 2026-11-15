@@ -29,14 +29,28 @@ final class SkillsManagerRuntime implements AppSettingsRuntime {
     required this.diagnostics,
     required this.failureReporter,
     SkillsWorkspaceRepository? workspace,
-  }) : workspace =
-           workspace ??
-           _diagnosticRepository(
-             rootPath: repositoryRoot,
-             settings: settings,
-             diagnostics: diagnostics,
-             failureReporter: failureReporter,
-           );
+  }) {
+    if (workspace != null) {
+      this.workspace = workspace;
+      _cloudWorkspaceBackend = null;
+    } else {
+      final backend = package_workspace.createSkillsRepository(
+        package_workspace.SkillsRepositoryConfiguration(
+          rootPath: repositoryRoot,
+          defaultLockWaitPolicy: package_workspace.LockWaitPolicy.wait(
+            timeout: const Duration(seconds: 30),
+          ),
+          additionalAgents: _packageAgentDefinitions(settings),
+        ),
+      );
+      _cloudWorkspaceBackend = backend;
+      this.workspace = DiagnosticSkillsWorkspaceRepository(
+        delegate: PackageSkillsWorkspaceRepository(backend: backend),
+        diagnostics: diagnostics,
+        failureReporter: failureReporter,
+      );
+    }
+  }
 
   /// The Workspace root, not the legacy Core `repository/` directory.
   ///
@@ -45,7 +59,12 @@ final class SkillsManagerRuntime implements AppSettingsRuntime {
   final String repositoryRoot;
   final AppDiagnostics diagnostics;
   final AppFailureReporter failureReporter;
-  final SkillsWorkspaceRepository workspace;
+  late final SkillsWorkspaceRepository workspace;
+  late final package_workspace.SkillsRepository? _cloudWorkspaceBackend;
+
+  /// Trusted App composition borrows this same public facade; it never owns it.
+  package_workspace.SkillsRepository? get cloudWorkspaceBackend =>
+      _cloudWorkspaceBackend;
   AppSettings settings;
   bool _busy = false;
   Future<void>? _closeFuture;
@@ -95,32 +114,21 @@ final class SkillsManagerRuntime implements AppSettingsRuntime {
 
   Future<void> _close() async {
     try {
+      var failed = false;
       for (final stop in _beforeClose.toList()) {
-        await stop();
+        try {
+          await stop();
+        } catch (_) {
+          failed = true;
+        }
+      }
+      if (failed) {
+        throw StateError('A background resource did not close cleanly.');
       }
     } finally {
       await workspace.close();
     }
   }
-
-  static SkillsWorkspaceRepository _diagnosticRepository({
-    required String rootPath,
-    required AppSettings settings,
-    required AppDiagnostics diagnostics,
-    required AppFailureReporter failureReporter,
-  }) => DiagnosticSkillsWorkspaceRepository(
-    delegate: PackageSkillsWorkspaceRepository.create(
-      configuration: package_workspace.SkillsRepositoryConfiguration(
-        rootPath: rootPath,
-        defaultLockWaitPolicy: package_workspace.LockWaitPolicy.wait(
-          timeout: const Duration(seconds: 30),
-        ),
-        additionalAgents: _packageAgentDefinitions(settings),
-      ),
-    ),
-    diagnostics: diagnostics,
-    failureReporter: failureReporter,
-  );
 }
 
 List<WorkspaceAgentDefinition> _agentDefinitions(AppSettings settings) => [
