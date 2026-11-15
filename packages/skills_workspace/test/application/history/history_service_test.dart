@@ -165,7 +165,7 @@ final class _HistoryContent implements WorkspaceHistoryContentPort {
   @override
   Future<HistoricalRevisionSelection?> resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   }) async {
     resolveCalls += 1;
     return selections[reference];
@@ -219,7 +219,7 @@ final _to = OperationSubjectReference(
 );
 
 HistoricalRevisionSelection _selection({
-  required OperationSubjectReference reference,
+  required PublishedRevisionReference reference,
   SourceLineageReference? lineage,
   RevisionObjectId? object,
   String declaredName = 'one',

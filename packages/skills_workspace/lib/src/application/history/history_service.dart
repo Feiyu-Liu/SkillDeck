@@ -17,8 +17,8 @@ final class WorkspaceHistoryService {
   Future<HistoryResult<SkillDiff>> inspectDiff({
     required RepositorySnapshot snapshot,
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference? from,
-    required OperationSubjectReference to,
+    required PublishedRevisionReference? from,
+    required PublishedRevisionReference to,
     CancellationToken? cancellationToken,
   }) async {
     final token = cancellationToken ?? CancellationToken.none();
@@ -68,7 +68,7 @@ final class WorkspaceHistoryService {
   Future<HistoryResult<RestorePublishPreflight>> planRestore({
     required RepositorySnapshot snapshot,
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference selectedRevision,
+    required PublishedRevisionReference selectedRevision,
     CancellationToken? cancellationToken,
   }) async {
     final token = cancellationToken ?? CancellationToken.none();

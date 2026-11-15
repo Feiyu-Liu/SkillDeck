@@ -1,4 +1,7 @@
+import 'package:skills_workspace/src/domain/cancellation.dart';
 import 'dart:io';
+
+import '../../support/revision_engine/unsupported_revision_object_graph.dart';
 
 import 'package:drift/drift.dart';
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
@@ -443,7 +446,9 @@ final class _ReplaceCall {
   final List<RevisionRetentionRef> references;
 }
 
-final class _RevisionEngine implements RevisionEnginePort {
+final class _RevisionEngine
+    with UnsupportedRevisionObjectGraph
+    implements RevisionEnginePort {
   final List<_ReplaceCall> calls = <_ReplaceCall>[];
 
   @override
@@ -466,6 +471,7 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) => throw UnimplementedError();
   @override
   Future<void> createStore(String repositoryPath) => throw UnimplementedError();
@@ -499,6 +505,8 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) => throw UnimplementedError();
   @override
   Future<RevisionEngineStatus> status() => throw UnimplementedError();

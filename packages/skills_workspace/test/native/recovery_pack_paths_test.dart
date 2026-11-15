@@ -26,7 +26,7 @@ void main() {
   });
   tearDown(() {
     engine.close();
-    temporary.deleteSync(recursive: true);
+    Directory(_fixtureIoPath(temporary.path)).deleteSync(recursive: true);
   });
 
   RevisionObjectId commit(String store) {
@@ -43,6 +43,9 @@ void main() {
 
   void roundTrip(String store, String bundle, String restored) {
     final root = commit(store);
+    final originalConfig = File(
+      _fixtureIoPath(p.join(store, 'config')),
+    ).readAsBytesSync();
     Directory(bundle).createSync(recursive: true);
     engine.createRecoveryPack(
       repositoryPath: store,
@@ -50,7 +53,9 @@ void main() {
       retainedRoots: [root],
     );
     expect(
-      Directory(bundle).listSync().map((entry) => p.basename(entry.path)),
+      Directory(
+        _fixtureIoPath(bundle),
+      ).listSync().map((entry) => p.basename(entry.path)),
       unorderedEquals(['objects.pack', 'objects.idx']),
     );
     engine.restoreRecoveryPack(
@@ -58,9 +63,53 @@ void main() {
       packPath: p.join(bundle, 'objects.pack'),
       indexPath: p.join(bundle, 'objects.idx'),
       retainedRoots: [root],
+      limits: const RevisionObjectImportLimits(),
     );
     expect(engine.readTree(restored, root).contentHash, tree.contentHash);
+    expect(
+      File(_fixtureIoPath(p.join(store, 'config'))).readAsBytesSync(),
+      originalConfig,
+    );
+    expect(
+      File(_fixtureIoPath(p.join(restored, 'config'))).readAsStringSync(),
+      isNot(contains('longpaths')),
+    );
   }
+
+  test(
+    'round trips bounded packs beyond legacy Windows paths with Unicode',
+    () {
+      final nested = p.joinAll([
+        temporary.path,
+        for (var i = 0; i < 8; i++) '路径-😀-${'segment' * 5}-$i',
+      ]);
+      expect(nested.length, greaterThan(320));
+      roundTrip(
+        p.join(nested, 'source.git'),
+        p.join(nested, 'pack'),
+        p.join(nested, 'restored.git'),
+      );
+    },
+  );
+
+  test('rejects paths beyond the actual Windows backend capacity safely', () {
+    final excessive = p.joinAll([
+      temporary.path,
+      for (var i = 0; i < 90; i++) '路径-😀-${'segment' * 8}-$i',
+      'store.git',
+    ]);
+    expect(excessive.length, greaterThan(4096));
+    expect(
+      () => engine.createStore(excessive),
+      throwsA(
+        isA<RevisionNativeException>().having(
+          (error) => error.code,
+          'code',
+          RevisionNativeFailureCode.repositoryFailure,
+        ),
+      ),
+    );
+  }, skip: !Platform.isWindows);
 
   for (final store in ['store', '仓库']) {
     for (final bundle in ['bundle', '恢复包']) {
@@ -217,4 +266,9 @@ void main() {
       isEmpty,
     );
   });
+}
+
+String _fixtureIoPath(String value) {
+  if (!Platform.isWindows || value.startsWith(r'\\?\')) return value;
+  return r'\\?\' + p.normalize(p.absolute(value));
 }

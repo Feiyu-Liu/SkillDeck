@@ -1,4 +1,5 @@
 import '../../domain/identifiers.dart';
+import '../../domain/draft_snapshot.dart';
 import '../../domain/source_descriptor.dart';
 import '../operations/operation_models.dart';
 import '../operations/workspace_business_changes.dart';
@@ -11,7 +12,7 @@ enum DestructiveDraftState { absent, clean, dirty }
 /// Source Replacement requires an authoritative dirty-state inspection for
 /// its target. Removal only needs to know whether a Draft path exists because
 /// the entire aggregate is deleted regardless of unpublished content.
-enum DestructivePlanningPurpose { sourceReplacement, removal }
+enum DestructivePlanningPurpose { sourceReplacement, removal, cleanRemoval }
 
 final class DestructiveSourceLineageState {
   const DestructiveSourceLineageState({required this.sourceLineage});
@@ -37,6 +38,7 @@ final class DestructiveManagedSkillState {
     required this.currentContentHash,
     required List<String> activationIds,
     required this.draftState,
+    this.cleanDraftFingerprint,
     required this.hasUpdateCandidateSession,
   }) : sourceLineages = List.unmodifiable(sourceLineages),
        activationIds = List.unmodifiable(activationIds) {
@@ -92,6 +94,7 @@ final class DestructiveManagedSkillState {
   final String currentContentHash;
   final List<String> activationIds;
   final DestructiveDraftState draftState;
+  final DraftFingerprint? cleanDraftFingerprint;
   final bool hasUpdateCandidateSession;
 }
 

@@ -90,6 +90,21 @@ final class OperationPlanCodec {
         'preparationSteps',
       ).map(_decodePreparation).toList();
       final record = _decodeRecord(_map(map, 'record'), operationId);
+      final bindingMap = map['localCommandBinding'];
+      final binding = bindingMap == null
+          ? null
+          : OperationLocalCommandBinding(
+              requestFingerprint: _string(
+                bindingMap as Map<String, Object?>,
+                'requestFingerprint',
+              ),
+              managedSkillId: ManagedSkillId(
+                _string(bindingMap, 'managedSkillId'),
+              ),
+              sourceLineage: SourceLineageReference(
+                _string(bindingMap, 'sourceLineage'),
+              ),
+            );
       return switch (_string(map, 'definitionKind')) {
         'preparedEnvelope' => PreparedOperationEnvelope(
           operationId: operationId,
@@ -98,6 +113,7 @@ final class OperationPlanCodec {
           operationGeneration: generation,
           preparationSteps: preparationSteps,
           record: record,
+          localCommandBinding: binding,
         ),
         'sealedPlan' => OperationPlan(
           operationId: operationId,
@@ -121,6 +137,7 @@ final class OperationPlanCodec {
             map['businessChanges'],
           ),
           record: record,
+          localCommandBinding: binding,
         ),
         _ => throw const OperationPlanCodecException('unknownDefinitionKind'),
       };
@@ -137,6 +154,12 @@ final class OperationPlanCodec {
 Map<String, Object?> _encodeCommonDefinition(
   OperationJournalDefinition definition,
 ) => <String, Object?>{
+  if (definition.localCommandBinding case final binding?)
+    'localCommandBinding': {
+      'requestFingerprint': binding.requestFingerprint,
+      'managedSkillId': binding.managedSkillId.value,
+      'sourceLineage': binding.sourceLineage.encoded,
+    },
   'operationId': definition.operationId.value,
   'expectedRepositoryRevision': definition.expectedRepositoryRevision.value,
   'committedRepositoryRevision': definition.committedRepositoryRevision.value,

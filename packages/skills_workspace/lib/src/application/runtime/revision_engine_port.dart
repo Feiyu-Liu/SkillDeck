@@ -1,4 +1,5 @@
 import '../../domain/revision_content.dart';
+import '../../domain/cancellation.dart';
 
 /// Health information returned by the private Revision Engine boundary.
 final class RevisionEngineStatus {
@@ -21,7 +22,7 @@ final class RevisionObjectId {
   final String value;
 
   static String _validate(String value) {
-    if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(value)) {
+    if (value.length != 40 || !RegExp(r'^[0-9a-f]{40}$').hasMatch(value)) {
       throw ArgumentError.value(
         value,
         'value',
@@ -120,6 +121,57 @@ final class RevisionCommitRequest {
   final RevisionCommitKind kind;
 }
 
+/// Bounded immutable commit topology without author or message text.
+final class RevisionCommitTopology {
+  RevisionCommitTopology({
+    required this.tree,
+    required List<RevisionObjectId> parents,
+  }) : parents = List.unmodifiable(parents);
+
+  final RevisionObjectId tree;
+  final List<RevisionObjectId> parents;
+}
+
+/// Caller-selected bounds for a new topology inspection.
+final class RevisionCommitInspectionLimits {
+  const RevisionCommitInspectionLimits({
+    this.maximumCommitBytes = 64 * 1024,
+    this.maximumParentCount = 64,
+  });
+  final int maximumCommitBytes;
+  final int maximumParentCount;
+}
+
+/// Resource bounds for local object graph validation, independent of quotas.
+final class RevisionObjectImportLimits {
+  const RevisionObjectImportLimits({
+    this.maximumObjectCount = 100000,
+    this.maximumObjectBytes = 32 * 1024 * 1024,
+    this.maximumTotalBytes = 256 * 1024 * 1024,
+    this.maximumCommitBytes = 64 * 1024,
+    this.maximumParentCount = 64,
+    this.maximumDeltaDepth = 64,
+  });
+
+  final int maximumObjectCount;
+  final int maximumObjectBytes;
+  final int maximumTotalBytes;
+  final int maximumCommitBytes;
+  final int maximumParentCount;
+  final int maximumDeltaDepth;
+}
+
+/// Counts the exact verified root closure, including already-present objects.
+final class RevisionObjectImportReport {
+  const RevisionObjectImportReport({
+    required this.objectCount,
+    required this.totalBytes,
+  });
+
+  final int objectCount;
+  final int totalBytes;
+}
+
 enum RevisionChangeKind { added, deleted, modified, renamed, typeChanged }
 
 /// One normalized path change between two immutable commits.
@@ -185,6 +237,8 @@ enum RevisionEngineFailureCode {
   verificationFailed,
   bundleInvalid,
   unexpectedFailure,
+  cancelled,
+  limitExceeded,
 }
 
 /// Stable private failure crossing the Revision worker boundary.
@@ -232,6 +286,35 @@ abstract interface class RevisionEnginePort {
     RevisionCommitRequest expected,
   );
 
+  /// Reads the tree and every ordered parent without exposing commit metadata.
+  /// Defaults to 64 KiB metadata and 64 parents; callers can choose larger
+  /// bounds. Exceeding a selected budget is `limitExceeded`, never corruption.
+  Future<RevisionCommitTopology> inspectCommit(
+    String repositoryPath,
+    RevisionObjectId commit, {
+    RevisionCommitInspectionLimits limits =
+        const RevisionCommitInspectionLimits(),
+  });
+
+  /// Copies a complete, bounded root closure from immutable private staging.
+  ///
+  /// Validates source hashes/types/connectivity before the first target write;
+  /// missing source objects cannot be satisfied by objects in the target.
+  /// Imports no unrelated, Draft, configuration or ref state. Pack inputs first
+  /// use [restoreRecoveryPack] to create a private staged repository.
+  ///
+  /// No selection/ref changes occur. Cancellation or an I/O failure during
+  /// copying can leave unreferenced immutable objects; it is never a business
+  /// commit or an assertion that bytes were rolled back. Journal/pinning and
+  /// any subsequent selection remain the caller's transactional responsibility.
+  Future<RevisionObjectImportReport> importObjects({
+    required String repositoryPath,
+    required String stagedRepositoryPath,
+    required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
+  });
+
   Future<bool> isAncestor({
     required String repositoryPath,
     required RevisionObjectId ancestor,
@@ -258,6 +341,16 @@ abstract interface class RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+  });
+
+  /// Creates a bounded index for an untrusted raw pack in an empty owned dir.
+  /// Streaming size validation precedes libgit2; no external thin-pack bases.
+  Future<void> createPackIndex({
+    required String packPath,
+    required String stagingDirectory,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
   });
 
   /// Reconstructs a new bare Store from a verified Bundle pack/index pair.
@@ -269,6 +362,8 @@ abstract interface class RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   });
 
   /// Replaces only the package-owned derived retention refs in one Store.

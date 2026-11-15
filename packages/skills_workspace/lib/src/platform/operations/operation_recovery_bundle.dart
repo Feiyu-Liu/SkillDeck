@@ -135,6 +135,7 @@ final class OperationRecoveryEntrySpec {
     required this.intendedKind,
     this.intendedSymbolicLinkTarget,
     this.verifyBeforeCapture,
+    this.expectedBeforeFingerprint,
     this.requiresInertBeforeImage = false,
     this.makeReadOnly = true,
     this.requirePlainDirectory = true,
@@ -186,6 +187,10 @@ final class OperationRecoveryEntrySpec {
   /// publication, Prepared recovery rolls back rather than resuming an
   /// unverified precondition.
   final OperationRecoveryPreCaptureVerifier? verifyBeforeCapture;
+
+  /// Authoritatively clean Draft evidence checked on both sides of capture.
+  /// The durable before image then protects applying and recovery.
+  final DraftFingerprint? expectedBeforeFingerprint;
 
   /// Adoption-only condition on the captured image, before any target mutation.
   final bool requiresInertBeforeImage;
@@ -543,6 +548,28 @@ final class OperationRecoveryPlanFactory
         ),
       );
     }
+    for (var index = 0; index < entries.length; index++) {
+      if (entries[index].expectedBeforeFingerprint == null) continue;
+      final number = (index + 1).toString().padLeft(4, '0');
+      final precommit = operationRecoveryReference(
+        operationId,
+        'guarded-draft-precommit-$number',
+      );
+      bindings.add(
+        OperationRecoveryStepBinding(
+          reference: precommit,
+          action: OperationRecoveryAction.verifyEntry,
+          entryId: entries[index].entryId,
+        ),
+      );
+      applying.add(
+        ApplyingOperationStep(
+          stepId: 'recovery.guard-draft-before-commit-$number',
+          recoveryReference: precommit,
+          kind: ApplyingStepKind.destructiveReplacement,
+        ),
+      );
+    }
     bindings.addAll(<OperationRecoveryStepBinding>[
       OperationRecoveryStepBinding(
         reference: verify,
@@ -782,7 +809,15 @@ final class OperationRecoveryEntryManifest {
     required this.requirePlainDirectory,
     required this.before,
     required this.intended,
+    this.preserveChangedDraftOnRollback = false,
   }) {
+    if (preserveChangedDraftOnRollback &&
+        (before.kind != OperationRecoveryEntryKind.directory ||
+            intended.present)) {
+      throw ArgumentError(
+        'Guarded Draft rollback requires directory-to-absence.',
+      );
+    }
     _requireSafeSegment(entryId, 'entryId');
     _requireAbsolutePath(targetPath, 'targetPath');
     for (final candidate in [
@@ -805,6 +840,7 @@ final class OperationRecoveryEntryManifest {
   final String rollForwardResiduePath;
   final bool makeReadOnly;
   final bool requirePlainDirectory;
+  final bool preserveChangedDraftOnRollback;
   final OperationRecoverySnapshot before;
   final OperationRecoverySnapshot intended;
 }
@@ -1282,6 +1318,8 @@ Map<String, Object?> _entryJson(OperationRecoveryEntryManifest entry) => {
   'rollForwardResiduePath': entry.rollForwardResiduePath,
   'makeReadOnly': entry.makeReadOnly,
   'requirePlainDirectory': entry.requirePlainDirectory,
+  if (entry.preserveChangedDraftOnRollback)
+    'preserveChangedDraftOnRollback': true,
   'before': _snapshotJson(entry.before),
   'intended': _snapshotJson(entry.intended),
 };
@@ -1317,6 +1355,10 @@ OperationRecoveryEntryManifest _decodeEntry(
   rollForwardResiduePath: _string(map, 'rollForwardResiduePath'),
   makeReadOnly: _boolean(map, 'makeReadOnly'),
   requirePlainDirectory: _boolean(map, 'requirePlainDirectory'),
+  preserveChangedDraftOnRollback:
+      map.containsKey('preserveChangedDraftOnRollback')
+      ? _boolean(map, 'preserveChangedDraftOnRollback')
+      : false,
   before: _decodeSnapshot(_map(map, 'before'), legacy: legacy),
   intended: _decodeSnapshot(_map(map, 'intended'), legacy: legacy),
 );

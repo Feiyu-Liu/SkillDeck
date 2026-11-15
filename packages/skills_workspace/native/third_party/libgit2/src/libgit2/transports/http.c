@@ -1,3 +1,4 @@
+/* Modified by SkillDeck on 2026-11-15: NONE rejects all redirects to isolate per-operation headers. */
 /*
  * Copyright (C) the libgit2 contributors. All rights reserved.
  *
@@ -242,6 +243,12 @@ static int handle_response(
 	int error;
 
 	*complete = false;
+
+	if (git_http_response_is_redirect(response) &&
+		transport->owner->connect_opts.follow_redirects == GIT_REMOTE_REDIRECT_NONE) {
+		git_error_set(GIT_ERROR_HTTP, "redirect disabled by operation policy");
+		return -1;
+	}
 
 	if (allow_replay && git_http_response_is_redirect(response)) {
 		if (!response->location) {

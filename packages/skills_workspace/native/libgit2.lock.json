@@ -28,6 +28,31 @@
       "id": "release-owner-thread-error-state",
       "path": "src/util/errors.c",
       "reason": "Provide a private non-exported thread-error cleanup helper, declared in src/util/errors.h, so runtime owners can release their TLS allocation before a different thread shuts down the shared runtime and deletes the POSIX TLS key."
+    },
+    {
+      "id": "strict-operation-redirects-http",
+      "path": "src/libgit2/transports/http.c",
+      "reason": "Reject every redirect under GIT_REMOTE_REDIRECT_NONE, including same-host port/path redirects, so custom headers stay bound to the supplied endpoint."
+    },
+    {
+      "id": "strict-operation-redirects-winhttp",
+      "path": "src/libgit2/transports/winhttp.c",
+      "reason": "Reject every redirect under GIT_REMOTE_REDIRECT_NONE on WinHTTP as on the POSIX HTTP backend."
+    },
+    {
+      "id": "windows-extended-unowned-filesystem-path-bound",
+      "path": "src/libgit2/path.h",
+      "reason": "Use the actual extended Win32 UTF-16 capacity for repository-less filesystem iterators, including bare ref enumeration used by packbuilder; retain repository-aware workdir core.longpaths policy."
+    },
+    {
+      "id": "windows-extended-repository-path-bound",
+      "path": "src/util/fs_path.c",
+      "reason": "Validate repository paths and reserved suffixes using actual extended Win32 backend UTF-16 capacity instead of the obsolete MAX_PATH limit; count surrogate pairs and reserve the terminator."
+    },
+    {
+      "id": "honor-disabled-fetchhead",
+      "path": "src/libgit2/remote.c",
+      "reason": "Avoid creating or truncating FETCH_HEAD when the fetch options disable it; ephemeral object transfers leave no remote metadata file."
     }
   ],
   "build": {

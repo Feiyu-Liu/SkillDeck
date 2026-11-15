@@ -60,6 +60,37 @@ final class DriftWorkspaceRevisionMaintenance
 
   @override
   Future<List<WorkspaceSelectedRevision>> selectedRevisions() async {
+    // Remove only paths named by the owned ephemeral registry, never arbitrary
+    // staging/orphan directories or another operation's recovery evidence.
+    final artifacts = await _database
+        .select(_database.workspaceTransferArtifacts)
+        .get();
+    for (final artifact in artifacts) {
+      final id = OperationId(artifact.operationId);
+      await _filesystem.removeOwnedPath(
+        targetPath: _layout.operationStagingPath(id),
+        ownerRoot: _layout.stagingRoot,
+      );
+      await (_database.delete(
+        _database.workspaceTransferArtifacts,
+      )..where((row) => row.operationId.equals(id.value))).go();
+    }
+    final transfers = await _database
+        .select(_database.workspaceNetworkTransfers)
+        .get();
+    for (final transfer in transfers) {
+      final id = OperationId(transfer.operationId);
+      final owner = transfer.managedSkillId == null
+          ? _layout.stagingRoot
+          : _layout.revisionStorePath(ManagedSkillId(transfer.managedSkillId!));
+      final root = transfer.managedSkillId == null
+          ? _layout.operationStagingPath(id)
+          : path.join(owner, 'network-transfers', id.value);
+      await _filesystem.removeOwnedPath(targetPath: root, ownerRoot: owner);
+      await (_database.delete(
+        _database.workspaceNetworkTransfers,
+      )..where((row) => row.operationId.equals(id.value))).go();
+    }
     final selections = _database.currentRevisionSelection;
     final lineages = _database.sourceLineages;
     final query = _database

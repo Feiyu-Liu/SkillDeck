@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import '../../support/revision_engine/unsupported_revision_object_graph.dart';
+
 import 'package:drift/drift.dart';
 import 'package:skills_workspace/src/application/history/history_models.dart';
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
@@ -202,7 +204,9 @@ void main() {
   );
 }
 
-final class _RevisionEngine implements RevisionEnginePort {
+final class _RevisionEngine
+    with UnsupportedRevisionObjectGraph
+    implements RevisionEnginePort {
   var diffCalls = 0;
   var readCalls = 0;
   List<RevisionChange> changes = const <RevisionChange>[
@@ -260,6 +264,7 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) => throw UnimplementedError();
   @override
   Future<void> createStore(String repositoryPath) => throw UnimplementedError();
@@ -282,6 +287,8 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) => throw UnimplementedError();
   @override
   Future<void> replaceRetentionRefs(

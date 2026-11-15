@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import '../support/revision_engine/unsupported_revision_object_graph.dart';
+
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/src/application/destructive/destructive_operation_models.dart';
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
@@ -217,7 +219,9 @@ AcquiredSourceSkill _skill(SourceDescriptor source, {String slot = 'one'}) =>
       ),
     );
 
-final class _RevisionEngine implements RevisionEnginePort {
+final class _RevisionEngine
+    with UnsupportedRevisionObjectGraph
+    implements RevisionEnginePort {
   final List<String> calls = [];
   bool failCreateCommit = false;
   String? recoveryVerificationPath;
@@ -265,6 +269,7 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) async {
     calls.add('createRecoveryPack');
     await File(
@@ -313,6 +318,8 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) async {
     calls.add('restoreRecoveryPack');
     recoveryVerificationPath = stagedRepositoryPath;

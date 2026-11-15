@@ -182,6 +182,29 @@ final class PutRevisionMetadata extends WorkspaceBusinessMutation {
   final int createdAtMicros;
 }
 
+final class PutRevisionPublishedEvent extends WorkspaceBusinessMutation {
+  PutRevisionPublishedEvent({
+    required this.sourceLineageId,
+    required this.eventFingerprint,
+    required this.objectId,
+    required this.kind,
+    required this.contentHash,
+    required this.publishedAtMicros,
+  }) {
+    _requireText(sourceLineageId, 'sourceLineageId');
+    _requireHash(eventFingerprint, 'eventFingerprint');
+    _requireHash(contentHash, 'contentHash');
+    if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(objectId) ||
+        objectId.length != 40 ||
+        kind.isEmpty) {
+      throw ArgumentError('Invalid published revision.');
+    }
+    _requireTimestamp(publishedAtMicros, 'publishedAtMicros');
+  }
+  final String sourceLineageId, eventFingerprint, objectId, kind, contentHash;
+  final int publishedAtMicros;
+}
+
 final class PutProjectRoot extends WorkspaceBusinessMutation {
   PutProjectRoot({
     required this.projectRootId,
@@ -304,6 +327,21 @@ final class DeleteSkillUserData extends WorkspaceBusinessMutation {
   const DeleteSkillUserData(this.managedSkillId);
 
   final ManagedSkillId managedSkillId;
+}
+
+final class PutGlobalCommandOutcome extends WorkspaceBusinessMutation {
+  PutGlobalCommandOutcome({
+    required this.operationId,
+    required this.requestFingerprint,
+    required this.personalTagId,
+    required this.committedRepositoryRevision,
+  }) {
+    _requireHash(requestFingerprint, 'requestFingerprint');
+    _requireText(personalTagId, 'personalTagId');
+  }
+  final OperationId operationId;
+  final String requestFingerprint, personalTagId;
+  final RepositoryRevision committedRepositoryRevision;
 }
 
 final class PutPersonalTag extends WorkspaceBusinessMutation {

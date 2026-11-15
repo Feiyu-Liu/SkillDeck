@@ -158,6 +158,12 @@ abstract interface class OperationControlPlanePort {
   Future<void> deleteCompletedJournal(OperationId operationId);
 }
 
+/// Independent completed-state checkpoints before deleting recovery evidence.
+abstract interface class OperationCompletedCheckpointPort {
+  Future<void> terminalCheckpoint(OperationPlan plan);
+  Future<void> cleanCheckpoint(OperationPlan plan);
+}
+
 /// Owns all filesystem and Revision Engine preparation and recovery details.
 abstract interface class OperationRecoveryPort {
   Future<void> prepareStep(

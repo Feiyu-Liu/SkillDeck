@@ -1,4 +1,5 @@
 import 'package:skills_workspace/src/api/cancellation.dart';
+import 'fake_completed_checkpoints.dart';
 import 'package:skills_workspace/src/application/operations/operation_coordinator.dart';
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
 import 'package:skills_workspace/src/application/ports/operation_ports.dart';
@@ -456,6 +457,12 @@ final class OperationHarness {
     controlPlane: controlPlane,
     recovery: recovery,
     referenceMaintenance: referenceMaintenance,
+    checkpoints: FakeCompletedCheckpoints(
+      onCheckpoint: (phase) {
+        log.add('checkpoint.$phase');
+        failures.check('checkpoint.$phase');
+      },
+    ),
     classifyAbort: classifyAbort,
   );
 }

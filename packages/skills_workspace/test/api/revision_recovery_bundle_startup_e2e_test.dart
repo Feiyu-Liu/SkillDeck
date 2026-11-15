@@ -243,7 +243,7 @@ typedef _BundleBytes = ({
 });
 
 typedef _HistoryEvidence = ({
-  OperationSubjectReference reference,
+  PublishedRevisionReference reference,
   WorkspaceOperationKind kind,
   int publishedAtMicros,
   String contentHash,

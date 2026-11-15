@@ -405,6 +405,28 @@ sealed class OperationJournalDefinition {
   int get operationGeneration;
   List<PreparationOperationStep> get preparationSteps;
   OperationRecordPlan get record;
+  OperationLocalCommandBinding? get localCommandBinding;
+}
+
+/// A local caller request bound before preparation; never a Cloud identity.
+final class OperationLocalCommandBinding {
+  const OperationLocalCommandBinding({
+    required this.requestFingerprint,
+    required this.managedSkillId,
+    required this.sourceLineage,
+  });
+  final String requestFingerprint;
+  final ManagedSkillId managedSkillId;
+  final SourceLineageReference sourceLineage;
+  @override
+  bool operator ==(Object other) =>
+      other is OperationLocalCommandBinding &&
+      other.requestFingerprint == requestFingerprint &&
+      other.managedSkillId == managedSkillId &&
+      other.sourceLineage == sourceLineage;
+  @override
+  int get hashCode =>
+      Object.hash(requestFingerprint, managedSkillId, sourceLineage);
 }
 
 /// The minimal recoverable contract persisted before candidate construction.
@@ -420,6 +442,7 @@ final class PreparedOperationEnvelope extends OperationJournalDefinition {
     required this.operationGeneration,
     required List<PreparationOperationStep> preparationSteps,
     required this.record,
+    this.localCommandBinding,
   }) : preparationSteps = List.unmodifiable(preparationSteps) {
     _requireOperationDefinition(
       operationId: operationId,
@@ -443,6 +466,20 @@ final class PreparedOperationEnvelope extends OperationJournalDefinition {
   final List<PreparationOperationStep> preparationSteps;
   @override
   final OperationRecordPlan record;
+  @override
+  final OperationLocalCommandBinding? localCommandBinding;
+
+  PreparedOperationEnvelope withLocalBinding(
+    OperationLocalCommandBinding? binding,
+  ) => PreparedOperationEnvelope(
+    operationId: operationId,
+    expectedRepositoryRevision: expectedRepositoryRevision,
+    committedRepositoryRevision: committedRepositoryRevision,
+    operationGeneration: operationGeneration,
+    preparationSteps: preparationSteps,
+    record: record,
+    localCommandBinding: binding,
+  );
 
   /// Requires a sealed plan to retain every already-journaled fact exactly.
   bool isSealedBy(OperationPlan plan) {
@@ -450,6 +487,7 @@ final class PreparedOperationEnvelope extends OperationJournalDefinition {
         plan.expectedRepositoryRevision != expectedRepositoryRevision ||
         plan.committedRepositoryRevision != committedRepositoryRevision ||
         plan.operationGeneration != operationGeneration ||
+        plan.localCommandBinding != localCommandBinding ||
         plan.record.operationId != record.operationId ||
         plan.record.kind != record.kind ||
         !_recordIsProjectionOf(record, plan.record) ||
@@ -480,6 +518,7 @@ final class OperationPlan extends OperationJournalDefinition {
     required List<RevisionSelectionChangePlan> revisionSelectionChanges,
     WorkspaceBusinessChangeSet? businessChanges,
     required this.record,
+    this.localCommandBinding,
   }) : preparationSteps = List.unmodifiable(preparationSteps),
        applyingSteps = List.unmodifiable(applyingSteps),
        finalizationSteps = List.unmodifiable(finalizationSteps),
@@ -538,6 +577,8 @@ final class OperationPlan extends OperationJournalDefinition {
   final WorkspaceBusinessChangeSet businessChanges;
   @override
   final OperationRecordPlan record;
+  @override
+  final OperationLocalCommandBinding? localCommandBinding;
 }
 
 final class JournaledOperation {

@@ -1,6 +1,9 @@
 /*
  * Copyright (C) the libgit2 contributors. All rights reserved.
  *
+ * SkillDeck project modification: filesystem-only paths without a repository
+ * use the actual extended Win32 UTF-16 bound, including ref iterators.
+ *
  * This file is part of libgit2, distributed under the GNU GPL v2 with
  * a Linking Exception. For full terms see the included COPYING file.
  */
@@ -45,6 +48,15 @@ GIT_INLINE(int) git_path_validate_str_length(
 	git_repository *repo,
 	const git_str *path)
 {
+#ifdef GIT_WIN32
+	/* Filesystem iterators used for bare refs have no repository/config. Their
+	 * absolute paths still use the same NT-prefixed backend as repository paths.
+	 * Repository-owned workdir paths below retain core.longpaths policy. */
+	if (repo == NULL) {
+		git_str filesystem_path = *path;
+		return git_fs_path_validate_str_length_with_suffix(&filesystem_path, 0);
+	}
+#endif
 	if (!git_path_str_is_valid(repo, path, 0, GIT_FS_PATH_REJECT_LONG_PATHS)) {
 		if (path->size == SIZE_MAX)
 			git_error_set(GIT_ERROR_FILESYSTEM, "path too long: '%s'", path->ptr);

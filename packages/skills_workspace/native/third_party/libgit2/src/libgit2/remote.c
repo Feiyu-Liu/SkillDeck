@@ -1,3 +1,4 @@
+/* Modified by SkillDeck on 2026-11-15: disabled FETCH_HEAD updates never create/truncate the file. */
 /*
  * Copyright (C) the libgit2 contributors. All rights reserved.
  *
@@ -2136,7 +2137,8 @@ int git_remote_update_tips(
 	else
 		tagopt = download_tags;
 
-	if ((error = truncate_fetch_head(git_repository_path(remote->repo))) < 0)
+	if ((update_flags & GIT_REMOTE_UPDATE_FETCHHEAD) &&
+	    (error = truncate_fetch_head(git_repository_path(remote->repo))) < 0)
 		goto out;
 
 	if (tagopt == GIT_REMOTE_DOWNLOAD_TAGS_ALL) {

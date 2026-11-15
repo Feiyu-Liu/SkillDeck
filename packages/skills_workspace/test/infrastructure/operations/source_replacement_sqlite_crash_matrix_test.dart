@@ -307,7 +307,11 @@ Future<void> _expectReplacementControlPlane(String workspaceRoot) async {
   final state = await inspectSourceReplacementSqliteCrashState(workspaceRoot);
   expect(state.repositoryRevision, 1);
   expect(state.destructionEpoch, 1);
-  _expectBusinessState(state, replacementCommitted: true);
+  _expectBusinessState(
+    state,
+    replacementCommitted: true,
+    completedReplacementRecord: true,
+  );
   expect(state.personalTagCount, 1);
   expect(state.skillTagAssignmentCount, 1);
   expect(state.activationCount, 1);
@@ -317,6 +321,7 @@ Future<void> _expectReplacementControlPlane(String workspaceRoot) async {
 void _expectBusinessState(
   SourceReplacementSqliteCrashState state, {
   required bool replacementCommitted,
+  bool completedReplacementRecord = false,
 }) {
   final expectedLineage = replacementCommitted
       ? sourceReplacementCrashLineageId
@@ -338,6 +343,7 @@ void _expectBusinessState(
   expect(state.note, 'Important');
   expect(state.operationSubjectLineageIds, [
     if (!replacementCommitted) destructiveCrashLineageId,
+    if (completedReplacementRecord) sourceReplacementCrashLineageId,
   ]);
 }
 

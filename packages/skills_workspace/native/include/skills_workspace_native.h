@@ -54,7 +54,9 @@ typedef enum skills_workspace_revision_status {
   SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE = 4,
   SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE = 5,
   SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL = 6,
-  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE = 7
+  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE = 7,
+  SKILLS_WORKSPACE_REVISION_CANCELLED = 8,
+  SKILLS_WORKSPACE_REVISION_LIMIT_EXCEEDED = 9
 } skills_workspace_revision_status;
 
 typedef enum skills_workspace_revision_commit_kind {
@@ -69,7 +71,7 @@ typedef enum skills_workspace_revision_commit_kind {
 // Initializes the local-only Revision Engine and disables external Git config
 // search paths. Calls are reference counted and must be balanced by shutdown.
 // Retain an init reference until all of that caller's Revision calls finish.
-// Source calls independently hold the shared runtime for their duration. The
+// Transport calls independently hold the shared runtime for their duration. The
 // last owner shuts libgit2 down; a later init reapplies the global options.
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_init(void);
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_shutdown(void);
@@ -123,6 +125,33 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_commit_verify(
     const char *const *expected_parent_oid_hex, intptr_t expected_parent_count,
     int32_t expected_commit_kind);
 
+// Inspects only immutable topology: tree OID followed by every ordered parent
+// OID as newline-separated ASCII records. No author or message is returned.
+// Caller supplies metadata/parent limits; object types are verified.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_commit_inspect(
+    const char *repository_path, const char *commit_oid_hex,
+    int64_t maximum_commit_bytes, int64_t maximum_parent_count,
+    uint8_t *output, intptr_t output_capacity, intptr_t *required_capacity);
+
+// Imports the exact complete commit/tree/blob closure from an isolated bare
+// staging repository into an existing bare Store. All source object hashes,
+// connectivity and limits are verified before the first target write. Packs
+// are first restored into staging through the existing recovery-pack seam.
+// No ref, HEAD, config, reflog, selection or business state is changed.
+// Cancellation/failure during copying may leave unreferenced immutable objects;
+// callers own Journal/pinning/selection and cannot infer a business commit.
+// Caller keeps the staging repository immutable until this function returns.
+// Source alternates are excluded. Import operational caps are 1,000,000
+// objects, 256 MiB/object and 8 GiB total; exceeding them is LIMIT_EXCEEDED.
+// Metadata/parent limits are caller-selected and do not apply to legacy restore.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_objects_import(
+    const char *repository_path, const char *staged_repository_path,
+    const char *const *retained_root_oid_hex, intptr_t retained_root_count,
+    int64_t maximum_object_count, int64_t maximum_object_bytes,
+    int64_t maximum_total_bytes, int64_t maximum_commit_bytes,
+    int64_t maximum_parent_count, const int32_t *cancel_flag,
+    int64_t *verified_object_count, int64_t *verified_total_bytes);
+
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_commit_is_ancestor(
     const char *repository_path, const char *ancestor_oid_hex,
     const char *descendant_oid_hex, int32_t *is_ancestor);
@@ -156,12 +185,38 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_create(
     const char *repository_path, const char *bundle_staging_path,
     const char *const *retained_root_oid_hex, intptr_t retained_root_count);
 
+// Preflights root closure resource budgets before allocating the packbuilder.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_create_bounded(
+    const char *repository_path, const char *bundle_staging_path,
+    const char *const *retained_root_oid_hex, intptr_t retained_root_count,
+    int64_t maximum_object_count, int64_t maximum_object_bytes,
+    int64_t maximum_total_bytes, int64_t maximum_commit_bytes,
+    int64_t maximum_parent_count);
+
 // Reconstructs a new staged bare Store from a Bundle's pack/index pair and
 // verifies every indexed object plus all retained roots without system Git.
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_restore(
     const char *staged_repository_path, const char *pack_path,
     const char *index_path, const char *const *retained_root_oid_hex,
     intptr_t retained_root_count);
+
+// Explicit bounded staging variant for new, potentially remote pack inputs.
+// Legacy recovery above retains its original resource policy.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_restore_bounded(
+    const char *staged_repository_path, const char *pack_path,
+    const char *index_path, const char *const *retained_root_oid_hex,
+    intptr_t retained_root_count, int64_t maximum_object_count,
+    int64_t maximum_object_bytes, int64_t maximum_total_bytes,
+    int64_t maximum_commit_bytes, int64_t maximum_parent_count,
+    int64_t maximum_delta_depth, const int32_t *cancel_flag);
+
+// Preflights an untrusted raw pack before indexing (no external ODB/thin pack).
+// Produces objects.pack/objects.idx in an existing empty caller-owned directory.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_pack_index_create_bounded(
+    const char *pack_path, const char *staging_directory,
+    int64_t maximum_object_count, int64_t maximum_object_bytes,
+    int64_t maximum_total_bytes, int64_t maximum_commit_bytes,
+    int64_t maximum_delta_depth, const int32_t *cancel_flag);
 
 // Replaces the package-owned derived retention references.  Names must use
 // the fixed `refs/skills-workspace/` namespace and targets must be commits.
@@ -192,6 +247,44 @@ typedef enum skills_workspace_transport_status {
   SKILLS_WORKSPACE_TRANSPORT_LIMIT_EXCEEDED = 13,
   SKILLS_WORKSPACE_TRANSPORT_UNSUPPORTED = 14
 } skills_workspace_transport_status;
+
+// Additional statuses used only by the private per-operation transport.
+#define SKILLS_WORKSPACE_TRANSPORT_REJECTED_REF 15
+#define SKILLS_WORKSPACE_TRANSPORT_OUTCOME_UNKNOWN 16
+
+typedef enum skills_workspace_transport_ref_status {
+  SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED = 0,
+  SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED = 1,
+  SKILLS_WORKSPACE_TRANSPORT_REF_REJECTED = 2
+} skills_workspace_transport_ref_status;
+
+// Transfers objects to/from an existing private bare staging/export repository.
+// Each refspec must have one explicit source and destination (no force,
+// wildcard, or deletion). The source is a full ref or SHA-1 commit; the
+// destination is a full ref. The caller owns staging disposal and validation.
+// Headers are in-memory per-call values; URLs contain no userinfo/query/fragment.
+// HTTPS only, except explicit loopback HTTP test policy (127.0.0.1 only).
+// No redirects, credentials callback acquisition, FETCH_HEAD, persisted remote,
+// or automatic retry. Cancellation never implies remote rollback.
+// ref_statuses has ref_count slots in request order. Never interpret an
+// unreported ref as accepted, even if libgit2 returned zero. No server text
+// crosses this ABI. Header buffers belong to the caller until return.
+// Optional transferred_bytes is reset at start and updated by native transfer
+// callbacks. Like cancel_flag, caller-owned aligned memory lives until return.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_transport_fetch_into(
+    const char *repository_path, const char *url,
+    const char *const *refspecs, intptr_t ref_count,
+    const char *const *custom_headers, intptr_t header_count,
+    int32_t proxy_mode, const char *proxy_url, const int32_t *cancel_flag,
+    int32_t allow_loopback_http_for_testing, int32_t *ref_statuses,
+    int64_t *transferred_bytes);
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_transport_push(
+    const char *repository_path, const char *url,
+    const char *const *refspecs, intptr_t ref_count,
+    const char *const *custom_headers, intptr_t header_count,
+    int32_t proxy_mode, const char *proxy_url, const int32_t *cancel_flag,
+    int32_t allow_loopback_http_for_testing, int32_t *ref_statuses,
+    int64_t *transferred_bytes);
 
 typedef enum skills_workspace_transport_proxy_mode {
   // Connect directly.

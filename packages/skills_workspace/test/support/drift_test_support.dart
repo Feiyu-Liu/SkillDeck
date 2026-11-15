@@ -158,7 +158,7 @@ final class FakeDriftHistoryContent implements WorkspaceHistoryContentPort {
   @override
   Future<HistoricalRevisionSelection?> resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   }) => throw UnimplementedError();
 
   @override

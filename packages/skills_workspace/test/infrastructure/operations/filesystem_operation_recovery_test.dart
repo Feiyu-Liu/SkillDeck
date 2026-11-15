@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../support/operations/fake_completed_checkpoints.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -969,6 +970,7 @@ void main() {
         controlPlane: controlPlane,
         recovery: recovery,
         referenceMaintenance: _NoopRevisionReferenceMaintenance(),
+        checkpoints: const FakeCompletedCheckpoints(),
       );
 
       final report = await coordinator.recover();

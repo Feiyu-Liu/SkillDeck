@@ -49,7 +49,8 @@ final class OperationPlanAssembler {
     required RepositoryRevision expectedRepositoryRevision,
     required WorkspaceOperationKind kind,
   }) {
-    if (kind != WorkspaceOperationKind.replaceSource) {
+    if (kind != WorkspaceOperationKind.replaceSource &&
+        kind != WorkspaceOperationKind.replaceIncomingRevision) {
       throw ArgumentError.value(
         kind,
         'kind',
@@ -85,6 +86,7 @@ final class OperationPlanAssembler {
     required WorkspaceBusinessChangeSet businessChanges,
     List<OperationSubjectIntent> subjects = const [],
     bool retainWithoutSubjects = false,
+    OperationLocalCommandBinding? localCommandBinding,
   }) {
     if (businessChanges.isEmpty) {
       throw ArgumentError.value(
@@ -111,6 +113,7 @@ final class OperationPlanAssembler {
       operationId: operationId,
       expectedRepositoryRevision: expectedRepositoryRevision,
       kind: kind,
+      localCommandBinding: localCommandBinding,
       businessChanges: businessChanges,
       recoverySteps: steps,
       subjects: subjects,
@@ -124,6 +127,7 @@ final class OperationPlanAssembler {
     required WorkspaceOperationKind kind,
     required WorkspaceBusinessChangeSet businessChanges,
     required DestructiveOperationRecoveryIntent recoveryIntent,
+    OperationLocalCommandBinding? localCommandBinding,
     required List<RevisionSelectionChangePlan> revisionSelectionChanges,
     required List<OperationSubjectIntent> subjects,
   }) {
@@ -153,6 +157,7 @@ final class OperationPlanAssembler {
       operationId: operationId,
       expectedRepositoryRevision: expectedRepositoryRevision,
       kind: kind,
+      localCommandBinding: localCommandBinding,
       businessChanges: businessChanges,
       recoverySteps: steps,
       revisionSelectionChanges: revisionSelectionChanges,
@@ -169,6 +174,7 @@ final class OperationPlanAssembler {
     List<RevisionSelectionChangePlan> revisionSelectionChanges = const [],
     List<OperationSubjectIntent> subjects = const [],
     bool retainWithoutSubjects = false,
+    OperationLocalCommandBinding? localCommandBinding,
   }) {
     if (subjects.isEmpty && !retainWithoutSubjects) {
       throw ArgumentError(
@@ -203,6 +209,7 @@ final class OperationPlanAssembler {
     ];
     final committed = expectedRepositoryRevision.next();
     return OperationPlan(
+      localCommandBinding: localCommandBinding,
       operationId: operationId,
       expectedRepositoryRevision: expectedRepositoryRevision,
       committedRepositoryRevision: committed,
@@ -275,7 +282,8 @@ void _validateDestructiveAlignment({
         );
       }
     case final SourceReplacementRecoveryIntent replacement:
-      if (kind != WorkspaceOperationKind.replaceSource ||
+      final mirror = kind == WorkspaceOperationKind.replaceIncomingRevision;
+      if (kind != WorkspaceOperationKind.replaceSource && !mirror ||
           recoveryIds.length != 1) {
         throw ArgumentError(
           'Source Replacement must target exactly one managed Skill.',
@@ -303,14 +311,16 @@ void _validateDestructiveAlignment({
           .toSet();
       if (intendedUpstream == null ||
           intendedEffective == null ||
-          intendedUpstream != intendedEffective ||
+          (!mirror && intendedUpstream != intendedEffective) ||
           intendedUpstream.sourceLineage != replacement.intendedSourceLineage ||
           intendedEffective.objectId != replacement.intendedObjectId ||
           subject.sourceLineage != replacement.intendedSourceLineage ||
           subject.beforeObjectId != null ||
           subject.beforeContentHash != null ||
-          subject.afterObjectId != intendedEffective.objectId ||
-          subject.afterContentHash != replacement.intendedContentHash ||
+          subject.afterObjectId !=
+              (mirror ? null : intendedEffective.objectId) ||
+          subject.afterContentHash !=
+              (mirror ? null : replacement.intendedContentHash) ||
           managedSkills.length != 1 ||
           managedSkills.single.managedSkillId !=
               replacement.skill.managedSkillId ||
@@ -322,11 +332,20 @@ void _validateDestructiveAlignment({
           lineages.single.sourceLineageId !=
               replacement.intendedSourceLineage.encoded ||
           lineages.single.objectFormat != replacement.intendedObjectFormat ||
-          revisions.length != 1 ||
-          revisions.single.sourceLineageId !=
-              replacement.intendedSourceLineage.encoded ||
-          revisions.single.objectId != intendedEffective.objectId.value ||
-          revisions.single.contentHash != replacement.intendedContentHash ||
+          (!mirror && revisions.length != 1) ||
+          revisions.any(
+            (revision) =>
+                revision.sourceLineageId !=
+                replacement.intendedSourceLineage.encoded,
+          ) ||
+          !revisions.any(
+            (revision) =>
+                revision.objectId == intendedEffective.objectId.value &&
+                revision.contentHash == replacement.intendedContentHash,
+          ) ||
+          !revisions.any(
+            (revision) => revision.objectId == intendedUpstream.objectId.value,
+          ) ||
           !_sameStrings(formerLineages, deletedLineages) ||
           businessChanges.mutations.any(
             (mutation) => mutation is DeleteManagedSkill,

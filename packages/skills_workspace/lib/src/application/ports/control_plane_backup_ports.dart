@@ -10,8 +10,20 @@ enum ControlPlaneStagingKind { file, directory }
 abstract interface class ControlPlaneBackupDatabasePort {
   Future<ControlPlaneIdentity> liveIdentity();
 
+  /// Changes only the verified staged database's local recovery incarnation.
+  /// Called before promotion; no serving primary is mutated through this port.
+  Future<ControlPlaneIdentity> markRestoredIncarnation(
+    String stagedDatabasePath,
+  );
+
   /// Executes `VACUUM INTO` on the one Drift-owned writer executor.
-  Future<void> vacuumInto(String destinationPath);
+  Future<void> vacuumInto(
+    String destinationPath, {
+    String? omitCompletedOperationId,
+  });
+
+  /// The terminal revision distinguishes committed completion from rollback.
+  Future<int> completedOperationRevision(String operationId);
 
   /// Opens and closes an independent Drift-owned probe executor.
   Future<ControlPlaneProbeResult> probeDatabase(

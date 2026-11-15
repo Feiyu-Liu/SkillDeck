@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import '../api/composite_command_dispatcher.dart';
 import '../api/requests.dart';
 import '../api/result.dart';
@@ -182,7 +184,9 @@ Future<SkillsResult<MutationReport>> _remove({
       try {
         lockHeldSnapshot = await state.readPlanningSnapshot(
           publicSnapshot: publicSnapshot,
-          purpose: DestructivePlanningPurpose.removal,
+          purpose: request.requireCleanDraft
+              ? DestructivePlanningPurpose.cleanRemoval
+              : DestructivePlanningPurpose.removal,
           targetManagedSkillIds: request.managedSkillIds,
           cancellationToken: context.cancellationToken,
         );
@@ -199,6 +203,22 @@ Future<SkillsResult<MutationReport>> _remove({
         );
         throw const _DestructivePlanningRejected();
       }
+      for (final entry in request.expectedLocalLineageFingerprints.entries) {
+        final actual = lockHeldSnapshot.findSkill(entry.key);
+        final lineage = actual?.activeSourceLineage;
+        if (!request.managedSkillIds.contains(entry.key) ||
+            lineage == null ||
+            sha256
+                    .convert(utf8.encode('local-lineage:${lineage.encoded}'))
+                    .toString() !=
+                entry.value) {
+          planningFailure = DestructivePlanningFailure<OperationPlan>(
+            code: DestructivePlanningFailureCode.staleIntent,
+            context: const {'reason': 'localLineageChanged'},
+          );
+          throw const _DestructivePlanningRejected();
+        }
+      }
       final planned = await planner.planRemoval(
         operationId: operationId,
         snapshot: lockHeldSnapshot,
@@ -206,6 +226,7 @@ Future<SkillsResult<MutationReport>> _remove({
           reviewedRevision: request.intent.reviewedRevision,
         ),
         managedSkillIds: request.managedSkillIds,
+        requireCleanDraft: request.requireCleanDraft,
         cancellationToken: context.cancellationToken,
       );
       final failure = planned.failureOrNull;

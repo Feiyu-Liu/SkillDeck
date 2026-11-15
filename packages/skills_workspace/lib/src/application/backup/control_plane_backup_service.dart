@@ -257,15 +257,16 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
     }
     eligible.sort(_newestBackupFirst);
     final selected = eligible.first;
+    final ControlPlaneIdentity restoredIdentity;
     try {
-      await _restorePrimary(selected);
+      restoredIdentity = await _restorePrimary(selected);
     } on Object {
       return const ControlPlaneStartupBlocked(
         ControlPlaneBackupFailureCode.primaryRestoreFailed,
       );
     }
     return ControlPlanePrimaryRestored(
-      identity: selected.manifest.identity,
+      identity: restoredIdentity,
       backup: selected,
     );
   }
@@ -288,9 +289,31 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
     return List<VerifiedControlPlaneBackup>.unmodifiable(verified);
   }
 
+  /// Called under the writer lock only after the operation is durably complete.
+  /// A clean checkpoint omits only the Journal whose owned cleanup was proven.
+  Future<void> checkpointCompletedOperation({
+    required String operationId,
+    bool clean = false,
+  }) async {
+    await _database.completedOperationRevision(operationId);
+    final identity = await _database.liveIdentity();
+    final eligibility = await _readEligibility();
+    if (eligibility is! SteadyBackupEligibility ||
+        eligibility.destructionEpoch != identity.destructionEpoch) {
+      throw const ControlPlaneBackupException(
+        ControlPlaneBackupFailureCode.destructiveBarrierArmed,
+      );
+    }
+    await _createBackup(
+      identity,
+      omitCompletedOperationId: clean ? operationId : null,
+    );
+  }
+
   Future<VerifiedControlPlaneBackup> _createBackup(
-    ControlPlaneIdentity identity,
-  ) async {
+    ControlPlaneIdentity identity, {
+    String? omitCompletedOperationId,
+  }) async {
     final backupId = '${identity.repositoryRevision}';
     final destination = path.join(
       _epochDirectory(identity.destructionEpoch),
@@ -307,7 +330,10 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
           ControlPlaneBackupFailureCode.backupCreationFailed,
         );
       }
-      await _database.vacuumInto(databasePath);
+      await _database.vacuumInto(
+        databasePath,
+        omitCompletedOperationId: omitCompletedOperationId,
+      );
       final probe = await _database.probeDatabase(
         databasePath,
         integrityLevel: ControlPlaneIntegrityLevel.full,
@@ -406,7 +432,9 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
     );
   }
 
-  Future<void> _restorePrimary(VerifiedControlPlaneBackup backup) async {
+  Future<ControlPlaneIdentity> _restorePrimary(
+    VerifiedControlPlaneBackup backup,
+  ) async {
     final staging = await _durability.createSiblingStagingPath(
       _paths.primaryDatabasePath,
       kind: ControlPlaneStagingKind.file,
@@ -428,6 +456,10 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
           ControlPlaneBackupFailureCode.primaryRestoreFailed,
         );
       }
+      final restoredIdentity = await _database.markRestoredIncarnation(staging);
+      await _removeIfOwned('$staging-wal');
+      await _removeIfOwned('$staging-shm');
+      final restoredHash = await _durability.sha256File(staging);
       await _removeIfOwned('${_paths.primaryDatabasePath}-wal');
       await _removeIfOwned('${_paths.primaryDatabasePath}-shm');
       await _durability.publish(
@@ -435,8 +467,7 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
         destinationPath: _paths.primaryDatabasePath,
         kind: ControlPlaneStagingKind.file,
         verify: (publishedPath) async {
-          if (await _durability.sha256File(publishedPath) !=
-              backup.manifest.databaseSha256) {
+          if (await _durability.sha256File(publishedPath) != restoredHash) {
             throw const ControlPlaneBackupException(
               ControlPlaneBackupFailureCode.primaryRestoreFailed,
             );
@@ -446,15 +477,18 @@ final class ControlPlaneBackupService implements WorkspaceStartupRecoveryPort {
             integrityLevel: ControlPlaneIntegrityLevel.full,
           );
           if (probe is! ControlPlaneHealthy ||
-              probe.identity != backup.manifest.identity) {
+              probe.identity != restoredIdentity) {
             throw const ControlPlaneBackupException(
               ControlPlaneBackupFailureCode.primaryRestoreFailed,
             );
           }
         },
       );
+      return restoredIdentity;
     } on Object {
       await _removeIfOwned(staging);
+      await _removeIfOwned('$staging-wal');
+      await _removeIfOwned('$staging-shm');
       rethrow;
     }
   }

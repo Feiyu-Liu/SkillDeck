@@ -68,7 +68,7 @@ final class HistoricalRevisionSelection {
     required this.declaredName,
   });
 
-  final OperationSubjectReference reference;
+  final PublishedRevisionReference reference;
   final ManagedSkillId managedSkillId;
   final SourceLineageReference sourceLineage;
   final RevisionObjectId objectId;

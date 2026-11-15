@@ -967,7 +967,7 @@ typedef _RevisionPointers = ({
   String effective,
 });
 typedef _PublishedHistoryEvidence = ({
-  OperationSubjectReference reference,
+  PublishedRevisionReference reference,
   WorkspaceOperationKind kind,
   String contentHash,
 });

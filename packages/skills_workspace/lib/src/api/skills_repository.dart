@@ -2,6 +2,10 @@ import '../domain/git_environment.dart';
 import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
 import 'requests.dart';
+import 'revision_transfer.dart';
+import 'revision_transfer_remote.dart';
+import 'skill_extra_data_patch.dart';
+import 'personal_tag_mutation.dart';
 import 'result.dart';
 import 'update_check_store.dart';
 
@@ -81,6 +85,48 @@ abstract interface class SkillsRepository {
   );
   SkillsOperation<EffectiveSkillFileContent> readEffectiveFile(
     ReadEffectiveFileRequest request,
+  );
+  SkillsOperation<AuthoritativeWorkspaceCapture> captureAuthoritativeState(
+    CaptureAuthoritativeStateRequest request,
+  );
+  SkillsOperation<RevisionTransferReport> pushCommittedRevision(
+    PushCommittedRevisionRequest request,
+  );
+  SkillsOperation<CommittedRevisionBatch> fetchIncomingRevision(
+    FetchIncomingRevisionRequest request,
+  );
+  SkillsOperation<CommittedRevisionBatch> prepareIncomingRevision(
+    PrepareIncomingRevisionRequest request,
+  );
+  SkillsOperation<CommittedRevisionBatch> exportCommittedRevision(
+    ExportCommittedRevisionRequest request,
+  );
+  SkillsOperation<PersonalTagCommandBinding> reservePersonalTagMutation(
+    ReservePersonalTagMutationRequest request,
+  );
+  SkillsOperation<PersonalTagMutationOutcome> applyPersonalTagMutation(
+    ApplyPersonalTagMutationRequest request,
+  );
+  SkillsOperation<PersonalTagMutationOutcome> inspectPersonalTagMutationOutcome(
+    InspectPersonalTagMutationOutcomeRequest request,
+  );
+  SkillsOperation<IncomingRevisionCommandBinding> reserveSkillExtraDataPatch(
+    ReserveSkillExtraDataPatchRequest request,
+  );
+  SkillsOperation<IncomingRevisionApplyResult> applySkillExtraDataPatch(
+    ApplySkillExtraDataPatchRequest request,
+  );
+  SkillsOperation<IncomingRevisionOutcome> inspectIncomingRevisionOutcome(
+    InspectIncomingRevisionOutcomeRequest request,
+  );
+  SkillsOperation<IncomingRevisionApplyResult> replaceIncomingRevision(
+    ReplaceIncomingRevisionRequest request,
+  );
+  SkillsOperation<IncomingRevisionApplyResult> installIncomingRevision(
+    InstallIncomingRevisionRequest request,
+  );
+  SkillsOperation<IncomingRevisionApplyResult> applyIncomingRevision(
+    ApplyIncomingRevisionRequest request,
   );
   SkillsOperation<InstallAttempt> install(InstallRequest request);
   SkillsOperation<MutationReport> confirmInstallTakeover(

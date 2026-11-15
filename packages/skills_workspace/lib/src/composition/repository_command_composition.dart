@@ -49,6 +49,9 @@ import 'skill_integrity_coordinator.dart';
 import 'update_check_command_handler.dart';
 import 'update_command_handlers.dart';
 import 'validation_command_handlers.dart';
+import 'revision_transfer_command_handlers.dart';
+import 'skill_extra_data_patch_commands.dart';
+import 'personal_tag_mutation_commands.dart';
 
 /// Complete application-layer handler wiring for one Workspace runtime.
 ///
@@ -58,6 +61,7 @@ import 'validation_command_handlers.dart';
 /// omitting a handler or supplying a nullable no-op implementation.
 final class RepositoryCommandComposition {
   RepositoryCommandComposition({
+    required this.revisionTransfers,
     required this.snapshots,
     required this.materializations,
     required this.writerLock,
@@ -102,6 +106,7 @@ final class RepositoryCommandComposition {
     required this.destructivePlanner,
   });
 
+  final WorkspaceRevisionTransferCommands revisionTransfers;
   final WorkspaceSnapshotPublisher snapshots;
   final WorkspaceMaterializationReconciliationPort materializations;
   final WorkspaceWriterLockPort writerLock;
@@ -156,6 +161,15 @@ final class RepositoryCommandComposition {
       writerLock: writerLock,
     );
     final handlers = <SkillsCommandHandler>[
+      ...revisionTransfers.handlers,
+      ...buildPersonalTagMutationHandlers(
+        transfers: revisionTransfers,
+        plans: operationPlans,
+      ),
+      ...buildSkillExtraDataPatchHandlers(
+        transfers: revisionTransfers,
+        plans: operationPlans,
+      ),
       ...buildDriftCommandHandlers(
         snapshots: snapshots,
         materializations: materializations,
@@ -250,7 +264,7 @@ final class RepositoryCommandComposition {
     assertCompleteBusinessHandlers(handlers);
     return CompositeSkillsRepositoryCommandDispatcher(
       guardCorruptSkillMutations(
-        handlers: handlers,
+        handlers: revisionTransfers.network.guardDestruction(handlers),
         snapshots: snapshots,
         integrity: integrity,
       ),

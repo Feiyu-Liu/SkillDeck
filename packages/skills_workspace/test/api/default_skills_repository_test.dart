@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:skills_workspace/src/api/default_skills_repository.dart';
 import 'package:skills_workspace/src/api/destructive_intent.dart';
 import 'package:skills_workspace/src/api/requests.dart';
+import 'package:skills_workspace/src/api/revision_transfer.dart';
+import 'package:skills_workspace/src/api/revision_transfer_remote.dart';
+import 'package:skills_workspace/src/api/skill_extra_data_patch.dart';
+import 'package:skills_workspace/src/api/personal_tag_mutation.dart';
 import 'package:skills_workspace/src/api/result.dart';
 import 'package:skills_workspace/src/api/skills_repository.dart';
 import 'package:skills_workspace/src/api/update_check_store.dart';
@@ -458,6 +462,198 @@ void main() {
           ResolveSkillDriftRequest(
             review: driftReview,
             resolution: const RestoreManagedSkillDrift(),
+          ),
+        ),
+      );
+
+      final identity = WorkspaceIdentity(
+        workspaceId: '123e4567-e89b-42d3-a456-426614174123',
+        recoveryIncarnation: '123e4567-e89b-42d3-a456-426614174124',
+      );
+      final reference = CommittedRevisionReference('a' * 64);
+      final batch = CommittedRevisionBatch(
+        identity: identity,
+        packSha256: 'a' * 64,
+        indexSha256: 'b' * 64,
+        source: source,
+        slotKey: 'sample-skill',
+        contentHash: 'a' * 64,
+        currentUpstream: reference,
+        currentEffective: reference,
+        publishedHistory: [],
+        wireManifest: [],
+        packBytes: [],
+        indexBytes: [],
+      );
+      await route(
+        WorkspaceOperationKind.exportCommittedRevision,
+        repository.exportCommittedRevision(
+          ExportCommittedRevisionRequest(
+            managedSkillId: skillId,
+            expectedRevision: RepositoryRevision(0),
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.applyIncomingRevision,
+        repository.applyIncomingRevision(
+          ApplyIncomingRevisionRequest(
+            managedSkillId: skillId,
+            expectedRevision: RepositoryRevision(0),
+            expectedIdentity: identity,
+            expectedEffective: reference,
+            incoming: batch,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.captureAuthoritativeState,
+        repository.captureAuthoritativeState(
+          const CaptureAuthoritativeStateRequest(),
+        ),
+      );
+
+      await route(
+        WorkspaceOperationKind.prepareIncomingRevision,
+        repository.prepareIncomingRevision(
+          PrepareIncomingRevisionRequest(
+            managedSkillId: skillId,
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            contentManifest: [],
+            packBytes: [],
+          ),
+        ),
+      );
+
+      await route(
+        WorkspaceOperationKind.installIncomingRevision,
+        repository.installIncomingRevision(
+          InstallIncomingRevisionRequest(
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            incoming: batch,
+          ),
+        ),
+      );
+      final remote = RevisionTransferRemote(
+        url: 'https://example.invalid/r.git',
+        ephemeralHeaders: () async => [],
+      );
+      await route(
+        WorkspaceOperationKind.pushCommittedRevision,
+        repository.pushCommittedRevision(
+          PushCommittedRevisionRequest(
+            managedSkillId: skillId,
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            batch: batch,
+            remote: remote,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.fetchIncomingRevision,
+        repository.fetchIncomingRevision(
+          FetchIncomingRevisionRequest(
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            contentManifest: [],
+            remote: remote,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.inspectIncomingRevisionOutcome,
+        repository.inspectIncomingRevisionOutcome(
+          InspectIncomingRevisionOutcomeRequest(
+            binding: IncomingRevisionCommandBinding(
+              operationId: OperationId('123e4567-e89b-42d3-a456-426614174199'),
+              requestFingerprint: 'c' * 64,
+              targetManagedSkillId: skillId,
+              localLineageFingerprint: 'd' * 64,
+              expectedIdentity: identity,
+            ),
+          ),
+        ),
+      );
+      final localBinding = IncomingRevisionCommandBinding(
+        operationId: OperationId('123e4567-e89b-42d3-a456-426614174198'),
+        requestFingerprint: 'c' * 64,
+        targetManagedSkillId: skillId,
+        localLineageFingerprint: 'd' * 64,
+        expectedIdentity: identity,
+      );
+      final patch = SkillExtraDataPatch(favorite: true);
+      await route(
+        WorkspaceOperationKind.reserveSkillExtraDataPatch,
+        repository.reserveSkillExtraDataPatch(
+          ReserveSkillExtraDataPatchRequest(
+            managedSkillId: skillId,
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            localOperationId: localBinding.operationId,
+            patch: patch,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.applySkillExtraDataPatch,
+        repository.applySkillExtraDataPatch(
+          ApplySkillExtraDataPatchRequest(
+            binding: localBinding,
+            expectedRevision: RepositoryRevision(0),
+            patch: patch,
+          ),
+        ),
+      );
+      final tagMutation = PersonalTagMutation(
+        kind: PersonalTagMutationKind.create,
+        name: 'Tag',
+      );
+      final tagBinding = PersonalTagCommandBinding(
+        operationId: OperationId('123e4567-e89b-42d3-a456-426614174197'),
+        requestFingerprint: 'e' * 64,
+        personalTagId: 'local-tag',
+        expectedIdentity: identity,
+      );
+      await route(
+        WorkspaceOperationKind.reservePersonalTagMutation,
+        repository.reservePersonalTagMutation(
+          ReservePersonalTagMutationRequest(
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            localOperationId: tagBinding.operationId,
+            mutation: tagMutation,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.applyPersonalTagMutation,
+        repository.applyPersonalTagMutation(
+          ApplyPersonalTagMutationRequest(
+            binding: tagBinding,
+            expectedRevision: RepositoryRevision(0),
+            mutation: tagMutation,
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.inspectPersonalTagMutationOutcome,
+        repository.inspectPersonalTagMutationOutcome(
+          InspectPersonalTagMutationOutcomeRequest(binding: tagBinding),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.replaceIncomingRevision,
+        repository.replaceIncomingRevision(
+          ReplaceIncomingRevisionRequest(
+            managedSkillId: skillId,
+            expectedIdentity: identity,
+            expectedRevision: RepositoryRevision(0),
+            expectedLocalLineageFingerprint: 'd' * 64,
+            expectedEffective: reference,
+            incoming: batch,
           ),
         ),
       );

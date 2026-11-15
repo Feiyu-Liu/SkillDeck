@@ -361,7 +361,7 @@ void main() {
     );
   });
 
-  test('Install reports deferred cleanup without losing success', () async {
+  test('Install retains committed recovery state when cleanup fails', () async {
     fixture = await _Fixture.create();
     fixture.sources.result = SourceAcquisitionSuccess<AcquiredSource>(
       value: _acquired(),
@@ -371,10 +371,22 @@ void main() {
 
     final result = await fixture.install();
 
-    expect(result.valueOrNull, isNotNull);
+    expect(result, isA<SkillsCommittedFinalizationPending<MutationReport>>());
     expect(
       result.warnings.map((warning) => warning.code),
-      contains(SkillsWarningCode.recoveryCleanupDeferred),
+      contains(SkillsWarningCode.finalizationDeferred),
+    );
+    expect(
+      fixture.operations.controlPlane.repositoryRevision,
+      RepositoryRevision(1),
+    );
+    expect(
+      fixture.operations.controlPlane.journals.single.phase,
+      OperationJournalPhase.completed,
+    );
+    expect(
+      fixture.operations.log.events,
+      isNot(contains('control.rollback-complete')),
     );
   });
 

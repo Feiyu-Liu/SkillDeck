@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:path/path.dart' as path;
+
+import '../application/revision_transfer/revision_transfer_models.dart';
 
 import '../application/activation/activation_mutation_models.dart';
 import '../application/drift/drift_models.dart';
@@ -21,7 +24,11 @@ import '../application/update/update_command_ports.dart';
 import '../application/update/update_models.dart';
 import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
+import '../domain/revision_content.dart';
 import '../infrastructure/workspace_layout.dart';
+import '../infrastructure/database/source_descriptor_codec.dart';
+import '../infrastructure/source/frontmatter_parser.dart';
+import 'dart:convert';
 import '../platform/operations/operation_recovery_bundle.dart';
 
 /// Binds revision-backed mutations to one recoverable filesystem transaction.
@@ -333,6 +340,339 @@ final class WorkspaceRevisionOperationPlans
           ),
         ),
       ],
+    );
+    _requireSealed(envelope, operation);
+    recovery.register();
+    return operation;
+  }
+
+  PreparedOperationEnvelope createIncomingInstallEnvelope({
+    required OperationId operationId,
+    required RepositoryRevision expectedRepositoryRevision,
+    required ManagedSkillId managedSkillId,
+    OperationLocalCommandBinding? localBinding,
+  }) => _revisionEnvelope(
+    operationId: operationId,
+    expectedRepositoryRevision: expectedRepositoryRevision,
+    kind: WorkspaceOperationKind.installIncomingRevision,
+    managedSkillIds: [managedSkillId],
+  ).withLocalBinding(localBinding);
+
+  OperationPlan sealIncomingInstallPlan({
+    required PreparedOperationEnvelope envelope,
+    required PreparedIncomingInstallation prepared,
+    required int plannedAtMicros,
+  }) {
+    final id = prepared.managedSkillId, lineage = prepared.lineage;
+    final content = prepared.content;
+    final root = _candidateRevisionRoot(envelope.operationId, id);
+    final builder = _RecoveryPlanBuilder(
+      envelope: envelope,
+      registry: _recoverySpecs,
+    );
+    builder.addDirectory(
+      targetPath: _storePath(id),
+      intendedSourcePath: path.join(root, 'store.git'),
+      makeReadOnly: false,
+      requirePlainDirectory: false,
+    );
+    builder.addDirectory(
+      targetPath: _bundlePath(id),
+      intendedSourcePath: path.join(root, 'bundle'),
+    );
+    builder.addDirectory(
+      targetPath: _layout.repositoryCopyPath(prepared.batch.slotKey),
+      intendedSourcePath: _candidateMaterializationPath(
+        envelope.operationId,
+        id,
+      ),
+      verifyBeforeCapture: (target) async {
+        if (await FileSystemEntity.type(target, followLinks: false) !=
+            FileSystemEntityType.notFound) {
+          throw const ExternalOperationPreconditionChanged();
+        }
+        return true;
+      },
+    );
+    final source = const SourceDescriptorCodec().encode(prepared.batch.source);
+    final recovery = builder.finish();
+    final operation = _assembler.assemble(
+      localCommandBinding: envelope.localCommandBinding,
+      operationId: envelope.operationId,
+      expectedRepositoryRevision: envelope.expectedRepositoryRevision,
+      kind: WorkspaceOperationKind.installIncomingRevision,
+      recoverySteps: recovery.steps,
+      businessChanges: WorkspaceBusinessChangeSet(
+        mutations: [
+          PutManagedSkill(
+            managedSkillId: id,
+            slotKey: prepared.batch.slotKey,
+            declaredName: prepared.declaredName,
+            displayName: prepared.declaredName,
+            description: prepared.description,
+            activeSourceLineageId: lineage.encoded,
+            createdAtMicros: plannedAtMicros,
+            updatedAtMicros: plannedAtMicros,
+          ),
+          PutSourceLineage(
+            sourceLineageId: lineage.encoded,
+            managedSkillId: id,
+            objectFormat: WorkspaceObjectFormat.sha1,
+            createdAtMicros: plannedAtMicros,
+          ),
+          PutSkillSource(
+            sourceLineageId: lineage.encoded,
+            kind: WorkspaceSourceKind.values.byName(source.kind),
+            payloadSchemaVersion: source.payloadSchemaVersion,
+            payloadJson: source.payloadJson,
+          ),
+          for (final entry in prepared.historyTrees.entries)
+            PutRevisionMetadata(
+              sourceLineageId: lineage.encoded,
+              objectId: entry.key.value,
+              contentHash: entry.value.contentHash,
+              fileCount: entry.value.fileCount,
+              byteSize: entry.value.byteSize,
+              declaredName: prepared.declaredName,
+              validationState: WorkspaceRevisionValidationState.valid,
+              validationCode: null,
+              createdAtMicros: plannedAtMicros,
+            ),
+          for (final entry in content.history)
+            PutRevisionPublishedEvent(
+              sourceLineageId: lineage.encoded,
+              eventFingerprint: entry.descriptor.eventFingerprint,
+              objectId: entry.objectId.value,
+              kind: entry.descriptor.kind.name,
+              contentHash: entry.descriptor.contentHash,
+              publishedAtMicros:
+                  entry.descriptor.publishedAt.microsecondsSinceEpoch,
+            ),
+          PutSkillUserData(
+            managedSkillId: id,
+            favorite: false,
+            favoriteChangedAtMicros: null,
+            note: null,
+            noteUpdatedAtMicros: null,
+          ),
+        ],
+      ),
+      revisionSelectionChanges: [
+        RevisionSelectionChangePlan(
+          managedSkillId: id,
+          previousUpstream: null,
+          previousEffective: null,
+          intendedUpstream: RevisionAddress(
+            sourceLineage: lineage,
+            objectId: content.upstream,
+          ),
+          intendedEffective: RevisionAddress(
+            sourceLineage: lineage,
+            objectId: content.effective,
+          ),
+        ),
+      ],
+      subjects: [
+        OperationSubjectIntent(
+          managedSkillId: id,
+          displayName: prepared.declaredName,
+          sourceLineage: lineage,
+        ),
+      ],
+    );
+    _requireSealed(envelope, operation);
+    recovery.register();
+    return operation;
+  }
+
+  PreparedOperationEnvelope createIncomingRevisionEnvelope({
+    required OperationId operationId,
+    required RepositoryRevision expectedRepositoryRevision,
+    required ManagedSkillId managedSkillId,
+    OperationLocalCommandBinding? localBinding,
+  }) => _revisionEnvelope(
+    operationId: operationId,
+    expectedRepositoryRevision: expectedRepositoryRevision,
+    kind: WorkspaceOperationKind.applyIncomingRevision,
+    managedSkillIds: [managedSkillId],
+  ).withLocalBinding(localBinding);
+
+  OperationPlan sealIncomingRevisionPlan({
+    required PreparedOperationEnvelope envelope,
+    required PreparedIncomingRevision prepared,
+    required int plannedAtMicros,
+    required CancellationToken cancellationToken,
+  }) {
+    final preflight = prepared.preflight;
+    final skill = preflight.skill;
+    final state = preflight.state;
+    final content = preflight.content;
+    final builder = _RecoveryPlanBuilder(
+      envelope: envelope,
+      registry: _recoverySpecs,
+    );
+    _addExistingLineageBundle(builder, envelope.operationId, skill.id);
+    final candidate = _candidateMaterializationPath(
+      envelope.operationId,
+      skill.id,
+    );
+    OperationRecoveryPreCaptureVerifier guard({bool symbolicLink = false}) =>
+        (target) async {
+          final observed = symbolicLink
+              ? await _artifactInspector.inspectSymbolicLink(
+                  path: target,
+                  expectedTarget: _layout.repositoryCopyPath(skill.slotKey),
+                  cancellationToken: cancellationToken,
+                )
+              : await _artifactInspector.inspectDirectory(
+                  path: target,
+                  expectedContentHash: skill.currentRevision.contentHash,
+                  cancellationToken: cancellationToken,
+                );
+          if (cancellationToken.isCancelled) return true;
+          if (observed.state != PublishedArtifactState.matching &&
+              observed.state != PublishedArtifactState.missing) {
+            throw const ExternalOperationPreconditionChanged();
+          }
+          return true;
+        };
+    builder.addDirectory(
+      targetPath: _layout.repositoryCopyPath(skill.slotKey),
+      intendedSourcePath: candidate,
+      verifyBeforeCapture: guard(),
+    );
+    for (final activation in skill.activations) {
+      final target = path.join(activation.location, skill.slotKey);
+      if (activation.mode == ActivationMode.symbolicLink) {
+        builder.addSymbolicLink(
+          targetPath: target,
+          linkTarget: _layout.repositoryCopyPath(skill.slotKey),
+          verifyBeforeCapture: guard(symbolicLink: true),
+        );
+      } else {
+        builder.addDirectory(
+          targetPath: target,
+          intendedSourcePath: candidate,
+          verifyBeforeCapture: guard(),
+        );
+      }
+    }
+    if (prepared.draftFingerprint case final fingerprint?) {
+      builder.addDraftCleanup(
+        targetPath: _layout.draftPath(skill.id),
+        intent: PublishedDraftCleanupIntent(
+          managedSkillId: skill.id,
+          expectedBaseObjectId: content.effective,
+          capturedFingerprint: fingerprint,
+        ),
+      );
+    }
+    PutRevisionMetadata metadata(
+      RevisionObjectId oid,
+      NormalizedSkillTree tree,
+      String name,
+    ) => PutRevisionMetadata(
+      sourceLineageId: state.sourceLineage.encoded,
+      objectId: oid.value,
+      contentHash: tree.contentHash,
+      fileCount: tree.fileCount,
+      byteSize: tree.byteSize,
+      declaredName: name,
+      validationState: WorkspaceRevisionValidationState.valid,
+      validationCode: null,
+      createdAtMicros: plannedAtMicros,
+    );
+    final recovery = builder.finish();
+    final operation = _assembler.assemble(
+      localCommandBinding: envelope.localCommandBinding,
+      operationId: envelope.operationId,
+      expectedRepositoryRevision: envelope.expectedRepositoryRevision,
+      kind: WorkspaceOperationKind.applyIncomingRevision,
+      recoverySteps: recovery.steps,
+      businessChanges: WorkspaceBusinessChangeSet(
+        mutations: [
+          for (final entry in prepared.historyTrees.entries)
+            if (entry.key != content.effective && entry.key != content.upstream)
+              metadata(
+                entry.key,
+                entry.value,
+                parseSkillFrontmatter(
+                  utf8.decode(
+                    entry.value.files
+                        .singleWhere((file) => file.relativePath == 'SKILL.md')
+                        .bytes,
+                  ),
+                )!.declaredName,
+              ),
+          for (final entry in content.history)
+            PutRevisionPublishedEvent(
+              sourceLineageId: state.sourceLineage.encoded,
+              eventFingerprint: entry.descriptor.eventFingerprint,
+              objectId: entry.objectId.value,
+              kind: entry.descriptor.kind.name,
+              contentHash: entry.descriptor.contentHash,
+              publishedAtMicros:
+                  entry.descriptor.publishedAt.microsecondsSinceEpoch,
+            ),
+          if (content.upstream != state.previousUpstream &&
+              content.upstream != content.effective)
+            metadata(
+              content.upstream,
+              prepared.upstreamTree,
+              prepared.upstreamDeclaredName,
+            ),
+          metadata(
+            content.effective,
+            prepared.effectiveTree,
+            prepared.declaredName,
+          ),
+          PutManagedSkill(
+            managedSkillId: skill.id,
+            slotKey: skill.slotKey,
+            declaredName: prepared.declaredName,
+            displayName: skill.displayName == skill.declaredName
+                ? prepared.declaredName
+                : skill.displayName,
+            description: prepared.description,
+            activeSourceLineageId: state.sourceLineage.encoded,
+            createdAtMicros: state.managedSkillCreatedAtMicros,
+            updatedAtMicros: plannedAtMicros,
+          ),
+          if (state.draftCreatedAtMicros != null)
+            PutDraftWorkspace(
+              managedSkillId: skill.id,
+              sourceLineageId: state.sourceLineage.encoded,
+              baseObjectId: content.effective.value,
+              purpose: WorkspaceDraftPurpose.customization,
+              createdAtMicros: state.draftCreatedAtMicros!,
+              updatedAtMicros: plannedAtMicros,
+            ),
+        ],
+      ),
+      revisionSelectionChanges: [
+        RevisionSelectionChangePlan(
+          managedSkillId: skill.id,
+          previousUpstream: RevisionAddress(
+            sourceLineage: state.sourceLineage,
+            objectId: state.previousUpstream,
+          ),
+          previousEffective: RevisionAddress(
+            sourceLineage: state.sourceLineage,
+            objectId: state.currentEffective,
+          ),
+          intendedUpstream: RevisionAddress(
+            sourceLineage: state.sourceLineage,
+            objectId: content.upstream,
+          ),
+          intendedEffective: RevisionAddress(
+            sourceLineage: state.sourceLineage,
+            objectId: content.effective,
+          ),
+        ),
+      ],
+      // This is one actual local apply operation, not a fabricated remote
+      // Publish/history event. Remote published descriptors remain outside DB.
+      subjects: [_nonPublishedSubject(skill, state.sourceLineage)],
     );
     _requireSealed(envelope, operation);
     recovery.register();

@@ -19,6 +19,8 @@ enum RevisionNativeFailureCode {
   bundleFailure,
   closed,
   unexpectedFailure,
+  cancelled,
+  limitExceeded,
 }
 
 final class RevisionNativeException implements Exception {
@@ -501,24 +503,135 @@ final class RevisionNativeEngine {
     });
   }
 
+  RevisionCommitTopology inspectCommit(
+    String repositoryPath,
+    RevisionObjectId commit, {
+    RevisionCommitInspectionLimits limits =
+        const RevisionCommitInspectionLimits(),
+  }) {
+    _ensureOpen();
+    final bytes = _readVariableBufferWithArena(
+      operation: 'inspectCommit',
+      invoke: (arena, output, capacity, required) =>
+          bindings.skills_workspace_revision_commit_inspect(
+            repositoryPath.toNativeUtf8(allocator: arena).cast(),
+            commit.value.toNativeUtf8(allocator: arena).cast(),
+            limits.maximumCommitBytes,
+            limits.maximumParentCount,
+            output,
+            capacity,
+            required,
+          ),
+    );
+    final lines = const LineSplitter().convert(ascii.decode(bytes));
+    if (lines.isEmpty || lines.length - 1 > limits.maximumParentCount) {
+      throw const RevisionNativeException(
+        code: RevisionNativeFailureCode.verificationFailure,
+        operation: 'inspectCommit',
+      );
+    }
+    return RevisionCommitTopology(
+      tree: RevisionObjectId(lines.first),
+      parents: lines.skip(1).map(RevisionObjectId.new).toList(),
+    );
+  }
+
+  RevisionObjectImportReport importObjects({
+    required String repositoryPath,
+    required String stagedRepositoryPath,
+    required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    int cancelFlagAddress = 0,
+  }) {
+    _ensureOpen();
+    return using((arena) {
+      final count = arena<ffi.Int64>();
+      final bytes = arena<ffi.Int64>();
+      _checkStatus(
+        bindings.skills_workspace_revision_objects_import(
+          repositoryPath.toNativeUtf8(allocator: arena).cast(),
+          stagedRepositoryPath.toNativeUtf8(allocator: arena).cast(),
+          _copyObjectIds(retainedRoots, arena),
+          retainedRoots.length,
+          limits.maximumObjectCount,
+          limits.maximumObjectBytes,
+          limits.maximumTotalBytes,
+          limits.maximumCommitBytes,
+          limits.maximumParentCount,
+          ffi.Pointer<ffi.Int32>.fromAddress(cancelFlagAddress),
+          count,
+          bytes,
+        ),
+        operation: 'importObjects',
+      );
+      return RevisionObjectImportReport(
+        objectCount: count.value,
+        totalBytes: bytes.value,
+      );
+    });
+  }
+
   void createRecoveryPack({
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) {
     _ensureOpen();
     using((arena) {
       final roots = _copyObjectIds(retainedRoots, arena);
+      final repository = repositoryPath
+          .toNativeUtf8(allocator: arena)
+          .cast<ffi.Char>();
+      final staging = bundleStagingPath
+          .toNativeUtf8(allocator: arena)
+          .cast<ffi.Char>();
       _checkStatus(
-        bindings.skills_workspace_revision_recovery_pack_create(
-          repositoryPath.toNativeUtf8(allocator: arena).cast(),
-          bundleStagingPath.toNativeUtf8(allocator: arena).cast(),
-          roots,
-          retainedRoots.length,
-        ),
+        limits == null
+            ? bindings.skills_workspace_revision_recovery_pack_create(
+                repository,
+                staging,
+                roots,
+                retainedRoots.length,
+              )
+            : bindings.skills_workspace_revision_recovery_pack_create_bounded(
+                repository,
+                staging,
+                roots,
+                retainedRoots.length,
+                limits.maximumObjectCount,
+                limits.maximumObjectBytes,
+                limits.maximumTotalBytes,
+                limits.maximumCommitBytes,
+                limits.maximumParentCount,
+              ),
         operation: 'createRecoveryPack',
       );
     });
+  }
+
+  void createPackIndex({
+    required String packPath,
+    required String stagingDirectory,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    int cancelFlagAddress = 0,
+  }) {
+    _ensureOpen();
+    using(
+      (arena) => _checkStatus(
+        bindings.skills_workspace_revision_pack_index_create_bounded(
+          packPath.toNativeUtf8(allocator: arena).cast(),
+          stagingDirectory.toNativeUtf8(allocator: arena).cast(),
+          limits.maximumObjectCount,
+          limits.maximumObjectBytes,
+          limits.maximumTotalBytes,
+          limits.maximumCommitBytes,
+          limits.maximumDeltaDepth,
+          ffi.Pointer<ffi.Int32>.fromAddress(cancelFlagAddress),
+        ),
+        operation: 'createPackIndex',
+      ),
+    );
   }
 
   void restoreRecoveryPack({
@@ -526,18 +639,40 @@ final class RevisionNativeEngine {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    int cancelFlagAddress = 0,
   }) {
     _ensureOpen();
     using((arena) {
       final roots = _copyObjectIds(retainedRoots, arena);
+      final repository = stagedRepositoryPath
+          .toNativeUtf8(allocator: arena)
+          .cast<ffi.Char>();
+      final pack = packPath.toNativeUtf8(allocator: arena).cast<ffi.Char>();
+      final index = indexPath.toNativeUtf8(allocator: arena).cast<ffi.Char>();
       _checkStatus(
-        bindings.skills_workspace_revision_recovery_pack_restore(
-          stagedRepositoryPath.toNativeUtf8(allocator: arena).cast(),
-          packPath.toNativeUtf8(allocator: arena).cast(),
-          indexPath.toNativeUtf8(allocator: arena).cast(),
-          roots,
-          retainedRoots.length,
-        ),
+        limits == null
+            ? bindings.skills_workspace_revision_recovery_pack_restore(
+                repository,
+                pack,
+                index,
+                roots,
+                retainedRoots.length,
+              )
+            : bindings.skills_workspace_revision_recovery_pack_restore_bounded(
+                repository,
+                pack,
+                index,
+                roots,
+                retainedRoots.length,
+                limits.maximumObjectCount,
+                limits.maximumObjectBytes,
+                limits.maximumTotalBytes,
+                limits.maximumCommitBytes,
+                limits.maximumParentCount,
+                limits.maximumDeltaDepth,
+                ffi.Pointer<ffi.Int32>.fromAddress(cancelFlagAddress),
+              ),
         operation: 'restoreRecoveryPack',
       );
     });
@@ -705,6 +840,8 @@ void _checkStatus(int status, {required String operation}) {
     5 => RevisionNativeFailureCode.verificationFailure,
     6 => RevisionNativeFailureCode.bufferTooSmall,
     7 => RevisionNativeFailureCode.bundleFailure,
+    8 => RevisionNativeFailureCode.cancelled,
+    9 => RevisionNativeFailureCode.limitExceeded,
     _ => RevisionNativeFailureCode.unexpectedFailure,
   };
   throw RevisionNativeException(code: code, operation: operation);

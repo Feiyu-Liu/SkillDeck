@@ -60,11 +60,14 @@ final class DriftUpdateDraftInspection
       cancellationToken: cancellationToken,
     );
     return switch (result) {
-      DraftDirtyStateInspectionSuccess(:final isDirty) =>
+      DraftDirtyStateInspectionSuccess(
+        :final isDirty,
+        :final cleanFingerprint,
+      ) =>
         UpdateDraftInspectionSuccess(
           isDirty
               ? const UpdateDraftInspection.dirty()
-              : const UpdateDraftInspection.clean(),
+              : UpdateDraftInspection.clean(cleanFingerprint: cleanFingerprint),
         ),
       DraftDirtyStateInspectionFailure(:final reason) =>
         UpdateDraftInspectionFailure(reason),
@@ -107,7 +110,7 @@ final class DriftUpdateDraftInspection
         _storePath(skill.id),
         selected.baseObjectId,
       );
-      final result = await _snapshots.inspectDirty(
+      final result = await _snapshots.inspectForCleanup(
         request: DraftCaptureRequest(
           liveDraftPath: _layout.draftPath(skill.id),
           stagingDestinationPath: path.join(
@@ -134,7 +137,10 @@ final class DriftUpdateDraftInspection
         }
         return DraftDirtyStateInspectionFailure(code.name);
       }
-      return DraftDirtyStateInspectionSuccess(isDirty: dirty);
+      return DraftDirtyStateInspectionSuccess(
+        isDirty: dirty.isDirty,
+        cleanFingerprint: dirty.cleanupFingerprint,
+      );
     } on RevisionEngineException catch (error) {
       return DraftDirtyStateInspectionFailure(error.code.name);
     } on Object {

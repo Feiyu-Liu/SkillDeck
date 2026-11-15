@@ -1,6 +1,9 @@
 /*
  * Copyright (C) the libgit2 contributors. All rights reserved.
  *
+ * SkillDeck project modification: validate repository paths against the
+ * extended Win32 backend UTF-16 limit, not the legacy MAX_PATH limit.
+ *
  * This file is part of libgit2, distributed under the GNU GPL v2 with
  * a Linking Exception. For full terms see the included COPYING file.
  */
@@ -1770,11 +1773,17 @@ int git_fs_path_validate_str_length_with_suffix(
 	size_t suffix_len)
 {
 #ifdef GIT_WIN32
-	size_t utf8_len = git_utf8_char_length(path->ptr, path->size);
+	git_win32_path converted;
+	int utf16_len = git_win32_path_from_utf8(converted, path->ptr);
 	size_t total_len;
 
-	if (GIT_ADD_SIZET_OVERFLOW(&total_len, utf8_len, suffix_len) ||
-	    total_len > MAX_PATH) {
+	if (utf16_len < 0)
+		return -1;
+
+	/* All backend paths include the NT namespace prefix. Count UTF-16 code
+	 * units (including surrogate pairs), reserving the terminating NUL. */
+	if (GIT_ADD_SIZET_OVERFLOW(&total_len, (size_t)utf16_len, suffix_len) ||
+	    total_len >= GIT_WIN_PATH_MAX) {
 
 		git_error_set(GIT_ERROR_FILESYSTEM, "path too long: '%.*s'",
 			(int)path->size, path->ptr);

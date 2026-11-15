@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:code_assets/code_assets.dart';
@@ -76,8 +77,21 @@ void main(List<String> args) async {
       }
 
       output.dependencies.add(
-        input.packageRoot.resolve('native/libgit2.lock.json'),
+        input.packageRoot.resolve('native/src/internal_repository_policy.h'),
       );
+      final dependencyLock = input.packageRoot.resolve(
+        'native/libgit2.lock.json',
+      );
+      output.dependencies.add(dependencyLock);
+      final lock =
+          jsonDecode(await File.fromUri(dependencyLock).readAsString())
+              as Map<String, Object?>;
+      for (final patch in lock['projectPatches']! as List<Object?>) {
+        final sourcePath = (patch! as Map<String, Object?>)['path']! as String;
+        output.dependencies.add(
+          input.packageRoot.resolve('native/third_party/libgit2/$sourcePath'),
+        );
+      }
       output.dependencies.add(
         input.packageRoot.resolve('native/sanitizers.config'),
       );

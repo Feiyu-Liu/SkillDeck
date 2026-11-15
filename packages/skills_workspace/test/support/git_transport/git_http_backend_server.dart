@@ -18,24 +18,41 @@ final class GitHttpBackendServer {
 
   /// Number of requests served, for asserting that a client never connected.
   int requestCount = 0;
+  int authenticatedRequestCount = 0;
 
   static Future<GitHttpBackendServer> start({
     required String projectRoot,
     bool requireAuthentication = false,
+    String? bearerToken,
+    String? redirectTo,
+    void Function(HttpRequest request)? onRequest,
+    void Function(int bytes)? onRequestBody,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final backend = GitHttpBackendServer._(server, projectRoot);
     server.listen((request) async {
       backend.requestCount += 1;
       try {
-        if (requireAuthentication) {
+        onRequest?.call(request);
+        if (redirectTo != null) {
+          request.response
+            ..statusCode = HttpStatus.temporaryRedirect
+            ..headers.set(HttpHeaders.locationHeader, redirectTo);
+          await request.response.close();
+          return;
+        }
+        if (requireAuthentication ||
+            (bearerToken != null &&
+                request.headers.value(HttpHeaders.authorizationHeader) !=
+                    'Bearer $bearerToken')) {
           request.response
             ..statusCode = HttpStatus.unauthorized
             ..headers.set('WWW-Authenticate', 'Basic realm="fixture"');
           await request.response.close();
           return;
         }
-        await backend._serve(request);
+        if (bearerToken != null) backend.authenticatedRequestCount += 1;
+        await backend._serve(request, onRequestBody);
       } on Object {
         try {
           request.response.statusCode = HttpStatus.internalServerError;
@@ -54,9 +71,15 @@ final class GitHttpBackendServer {
 
   Future<void> close() => _server.close(force: true);
 
-  Future<void> _serve(HttpRequest request) async {
+  Future<void> _serve(
+    HttpRequest request,
+    void Function(int bytes)? onRequestBody,
+  ) async {
     final body = BytesBuilder(copy: false);
-    await request.forEach(body.add);
+    await request.forEach((chunk) {
+      onRequestBody?.call(chunk.length);
+      body.add(chunk);
+    });
     final environment = <String, String>{
       'PATH': Platform.environment['PATH'] ?? '',
       if (Platform.isWindows)

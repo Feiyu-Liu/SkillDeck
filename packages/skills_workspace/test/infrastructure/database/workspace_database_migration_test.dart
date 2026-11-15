@@ -73,7 +73,7 @@ void main() {
     reopened.close();
   });
 
-  test('committed schema v3 matches the current Drift declaration', () async {
+  test('committed schema v4 matches the current Drift declaration', () async {
     final verifier = SchemaVerifier(GeneratedHelper());
     final schema = await verifier.schemaAt(workspaceDatabaseSchemaVersion);
     final database = WorkspaceDatabase.forTesting(schema.newConnection());

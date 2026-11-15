@@ -232,6 +232,7 @@ final class DestructiveOperationPlanner {
     required DestructivePlanningSnapshot snapshot,
     required DestructiveOperationIntent destructiveIntent,
     required Set<ManagedSkillId> managedSkillIds,
+    bool requireCleanDraft = false,
     required CancellationToken cancellationToken,
   }) async {
     final stale = _validateReviewedRevision<OperationPlan>(
@@ -255,6 +256,26 @@ final class DestructiveOperationPlanner {
           code: DestructivePlanningFailureCode.managedSkillNotFound,
           context: {'managedSkillId': managedSkillId.value},
         );
+      }
+      if (requireCleanDraft) {
+        if (skill.draftState == DestructiveDraftState.dirty) {
+          return DestructivePlanningFailure<OperationPlan>(
+            code: DestructivePlanningFailureCode.dirtyDraftResolutionRequired,
+          );
+        }
+        if (skill.hasUpdateCandidateSession) {
+          return DestructivePlanningFailure<OperationPlan>(
+            code: DestructivePlanningFailureCode
+                .updateCandidateResolutionRequired,
+          );
+        }
+        if (skill.draftState == DestructiveDraftState.clean &&
+            skill.cleanDraftFingerprint == null) {
+          return DestructivePlanningFailure<OperationPlan>(
+            code: DestructivePlanningFailureCode.sourcePreparationFailed,
+            context: const {'reason': 'cleanDraftEvidenceUnavailable'},
+          );
+        }
       }
       skills.add(skill);
     }
@@ -348,6 +369,7 @@ final class DestructiveOperationPlanner {
     activationIds: skill.activationIds,
     hasDraft: skill.draftState != DestructiveDraftState.absent,
     hasUpdateCandidateSession: skill.hasUpdateCandidateSession,
+    expectedCleanDraftFingerprint: skill.cleanDraftFingerprint,
   );
 
   DestructivePlanningFailure<OperationPlan> _cancelled() =>

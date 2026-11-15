@@ -333,7 +333,23 @@ final class _FakeControlPlaneDatabase
   Future<ControlPlaneIdentity> liveIdentity() async => identity;
 
   @override
-  Future<void> vacuumInto(String destinationPath) async {
+  Future<ControlPlaneIdentity> markRestoredIncarnation(String path) async {
+    final result = await probeDatabase(
+      path,
+      integrityLevel: ControlPlaneIntegrityLevel.full,
+    );
+    return (result as ControlPlaneHealthy).identity;
+  }
+
+  @override
+  Future<int> completedOperationRevision(String operationId) async =>
+      identity.repositoryRevision;
+
+  @override
+  Future<void> vacuumInto(
+    String destinationPath, {
+    String? omitCompletedOperationId,
+  }) async {
     if (await File(destinationPath).exists()) {
       throw StateError('VACUUM INTO destination already exists.');
     }

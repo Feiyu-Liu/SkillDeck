@@ -1,5 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart' as path;
+
+import '../api/revision_transfer.dart';
+import '../application/revision_transfer/revision_transfer_models.dart';
+import '../domain/slot_key.dart';
 
 import '../application/drift/drift_models.dart';
 import '../application/drafts/draft_models.dart';
@@ -481,6 +486,318 @@ final class WorkspaceRevisionPreparationService
         ? const {'reason': 'artifactChanged'}
         : failure.context,
   );
+
+  Future<PreparedIncomingInstallation> prepareIncomingInstallation({
+    required OperationId operationId,
+    required ManagedSkillId managedSkillId,
+    required SourceLineageReference lineage,
+    required CommittedRevisionBatch batch,
+    required IncomingRevisionContent content,
+    required CancellationToken cancellationToken,
+  }) async {
+    _throwIfCancelled(cancellationToken);
+    final root = _candidateRoot(operationId, managedSkillId);
+    await _filesystem.ensureDirectory(root);
+    final pack = path.join(root, 'received.pack'),
+        index = path.join(root, 'received.idx');
+    final store = path.join(root, 'store.git');
+    await _filesystem.writeDurableFile(pack, content.packBytes);
+    await _filesystem.writeDurableFile(index, content.indexBytes);
+    await _revisions.restoreRecoveryPack(
+      stagedRepositoryPath: store,
+      packPath: pack,
+      indexPath: index,
+      retainedRoots: content.roots,
+      limits: const RevisionObjectImportLimits(),
+      cancellationToken: cancellationToken,
+    );
+    final trees = <RevisionObjectId, NormalizedSkillTree>{};
+    for (final rootId in content.roots) {
+      _throwIfCancelled(cancellationToken);
+      final raw = await _revisions.readTree(store, rootId);
+      final normalized = const SkillContentNormalizer().normalize([
+        for (final file in raw.files)
+          SkillContentEntry.file(
+            path: file.relativePath,
+            bytes: file.bytes,
+            isExecutable: file.isExecutable,
+          ),
+      ]).valueOrNull;
+      if (normalized == null || normalized.contentHash != raw.contentHash) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidSkill,
+        );
+      }
+      final skillFile = normalized.files
+          .where((file) => file.relativePath == 'SKILL.md')
+          .firstOrNull;
+      final metadata = skillFile == null
+          ? null
+          : parseSkillFrontmatter(utf8.decode(skillFile.bytes));
+      if (metadata == null) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidSkill,
+        );
+      }
+      final derivedSlot = deriveSlotKeyValue(metadata.declaredName).value;
+      if (derivedSlot == null ||
+          (rootId == content.effective || rootId == content.upstream) &&
+              derivedSlot != batch.slotKey) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.slotMismatch,
+        );
+      }
+      if (rootId != content.upstream &&
+          rootId != content.effective &&
+          !await _revisions.isAncestor(
+            repositoryPath: store,
+            ancestor: rootId,
+            descendant: content.effective,
+          )) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.historyRetentionRequired,
+        );
+      }
+      trees[rootId] = normalized;
+    }
+    final upstream = trees[content.upstream]!,
+        effective = trees[content.effective]!;
+    if (effective.contentHash != content.contentHash) {
+      throw const IncomingRevisionRejected(
+        IncomingRevisionPendingReason.invalidPayload,
+      );
+    }
+    for (final event in content.history) {
+      if (trees[event.objectId]!.contentHash != event.descriptor.contentHash) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidPayload,
+        );
+      }
+    }
+    final metadata = parseSkillFrontmatter(
+      utf8.decode(
+        effective.files
+            .singleWhere((file) => file.relativePath == 'SKILL.md')
+            .bytes,
+      ),
+    )!;
+    final upstreamMetadata = parseSkillFrontmatter(
+      utf8.decode(
+        upstream.files
+            .singleWhere((file) => file.relativePath == 'SKILL.md')
+            .bytes,
+      ),
+    )!;
+    await _writeRecoveryBundleAt(
+      operationStagingRoot: _layout.operationStagingPath(operationId),
+      bundle: path.join(root, 'bundle'),
+      store: store,
+      sourceLineage: lineage,
+      currentUpstream: content.upstream,
+      currentEffective: content.effective,
+      retainedRoots: content.roots,
+    );
+    await _writeTree(
+      _candidateMaterializationPath(operationId, managedSkillId),
+      effective,
+      cancellationToken,
+    );
+    return PreparedIncomingInstallation(
+      managedSkillId: managedSkillId,
+      lineage: lineage,
+      batch: batch,
+      content: content,
+      upstreamTree: upstream,
+      effectiveTree: effective,
+      historyTrees: trees,
+      declaredName: metadata.declaredName,
+      upstreamDeclaredName: upstreamMetadata.declaredName,
+      description: metadata.description,
+    );
+  }
+
+  /// Local object-preserving preparation, called only after a Prepared Journal.
+  Future<PreparedIncomingRevision> prepareIncomingRevision({
+    required OperationId operationId,
+    required IncomingRevisionPreflight preflight,
+    required CancellationToken cancellationToken,
+  }) async {
+    _throwIfCancelled(cancellationToken);
+    final skill = preflight.skill;
+    final state = preflight.state;
+    final content = preflight.content;
+    final store = _storePath(skill.id);
+    DraftFingerprint? fingerprint;
+    if (state.draftCreatedAtMicros != null) {
+      final base = await _revisions.readTree(store, state.currentEffective);
+      final inspection = await _drafts.inspectForCleanup(
+        request: DraftCaptureRequest(
+          liveDraftPath: _layout.draftPath(skill.id),
+          stagingDestinationPath: _candidateDraftPath(operationId, skill.id),
+          capturePosixExecutableIntent: _capturePosixExecutableIntent,
+          executableIntentOverrides: _executableIntentOverrides(base),
+          isCancelled: () => cancellationToken.isCancelled,
+        ),
+        draftBase: base,
+      );
+      if (inspection.valueOrNull == null || inspection.valueOrNull!.isDirty) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.dirtyDraft,
+        );
+      }
+      fingerprint = inspection.valueOrNull!.cleanupFingerprint;
+    }
+    final root = _candidateRoot(operationId, skill.id);
+    await _filesystem.ensureDirectory(root);
+    final pack = path.join(root, 'incoming.pack');
+    final index = path.join(root, 'incoming.idx');
+    final staging = path.join(root, 'incoming.git');
+    await _filesystem.writeDurableFile(pack, content.packBytes);
+    await _filesystem.writeDurableFile(index, content.indexBytes);
+    await _revisions.restoreRecoveryPack(
+      stagedRepositoryPath: staging,
+      packPath: pack,
+      indexPath: index,
+      retainedRoots: content.roots,
+      limits: const RevisionObjectImportLimits(),
+      cancellationToken: cancellationToken,
+    );
+    _throwIfCancelled(cancellationToken);
+    Future<bool> ancestor(RevisionObjectId a, RevisionObjectId b) async {
+      if (a == b) return true;
+      try {
+        return await _revisions.isAncestor(
+          repositoryPath: staging,
+          ancestor: a,
+          descendant: b,
+        );
+      } on RevisionEngineException {
+        return false;
+      }
+    }
+
+    if (!await ancestor(state.currentEffective, content.effective)) {
+      throw const IncomingRevisionRejected(
+        IncomingRevisionPendingReason.diverged,
+      );
+    }
+    if (!await ancestor(state.previousUpstream, content.upstream)) {
+      throw const IncomingRevisionRejected(
+        IncomingRevisionPendingReason.baselineMismatch,
+      );
+    }
+    for (final published in content.roots) {
+      if (published != content.upstream &&
+          !await ancestor(published, content.effective)) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.historyRetentionRequired,
+        );
+      }
+    }
+    NormalizedSkillTree validate(NormalizedSkillTree raw) {
+      final normalized = const SkillContentNormalizer().normalize([
+        for (final file in raw.files)
+          SkillContentEntry.file(
+            path: file.relativePath,
+            bytes: file.bytes,
+            isExecutable: file.isExecutable,
+          ),
+      ]).valueOrNull;
+      if (normalized == null || normalized.contentHash != raw.contentHash) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidSkill,
+        );
+      }
+      return normalized;
+    }
+
+    final upstream = validate(
+      await _revisions.readTree(staging, content.upstream),
+    );
+    final effective = validate(
+      await _revisions.readTree(staging, content.effective),
+    );
+    if (effective.contentHash != content.contentHash) {
+      throw const IncomingRevisionRejected(
+        IncomingRevisionPendingReason.invalidPayload,
+      );
+    }
+    SkillFrontmatter frontmatter(
+      NormalizedSkillTree tree, {
+      bool requireCurrentSlot = true,
+    }) {
+      final bytes = tree.files
+          .where((file) => file.relativePath == 'SKILL.md')
+          .firstOrNull
+          ?.bytes;
+      final parsed = bytes == null
+          ? null
+          : parseSkillFrontmatter(utf8.decode(bytes));
+      if (parsed == null) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidSkill,
+        );
+      }
+      final derivedSlot = deriveSlotKeyValue(parsed.declaredName).value;
+      if (derivedSlot == null ||
+          requireCurrentSlot && derivedSlot != skill.slotKey) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.slotMismatch,
+        );
+      }
+      return parsed;
+    }
+
+    final upstreamMetadata = frontmatter(upstream);
+    final metadata = frontmatter(effective);
+    final historyTrees = <RevisionObjectId, NormalizedSkillTree>{};
+    for (final entry in content.history) {
+      final tree =
+          historyTrees[entry.objectId] ??
+          validate(await _revisions.readTree(staging, entry.objectId));
+      frontmatter(tree, requireCurrentSlot: false);
+      if (tree.contentHash != entry.descriptor.contentHash) {
+        throw const IncomingRevisionRejected(
+          IncomingRevisionPendingReason.invalidPayload,
+        );
+      }
+      historyTrees[entry.objectId] = tree;
+    }
+    _throwIfCancelled(cancellationToken);
+    await _revisions.importObjects(
+      repositoryPath: store,
+      stagedRepositoryPath: staging,
+      retainedRoots: content.roots,
+      cancellationToken: cancellationToken,
+    );
+    await _writeRecoveryBundle(
+      operationId: operationId,
+      managedSkillId: skill.id,
+      store: store,
+      sourceLineage: state.sourceLineage,
+      currentUpstream: content.upstream,
+      currentEffective: content.effective,
+      retainedRoots: {
+        ...content.roots,
+        ...preflight.localPublishedRoots,
+      }.toList(),
+    );
+    await _writeTree(
+      _candidateMaterializationPath(operationId, skill.id),
+      effective,
+      cancellationToken,
+    );
+    return PreparedIncomingRevision(
+      preflight: preflight,
+      upstreamTree: upstream,
+      upstreamDeclaredName: upstreamMetadata.declaredName,
+      effectiveTree: effective,
+      declaredName: metadata.declaredName,
+      description: metadata.description,
+      draftFingerprint: fingerprint,
+      historyTrees: historyTrees,
+    );
+  }
 
   @override
   Future<UpdateRevisionPreparationResult> prepareUpdate({

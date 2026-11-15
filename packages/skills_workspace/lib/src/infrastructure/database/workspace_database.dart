@@ -2,19 +2,26 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../application/backup/control_plane_backup_models.dart';
+import '../../application/operations/operation_models.dart'
+    show OperationJournalPhase;
 import '../../application/ports/control_plane_backup_ports.dart';
 import 'workspace_database_open_retry.dart';
 
 part 'workspace_database.g.dart';
 
-const int workspaceDatabaseSchemaVersion = 3;
+// v4 is a reader/writer compatibility barrier for new operation semantics.
+// Physical v3 tables are unchanged; older readers must refuse these records.
+const int workspaceDatabaseSchemaVersion = 4;
 const int minimumSupportedWorkspaceDatabaseSchemaVersion = 2;
 const int currentSourcePayloadSchemaVersion = 1;
 
 class WorkspaceMetadata extends Table {
   IntColumn get singleton => integer()();
+  TextColumn get workspaceId => text()();
+  TextColumn get recoveryIncarnation => text()();
   IntColumn get repositoryRevision => integer()();
   IntColumn get destructionEpoch => integer()();
   IntColumn get createdAtMicros => integer()();
@@ -26,6 +33,8 @@ class WorkspaceMetadata extends Table {
   @override
   List<String> get customConstraints => const [
     'CHECK (singleton = 1)',
+    'CHECK (length(workspace_id) = 36)',
+    'CHECK (length(recovery_incarnation) = 36)',
     'CHECK (repository_revision >= 0)',
     'CHECK (destruction_epoch >= 0)',
     'CHECK (created_at_micros >= 0)',
@@ -146,6 +155,106 @@ class RevisionMetadata extends Table {
     "CHECK ((validation_state = 'valid' AND validation_code IS NULL) OR "
         "(validation_state = 'invalid' AND length(trim(validation_code)) > 0))",
     'CHECK (created_at_micros >= 0)',
+  ];
+}
+
+/// Imported published/restorable event facts owned by one local Source Lineage.
+/// These are immutable event descriptors, never fabricated local operations.
+/// Only short-lived incoming preparation paths with no existing Skill owner.
+/// Registered before bytes are written and reclaimed under startup writer lock.
+/// Pending receiver reservations are local intent, not completed Skill history.
+/// Global-tag commands have an independent non-Skill history meaning. Receipts
+/// retain only local intent identity and result ID, never retired Skill data.
+class WorkspaceGlobalCommandReservations extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get requestFingerprint => text()();
+  TextColumn get recoveryIncarnation => text()();
+  TextColumn get personalTagId => text()();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class WorkspaceGlobalCommandOutcomes extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get requestFingerprint => text()();
+  TextColumn get personalTagId => text()();
+  IntColumn get committedRepositoryRevision => integer()();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class WorkspaceNetworkTransfers extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get managedSkillId => text().nullable().references(
+    ManagedSkills,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  TextColumn get sourceLineageId => text().nullable().references(
+    SourceLineages,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class WorkspaceIncomingReservations extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get requestFingerprint => text()();
+  TextColumn get recoveryIncarnation => text()();
+  TextColumn get managedSkillId => text()();
+  TextColumn get sourceLineageId => text()();
+  TextColumn get previousSourceLineageId => text().nullable()();
+  TextColumn get expectedEffectiveObjectId => text().nullable()();
+  TextColumn get contentManifestDigest => text()();
+  BoolColumn get newInstallation => boolean()();
+  BoolColumn get replacement => boolean().withDefault(const Constant(false))();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class WorkspaceIncomingOutcomes extends Table {
+  TextColumn get operationId => text()();
+  TextColumn get requestFingerprint => text()();
+  TextColumn get managedSkillId =>
+      text().references(ManagedSkills, #id, onDelete: KeyAction.cascade)();
+  TextColumn get sourceLineageId =>
+      text().references(SourceLineages, #id, onDelete: KeyAction.cascade)();
+  TextColumn get expectedEffectiveObjectId => text().nullable()();
+  TextColumn get contentManifestDigest => text()();
+  BoolColumn get newInstallation => boolean()();
+  BoolColumn get replacement => boolean().withDefault(const Constant(false))();
+  TextColumn get effectiveObjectId => text()();
+  TextColumn get upstreamObjectId => text()();
+  IntColumn get committedRepositoryRevision => integer()();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class WorkspaceTransferArtifacts extends Table {
+  TextColumn get operationId => text()();
+  @override
+  Set<Column<Object>> get primaryKey => {operationId};
+}
+
+class RevisionPublishedEvents extends Table {
+  TextColumn get sourceLineageId =>
+      text().references(SourceLineages, #id, onDelete: KeyAction.cascade)();
+  TextColumn get eventFingerprint => text()();
+  TextColumn get objectId => text()();
+  TextColumn get kind => text()();
+  TextColumn get contentHash => text()();
+  IntColumn get publishedAtMicros => integer()();
+  @override
+  Set<Column<Object>> get primaryKey => {sourceLineageId, eventFingerprint};
+  @override
+  List<String> get customConstraints => [
+    'CHECK (length(event_fingerprint) = 64)',
+    'CHECK (length(object_id) = 40)',
+    'CHECK (length(content_hash) = 64)',
+    'CHECK (published_at_micros >= 0)',
+    'FOREIGN KEY (source_lineage_id, object_id) REFERENCES revision_metadata(source_lineage_id, object_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED',
   ];
 }
 
@@ -589,6 +698,13 @@ class OperationSubjects extends Table {
     SourceLineages,
     SkillSources,
     RevisionMetadata,
+    RevisionPublishedEvents,
+    WorkspaceTransferArtifacts,
+    WorkspaceIncomingReservations,
+    WorkspaceIncomingOutcomes,
+    WorkspaceNetworkTransfers,
+    WorkspaceGlobalCommandReservations,
+    WorkspaceGlobalCommandOutcomes,
     CurrentRevisionSelection,
     DraftWorkspaces,
     UpdateCandidateSessions,
@@ -670,6 +786,8 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
             await into(workspaceMetadata).insert(
               WorkspaceMetadataCompanion.insert(
                 singleton: const Value(1),
+                workspaceId: const Uuid().v4(),
+                recoveryIncarnation: const Uuid().v4(),
                 repositoryRevision: 0,
                 destructionEpoch: 0,
                 createdAtMicros: now,
@@ -683,7 +801,7 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
             );
           },
           onUpgrade: (migrator, from, to) async {
-            if (from == 2 && to == 3) {
+            if (from == 2 && (to == 3 || to == 4)) {
               await migrator.createTable(skillUpdateCheckRecords);
               await migrator.createTable(skillUpdateCheckMetadata);
               await into(skillUpdateCheckMetadata).insert(
@@ -691,11 +809,35 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
                   singleton: const Value(1),
                 ),
               );
-              return;
+            } else if (!(from == 3 && to == 4)) {
+              throw StateError(
+                'Unsupported workspace schema migration $from->$to',
+              );
             }
-            throw StateError(
-              'Unsupported workspace schema migration $from->$to',
-            );
+            if (to == 4) {
+              await migrator.createTable(revisionPublishedEvents);
+              await migrator.createTable(workspaceTransferArtifacts);
+              await migrator.createTable(workspaceIncomingReservations);
+              await migrator.createTable(workspaceIncomingOutcomes);
+              await migrator.createTable(workspaceNetworkTransfers);
+              await migrator.createTable(workspaceGlobalCommandReservations);
+              await migrator.createTable(workspaceGlobalCommandOutcomes);
+              await migrator.alterTable(
+                TableMigration(
+                  workspaceMetadata,
+                  newColumns: [
+                    workspaceMetadata.workspaceId,
+                    workspaceMetadata.recoveryIncarnation,
+                  ],
+                  columnTransformer: {
+                    workspaceMetadata.workspaceId: Variable(const Uuid().v4()),
+                    workspaceMetadata.recoveryIncarnation: Variable(
+                      const Uuid().v4(),
+                    ),
+                  },
+                ),
+              );
+            }
           },
         );
     return MigrationStrategy(
@@ -757,7 +899,74 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
   }
 
   @override
-  Future<void> vacuumInto(String destinationPath) async {
+  Future<ControlPlaneIdentity> markRestoredIncarnation(
+    String stagedDatabasePath,
+  ) async {
+    final staged = _WorkspaceArtifactDatabase(File(stagedDatabasePath));
+    try {
+      // Opening a verified v2/v3 backup performs the supported schema upgrade.
+      await staged.select(staged.workspaceMetadata).getSingle();
+      await (staged.update(
+        staged.workspaceMetadata,
+      )..where((row) => row.singleton.equals(1))).write(
+        WorkspaceMetadataCompanion(
+          recoveryIncarnation: Value(const Uuid().v4()),
+        ),
+      );
+      final checkpoint = await staged
+          .customSelect('PRAGMA wal_checkpoint(TRUNCATE)')
+          .getSingle();
+      if (checkpoint.data['busy'] != 0) {
+        throw StateError('Restore checkpoint unavailable.');
+      }
+      return await staged.liveIdentity();
+    } finally {
+      await staged.close();
+    }
+  }
+
+  @override
+  Future<void> vacuumInto(
+    String destinationPath, {
+    String? omitCompletedOperationId,
+  }) async {
+    if (omitCompletedOperationId != null) {
+      await completedOperationRevision(omitCompletedOperationId);
+      final intermediate = '$destinationPath.normalize-${const Uuid().v4()}';
+      WorkspaceDatabase? artifact;
+      try {
+        await vacuumInto(intermediate);
+        artifact = _WorkspaceArtifactDatabase(File(intermediate));
+        final journal =
+            await (artifact.select(artifact.operationJournals)..where(
+                  (row) => row.operationId.equals(omitCompletedOperationId),
+                ))
+                .getSingle();
+        if (journal.phase != OperationJournalPhase.completed.name) {
+          throw StateError('Checkpoint Journal is not completed.');
+        }
+        await artifact.customStatement('PRAGMA secure_delete = ON');
+        final owned = artifact;
+        await owned.transaction(() async {
+          await (owned.delete(owned.operationJournalSteps)..where(
+                (row) => row.operationId.equals(omitCompletedOperationId),
+              ))
+              .go();
+          await (owned.delete(owned.operationJournals)..where(
+                (row) => row.operationId.equals(omitCompletedOperationId),
+              ))
+              .go();
+        });
+        await artifact.vacuumInto(destinationPath);
+      } finally {
+        await artifact?.close();
+        for (final suffix in ['', '-wal', '-shm']) {
+          final file = File('$intermediate$suffix');
+          if (await file.exists()) await file.delete();
+        }
+      }
+      return;
+    }
     if (await FileSystemEntity.type(destinationPath, followLinks: false) !=
         FileSystemEntityType.notFound) {
       throw ArgumentError.value(
@@ -767,6 +976,18 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
       );
     }
     await customStatement('VACUUM INTO ?', <Object?>[destinationPath]);
+  }
+
+  @override
+  Future<int> completedOperationRevision(String operationId) async {
+    final journal = await (select(
+      operationJournals,
+    )..where((row) => row.operationId.equals(operationId))).getSingle();
+    if (journal.phase != OperationJournalPhase.completed.name ||
+        journal.committedRepositoryRevision == null) {
+      throw StateError('Completed checkpoint proof unavailable.');
+    }
+    return journal.committedRepositoryRevision!;
   }
 
   @override
@@ -869,8 +1090,13 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
       }
 
       try {
+        // Probe only columns common to supported legacy schemas. Selecting
+        // current metadata rows would wrongly reject v2/v3 backups lacking
+        // the new identity columns before their explicit staged migration.
         final metadata = await probe
-            .select(probe.workspaceMetadata)
+            .customSelect(
+              'SELECT repository_revision, destruction_epoch FROM workspace_metadata WHERE singleton = 1',
+            )
             .getSingleOrNull();
         if (metadata == null) {
           return const ControlPlaneUnusable(
@@ -880,8 +1106,8 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
         return ControlPlaneHealthy(
           ControlPlaneIdentity(
             schemaVersion: userVersion,
-            repositoryRevision: metadata.repositoryRevision,
-            destructionEpoch: metadata.destructionEpoch,
+            repositoryRevision: metadata.read<int>('repository_revision'),
+            destructionEpoch: metadata.read<int>('destruction_epoch'),
           ),
         );
       } on Object catch (error) {
@@ -966,4 +1192,22 @@ final class _WorkspaceProbeDatabase extends _$WorkspaceDatabase {
     onUpgrade: (_, from, to) =>
         throw StateError('A probe must not migrate schema $from->$to.'),
   );
+}
+
+/// Owned temporary backup/restore SQL work has an independent executor/type.
+final class _WorkspaceArtifactDatabase extends WorkspaceDatabase {
+  _WorkspaceArtifactDatabase(File file)
+    : super.forTesting(
+        LazyDatabase(
+          () => NativeDatabase.createInBackground(
+            file,
+            readPool: 0,
+            setup: (database) {
+              database.execute('PRAGMA journal_mode = DELETE');
+              database.execute('PRAGMA synchronous = FULL');
+              database.execute('PRAGMA foreign_keys = ON');
+            },
+          ),
+        ),
+      );
 }

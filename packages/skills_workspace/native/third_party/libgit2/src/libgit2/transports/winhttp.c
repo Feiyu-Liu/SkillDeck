@@ -1,3 +1,4 @@
+/* Modified by SkillDeck on 2026-11-15: NONE rejects all redirects to isolate per-operation headers. */
 /* Modified by the SkillDeck project on 2026-10-24: disable authentication replay and preserve authentication errors. */
 /*
  * Copyright (C) the libgit2 contributors. All rights reserved.
@@ -1187,6 +1188,11 @@ replay:
 			wchar_t *location;
 			DWORD location_length;
 			char *location8;
+
+			if (t->owner->connect_opts.follow_redirects == GIT_REMOTE_REDIRECT_NONE) {
+				git_error_set(GIT_ERROR_HTTP, "redirect disabled by operation policy");
+				return -1;
+			}
 
 			/* OK, fetch the Location header from the redirect. */
 			if (WinHttpQueryHeaders(s->request,

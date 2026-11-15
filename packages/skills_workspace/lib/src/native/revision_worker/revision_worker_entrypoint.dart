@@ -204,6 +204,30 @@ Future<Object?> _execute(
         expected: _commitRequest(treeOid, parentOids, kindIndex),
       );
       return null;
+    case RevisionWorkerInspectCommitCommand(
+      :final repositoryPath,
+      :final commitOid,
+      :final limits,
+    ):
+      return engine.inspectCommit(
+        repositoryPath,
+        RevisionObjectId(commitOid),
+        limits: limits,
+      );
+    case RevisionWorkerImportObjectsCommand(
+      :final repositoryPath,
+      :final stagedRepositoryPath,
+      :final retainedRootOids,
+      :final limits,
+      :final cancelFlagAddress,
+    ):
+      return engine.importObjects(
+        repositoryPath: repositoryPath,
+        stagedRepositoryPath: stagedRepositoryPath,
+        retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
+        limits: limits,
+        cancelFlagAddress: cancelFlagAddress,
+      );
     case RevisionWorkerIsAncestorCommand(
       :final repositoryPath,
       :final ancestorOid,
@@ -249,24 +273,43 @@ Future<Object?> _execute(
       :final repositoryPath,
       :final bundleStagingPath,
       :final retainedRootOids,
+      :final limits,
     ):
       engine.createRecoveryPack(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundleStagingPath,
         retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
+        limits: limits,
+      );
+      return null;
+    case RevisionWorkerCreatePackIndexCommand(
+      :final packPath,
+      :final cancelFlagAddress,
+      :final stagingDirectory,
+      :final limits,
+    ):
+      engine.createPackIndex(
+        packPath: packPath,
+        stagingDirectory: stagingDirectory,
+        limits: limits,
+        cancelFlagAddress: cancelFlagAddress,
       );
       return null;
     case RevisionWorkerRestoreRecoveryPackCommand(
       :final stagedRepositoryPath,
       :final packPath,
+      :final cancelFlagAddress,
       :final indexPath,
       :final retainedRootOids,
+      :final limits,
     ):
       engine.restoreRecoveryPack(
         stagedRepositoryPath: stagedRepositoryPath,
         packPath: packPath,
         indexPath: indexPath,
         retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
+        limits: limits,
+        cancelFlagAddress: cancelFlagAddress,
       );
       return null;
     case RevisionWorkerBuildBundleArtifactsCommand(
@@ -344,6 +387,9 @@ RevisionEngineFailureCode _mapNativeFailure(RevisionNativeFailureCode code) {
       RevisionEngineFailureCode.verificationFailed,
     RevisionNativeFailureCode.bundleFailure =>
       RevisionEngineFailureCode.bundleInvalid,
+    RevisionNativeFailureCode.cancelled => RevisionEngineFailureCode.cancelled,
+    RevisionNativeFailureCode.limitExceeded =>
+      RevisionEngineFailureCode.limitExceeded,
     RevisionNativeFailureCode.unexpectedFailure =>
       RevisionEngineFailureCode.unexpectedFailure,
   };

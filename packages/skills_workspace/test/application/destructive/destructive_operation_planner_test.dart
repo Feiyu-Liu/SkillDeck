@@ -243,6 +243,39 @@ void main() {
     expect(subjectIdentities.calls, 0);
   });
 
+  for (final candidate in [false, true]) {
+    test(
+      'conditional Removal rejects ${candidate ? 'active Candidate' : 'dirty Draft'} before recovery capture',
+      () async {
+        final result = await planner.planRemoval(
+          operationId: OperationId(_operationValue),
+          snapshot: _snapshot(
+            skills: [
+              _skill(
+                draftState: candidate
+                    ? DestructiveDraftState.absent
+                    : DestructiveDraftState.dirty,
+                hasUpdateCandidateSession: candidate,
+              ),
+            ],
+          ),
+          destructiveIntent: DestructiveOperationIntent(
+            reviewedRevision: RepositoryRevision(7),
+          ),
+          managedSkillIds: {ManagedSkillId(_skillValue)},
+          requireCleanDraft: true,
+          cancellationToken: CancellationToken.none(),
+        );
+        expect(
+          result.failureOrNull?.code,
+          candidate
+              ? DestructivePlanningFailureCode.updateCandidateResolutionRequired
+              : DestructivePlanningFailureCode.dirtyDraftResolutionRequired,
+        );
+      },
+    );
+  }
+
   test('stale Removal rejects before recovery registration', () async {
     final result = await planner.planRemoval(
       operationId: OperationId(_operationValue),

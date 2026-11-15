@@ -87,6 +87,20 @@ enum WorkspaceOperationKind {
   inspectSkillDrift,
   exportSkillDriftArtifact,
   resolveSkillDrift,
+  exportCommittedRevision,
+  applyIncomingRevision,
+  captureAuthoritativeState,
+  prepareIncomingRevision,
+  installIncomingRevision,
+  pushCommittedRevision,
+  fetchIncomingRevision,
+  inspectIncomingRevisionOutcome,
+  reserveSkillExtraDataPatch,
+  applySkillExtraDataPatch,
+  reservePersonalTagMutation,
+  applyPersonalTagMutation,
+  inspectPersonalTagMutationOutcome,
+  replaceIncomingRevision,
 }
 
 enum OperationProgressPhase {
@@ -1458,6 +1472,8 @@ final class OperationHistoryPage {
   final String? nextCursor;
 }
 
+enum PublishedRevisionOrigin { local, imported }
+
 final class PublishedRevisionSummary {
   const PublishedRevisionSummary({
     required this.reference,
@@ -1465,9 +1481,11 @@ final class PublishedRevisionSummary {
     required this.kind,
     required this.publishedAt,
     required this.contentHash,
+    this.origin = PublishedRevisionOrigin.local,
   });
 
-  final OperationSubjectReference reference;
+  final PublishedRevisionReference reference;
+  final PublishedRevisionOrigin origin;
   final ManagedSkillId managedSkillId;
   final WorkspaceOperationKind kind;
   final DateTime publishedAt;
@@ -1535,8 +1553,8 @@ final class SkillDiff {
   }) : files = List.unmodifiable(files);
 
   final ManagedSkillId managedSkillId;
-  final OperationSubjectReference? from;
-  final OperationSubjectReference to;
+  final PublishedRevisionReference? from;
+  final PublishedRevisionReference to;
   final List<SkillFileDiff> files;
 }
 

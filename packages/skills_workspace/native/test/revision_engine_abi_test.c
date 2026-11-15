@@ -40,11 +40,20 @@ typedef int32_t (*commit_create_root_fn)(const char *, const char *, char *,
 typedef int32_t (*commit_verify_root_fn)(const char *, const char *,
                                          const char *, const uint8_t *,
                                          intptr_t);
+typedef int32_t (*commit_inspect_fn)(const char *, const char *, int64_t,
+                                      int64_t, uint8_t *, intptr_t, intptr_t *);
+typedef int32_t (*objects_import_fn)(const char *, const char *,
+    const char *const *, intptr_t, int64_t, int64_t, int64_t, int64_t, int64_t,
+    const int32_t *, int64_t *, int64_t *);
 typedef int32_t (*retention_refs_replace_fn)(
     const char *, const char *const *, const char *const *, intptr_t);
 typedef int32_t (*transport_fetch_fn)(const char *, const char *,
                                       const char *, int32_t, const char *,
                                       const int32_t *, char *, intptr_t);
+typedef int32_t (*operation_transport_fn)(
+    const char *, const char *, const char *const *, intptr_t,
+    const char *const *, intptr_t, int32_t, const char *, const int32_t *,
+    int32_t, int32_t *, int64_t *);
 typedef int32_t (*transport_tree_list_fn)(const char *, const char *,
                                           const char *, uint8_t *, intptr_t,
                                           intptr_t *);
@@ -145,10 +154,18 @@ int main(int argc, char **argv) {
                    "skills_workspace_revision_commit_create_root");
   REQUIRE_FUNCTION(commit_verify_root, commit_verify_root_fn,
                    "skills_workspace_revision_commit_verify_root");
+  REQUIRE_FUNCTION(commit_inspect, commit_inspect_fn,
+                   "skills_workspace_revision_commit_inspect");
+  REQUIRE_FUNCTION(objects_import, objects_import_fn,
+                   "skills_workspace_revision_objects_import");
   REQUIRE_FUNCTION(retention_refs_replace, retention_refs_replace_fn,
                    "skills_workspace_revision_retention_refs_replace");
   REQUIRE_FUNCTION(transport_fetch, transport_fetch_fn,
                    "skills_workspace_transport_fetch");
+  REQUIRE_FUNCTION(transport_fetch_into, operation_transport_fn,
+                   "skills_workspace_transport_fetch_into");
+  REQUIRE_FUNCTION(transport_push, operation_transport_fn,
+                   "skills_workspace_transport_push");
   REQUIRE_FUNCTION(transport_tree_list, transport_tree_list_fn,
                    "skills_workspace_transport_tree_list");
   REQUIRE_FUNCTION(transport_blob_read, transport_blob_read_fn,
@@ -200,6 +217,26 @@ int main(int argc, char **argv) {
           SKILLS_WORKSPACE_REVISION_OK) {
     CLOSE_LIBRARY(library);
     return fail("root commit creation or verification failed");
+  }
+  {
+    uint8_t topology[128];
+    intptr_t required = 0;
+    int64_t count = 0, total = 0;
+    int32_t cancelled = 1;
+    const char *roots[] = {commit_oid};
+    if (commit_inspect(argv[2], commit_oid, 65536, 64,
+                         topology, sizeof(topology), &required) !=
+            SKILLS_WORKSPACE_REVISION_OK || required != 41 ||
+        memcmp(topology, tree_oid, 40) != 0 || topology[40] != '\n' ||
+        objects_import(argv[2], argv[2], roots, 1, 10, 65536, 1048576,
+                         65536, 64, NULL, &count, &total) !=
+            SKILLS_WORKSPACE_REVISION_OK || count != 3 || total <= 0 ||
+        objects_import(argv[2], argv[2], roots, 1, 10, 65536, 1048576,
+                         65536, 64, &cancelled, &count, &total) !=
+            SKILLS_WORKSPACE_REVISION_CANCELLED) {
+      CLOSE_LIBRARY(library);
+      return fail("commit topology or immutable object import failed");
+    }
   }
   {
     const char *names[] = {
@@ -277,6 +314,21 @@ int main(int argc, char **argv) {
             SKILLS_WORKSPACE_TRANSPORT_CANCELLED) {
       CLOSE_LIBRARY(library);
       return fail("transport fetch arguments did not fail closed");
+    }
+    {
+      const char *specs[] = {"refs/heads/main:refs/transport/main"};
+      int32_t ref_status = -1;
+      if (transport_fetch_into(fetch_path, "http://example.invalid/r.git",
+              specs, 1, NULL, 0, 0, NULL, NULL, 0, &ref_status, NULL) !=
+              SKILLS_WORKSPACE_TRANSPORT_INVALID_ARGUMENT ||
+          ref_status != SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED ||
+          transport_push(fetch_path, "https://example.invalid/r.git",
+              specs, 1, NULL, 0, 0, NULL, &cancelled, 0, &ref_status, NULL) !=
+              SKILLS_WORKSPACE_TRANSPORT_CANCELLED ||
+          ref_status != SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED) {
+        CLOSE_LIBRARY(library);
+        return fail("per-operation transport arguments did not fail closed");
+      }
     }
     {
       int32_t proxy = transport_windows_proxy(NULL, 0, &required);

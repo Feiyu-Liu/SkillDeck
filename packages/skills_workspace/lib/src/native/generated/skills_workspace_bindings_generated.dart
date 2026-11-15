@@ -161,6 +161,30 @@ external int skills_workspace_revision_commit_create_root(
   int oid_hex_capacity,
 );
 
+/// Inspects only immutable topology: tree OID followed by every ordered parent
+/// OID as newline-separated ASCII records. No author or message is returned.
+/// Caller supplies metadata/parent limits; object types are verified.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.IntPtr>,
+  )
+>()
+external int skills_workspace_revision_commit_inspect(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> commit_oid_hex,
+  int maximum_commit_bytes,
+  int maximum_parent_count,
+  ffi.Pointer<ffi.Uint8> output,
+  int output_capacity,
+  ffi.Pointer<ffi.IntPtr> required_capacity,
+);
+
 @ffi.Native<
   ffi.Int32 Function(
     ffi.Pointer<ffi.Char>,
@@ -236,7 +260,7 @@ external int skills_workspace_revision_diff(
 /// Initializes the local-only Revision Engine and disables external Git config
 /// search paths. Calls are reference counted and must be balanced by shutdown.
 /// Retain an init reference until all of that caller's Revision calls finish.
-/// Source calls independently hold the shared runtime for their duration. The
+/// Transport calls independently hold the shared runtime for their duration. The
 /// last owner shuts libgit2 down; a later init reapplies the global options.
 @ffi.Native<ffi.Int32 Function()>()
 external int skills_workspace_revision_init();
@@ -284,6 +308,73 @@ external int skills_workspace_revision_merge(
   ffi.Pointer<ffi.IntPtr> conflict_count,
 );
 
+/// Imports the exact complete commit/tree/blob closure from an isolated bare
+/// staging repository into an existing bare Store. All source object hashes,
+/// connectivity and limits are verified before the first target write. Packs
+/// are first restored into staging through the existing recovery-pack seam.
+/// No ref, HEAD, config, reflog, selection or business state is changed.
+/// Cancellation/failure during copying may leave unreferenced immutable objects;
+/// callers own Journal/pinning/selection and cannot infer a business commit.
+/// Caller keeps the staging repository immutable until this function returns.
+/// Source alternates are excluded. Import operational caps are 1,000,000
+/// objects, 256 MiB/object and 8 GiB total; exceeding them is LIMIT_EXCEEDED.
+/// Metadata/parent limits are caller-selected and do not apply to legacy restore.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Pointer<ffi.Int32>,
+    ffi.Pointer<ffi.Int64>,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int skills_workspace_revision_objects_import(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> staged_repository_path,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> retained_root_oid_hex,
+  int retained_root_count,
+  int maximum_object_count,
+  int maximum_object_bytes,
+  int maximum_total_bytes,
+  int maximum_commit_bytes,
+  int maximum_parent_count,
+  ffi.Pointer<ffi.Int32> cancel_flag,
+  ffi.Pointer<ffi.Int64> verified_object_count,
+  ffi.Pointer<ffi.Int64> verified_total_bytes,
+);
+
+/// Preflights an untrusted raw pack before indexing (no external ODB/thin pack).
+/// Produces objects.pack/objects.idx in an existing empty caller-owned directory.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Pointer<ffi.Int32>,
+  )
+>()
+external int skills_workspace_revision_pack_index_create_bounded(
+  ffi.Pointer<ffi.Char> pack_path,
+  ffi.Pointer<ffi.Char> staging_directory,
+  int maximum_object_count,
+  int maximum_object_bytes,
+  int maximum_total_bytes,
+  int maximum_commit_bytes,
+  int maximum_delta_depth,
+  ffi.Pointer<ffi.Int32> cancel_flag,
+);
+
 /// Creates the exact `objects.pack` and `objects.idx` payloads for a staged
 /// Revision Recovery Bundle. The directory must already exist and be empty.
 @ffi.Native<
@@ -299,6 +390,32 @@ external int skills_workspace_revision_recovery_pack_create(
   ffi.Pointer<ffi.Char> bundle_staging_path,
   ffi.Pointer<ffi.Pointer<ffi.Char>> retained_root_oid_hex,
   int retained_root_count,
+);
+
+/// Preflights root closure resource budgets before allocating the packbuilder.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+  )
+>()
+external int skills_workspace_revision_recovery_pack_create_bounded(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> bundle_staging_path,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> retained_root_oid_hex,
+  int retained_root_count,
+  int maximum_object_count,
+  int maximum_object_bytes,
+  int maximum_total_bytes,
+  int maximum_commit_bytes,
+  int maximum_parent_count,
 );
 
 /// Reconstructs a new staged bare Store from a Bundle's pack/index pair and
@@ -318,6 +435,39 @@ external int skills_workspace_revision_recovery_pack_restore(
   ffi.Pointer<ffi.Char> index_path,
   ffi.Pointer<ffi.Pointer<ffi.Char>> retained_root_oid_hex,
   int retained_root_count,
+);
+
+/// Explicit bounded staging variant for new, potentially remote pack inputs.
+/// Legacy recovery above retains its original resource policy.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Int64,
+    ffi.Pointer<ffi.Int32>,
+  )
+>()
+external int skills_workspace_revision_recovery_pack_restore_bounded(
+  ffi.Pointer<ffi.Char> staged_repository_path,
+  ffi.Pointer<ffi.Char> pack_path,
+  ffi.Pointer<ffi.Char> index_path,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> retained_root_oid_hex,
+  int retained_root_count,
+  int maximum_object_count,
+  int maximum_object_bytes,
+  int maximum_total_bytes,
+  int maximum_commit_bytes,
+  int maximum_parent_count,
+  int maximum_delta_depth,
+  ffi.Pointer<ffi.Int32> cancel_flag,
 );
 
 /// Replaces the package-owned derived retention references.  Names must use
@@ -463,6 +613,81 @@ external int skills_workspace_transport_fetch(
   int oid_hex_capacity,
 );
 
+/// Transfers objects to/from an existing private bare staging/export repository.
+/// Each refspec must have one explicit source and destination (no force,
+/// wildcard, or deletion). The source is a full ref or SHA-1 commit; the
+/// destination is a full ref. The caller owns staging disposal and validation.
+/// Headers are in-memory per-call values; URLs contain no userinfo/query/fragment.
+/// HTTPS only, except explicit loopback HTTP test policy (127.0.0.1 only).
+/// No redirects, credentials callback acquisition, FETCH_HEAD, persisted remote,
+/// or automatic retry. Cancellation never implies remote rollback.
+/// ref_statuses has ref_count slots in request order. Never interpret an
+/// unreported ref as accepted, even if libgit2 returned zero. No server text
+/// crosses this ABI. Header buffers belong to the caller until return.
+/// Optional transferred_bytes is reset at start and updated by native transfer
+/// callbacks. Like cancel_flag, caller-owned aligned memory lives until return.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Int32,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Int32>,
+    ffi.Int32,
+    ffi.Pointer<ffi.Int32>,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int skills_workspace_transport_fetch_into(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> url,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> refspecs,
+  int ref_count,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> custom_headers,
+  int header_count,
+  int proxy_mode,
+  ffi.Pointer<ffi.Char> proxy_url,
+  ffi.Pointer<ffi.Int32> cancel_flag,
+  int allow_loopback_http_for_testing,
+  ffi.Pointer<ffi.Int32> ref_statuses,
+  ffi.Pointer<ffi.Int64> transferred_bytes,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Int32,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Int32>,
+    ffi.Int32,
+    ffi.Pointer<ffi.Int32>,
+    ffi.Pointer<ffi.Int64>,
+  )
+>()
+external int skills_workspace_transport_push(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> url,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> refspecs,
+  int ref_count,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> custom_headers,
+  int header_count,
+  int proxy_mode,
+  ffi.Pointer<ffi.Char> proxy_url,
+  ffi.Pointer<ffi.Int32> cancel_flag,
+  int allow_loopback_http_for_testing,
+  ffi.Pointer<ffi.Int32> ref_statuses,
+  ffi.Pointer<ffi.Int64> transferred_bytes,
+);
+
 /// Lists every non-tree entry beneath subpath (the whole tree when subpath is
 /// empty) of a commit, in `git ls-tree -r -z --full-tree` record format:
 /// mode SP type SP oid TAB full-path NUL. Gitlinks and every mode are reported
@@ -502,6 +727,10 @@ external int skills_workspace_transport_windows_proxy(
 );
 
 const int SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE = 40;
+
+const int SKILLS_WORKSPACE_TRANSPORT_OUTCOME_UNKNOWN = 16;
+
+const int SKILLS_WORKSPACE_TRANSPORT_REJECTED_REF = 15;
 
 /// Narrow POSIX durability boundary. Every function returns zero on success or
 /// the platform errno value on failure. Windows builds retain the symbols for a
@@ -562,7 +791,9 @@ enum skills_workspace_revision_status {
   SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE(4),
   SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE(5),
   SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL(6),
-  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE(7);
+  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE(7),
+  SKILLS_WORKSPACE_REVISION_CANCELLED(8),
+  SKILLS_WORKSPACE_REVISION_LIMIT_EXCEEDED(9);
 
   final int value;
   const skills_workspace_revision_status(this.value);
@@ -577,6 +808,8 @@ enum skills_workspace_revision_status {
         5 => SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE,
         6 => SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL,
         7 => SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE,
+        8 => SKILLS_WORKSPACE_REVISION_CANCELLED,
+        9 => SKILLS_WORKSPACE_REVISION_LIMIT_EXCEEDED,
         _ => throw ArgumentError(
           'Unknown value for skills_workspace_revision_status: $value',
         ),
@@ -603,6 +836,25 @@ enum skills_workspace_transport_proxy_mode {
         2 => SKILLS_WORKSPACE_TRANSPORT_PROXY_SPECIFIED,
         _ => throw ArgumentError(
           'Unknown value for skills_workspace_transport_proxy_mode: $value',
+        ),
+      };
+}
+
+enum skills_workspace_transport_ref_status {
+  SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED(0),
+  SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED(1),
+  SKILLS_WORKSPACE_TRANSPORT_REF_REJECTED(2);
+
+  final int value;
+  const skills_workspace_transport_ref_status(this.value);
+
+  static skills_workspace_transport_ref_status fromValue(int value) =>
+      switch (value) {
+        0 => SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED,
+        1 => SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED,
+        2 => SKILLS_WORKSPACE_TRANSPORT_REF_REJECTED,
+        _ => throw ArgumentError(
+          'Unknown value for skills_workspace_transport_ref_status: $value',
         ),
       };
 }

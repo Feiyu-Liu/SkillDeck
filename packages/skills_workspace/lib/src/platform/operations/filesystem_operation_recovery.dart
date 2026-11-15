@@ -173,8 +173,14 @@ final class FilesystemOperationRecovery
           alternate: entry.before,
           residuePath: entry.displacedPath,
         );
-      case OperationRecoveryAction.prepareEvidence:
       case OperationRecoveryAction.verifyEntry:
+        final guarded = manifest.entry(binding.entryId!);
+        if (!guarded.preserveChangedDraftOnRollback ||
+            !await _matches(guarded.targetPath, guarded.intended) ||
+            !await _matches(guarded.displacedPath, guarded.before)) {
+          throw const ExternalOperationPreconditionChanged();
+        }
+      case OperationRecoveryAction.prepareEvidence:
       case OperationRecoveryAction.cleanupEntryResidue:
       case OperationRecoveryAction.backupRotation:
       case OperationRecoveryAction.armDestructiveBarrier:
@@ -275,6 +281,10 @@ final class FilesystemOperationRecovery
     _requirePlanMatches(manifest, plan);
     final destructiveIntent = manifest.destructiveIntent;
     for (final entry in manifest.entries.reversed) {
+      if (entry.preserveChangedDraftOnRollback &&
+          await _preserveGuardedDraftRollback(entry)) {
+        continue;
+      }
       await _establish(
         manifest,
         entry,
@@ -496,6 +506,15 @@ final class FilesystemOperationRecovery
             throw const ExternalOperationPreconditionChanged();
           }
         }
+        final expectedFingerprint = entry.expectedBeforeFingerprint;
+        if (expectedFingerprint != null &&
+            await _draftFingerprint(
+                  targetPath,
+                  capturedFingerprint: expectedFingerprint,
+                ) !=
+                expectedFingerprint) {
+          throw const ExternalOperationPreconditionChanged();
+        }
         final beforePayload = operationRecoveryPayloadPath(
           bundleRoot: staging.path,
           entryId: entry.entryId,
@@ -516,6 +535,14 @@ final class FilesystemOperationRecovery
           allowContainedLinks: true,
           cancellation: cancellation,
         );
+        if (expectedFingerprint != null &&
+            await _draftFingerprint(
+                  targetPath,
+                  capturedFingerprint: expectedFingerprint,
+                ) !=
+                expectedFingerprint) {
+          throw const ExternalOperationPreconditionChanged();
+        }
         if (entry.requiresInertBeforeImage) {
           final inert = switch (before.kind) {
             OperationRecoveryEntryKind.directory =>
@@ -565,6 +592,7 @@ final class FilesystemOperationRecovery
             ),
             makeReadOnly: entry.makeReadOnly,
             requirePlainDirectory: entry.requirePlainDirectory,
+            preserveChangedDraftOnRollback: expectedFingerprint != null,
             before: before,
             intended: intended,
           ),
@@ -838,7 +866,38 @@ final class FilesystemOperationRecovery
           OperationRecoveryFailureReason.checksumMismatch,
         );
       }
+      final guardedDraftTargets = <String>{};
+      if (manifest.entries.any(
+        (entry) => entry.preserveChangedDraftOnRollback,
+      )) {
+        for (final skill
+            in manifest.destructiveIntent?.skills ??
+                const <DestructiveSkillRecoveryIntent>[]) {
+          if (skill.hasDraft) {
+            guardedDraftTargets.add(
+              await _filesystem.resolveMutationPath(
+                path.normalize(
+                  path.join(
+                    _layout.stagingRoot,
+                    '..',
+                    'drafts',
+                    skill.managedSkillId.value,
+                  ),
+                ),
+              ),
+            );
+          }
+        }
+      }
       for (final entry in manifest.entries) {
+        if (entry.preserveChangedDraftOnRollback &&
+            (!manifest.context.destructive ||
+                !entry.entryId.endsWith('-draft') ||
+                !guardedDraftTargets.contains(entry.targetPath))) {
+          throw const OperationRecoveryException(
+            OperationRecoveryFailureReason.bundleCorrupt,
+          );
+        }
         final beforeRoot = operationRecoveryPayloadPath(
           bundleRoot: root,
           entryId: entry.entryId,
@@ -878,6 +937,51 @@ final class FilesystemOperationRecovery
     }
   }
 
+  /// During rollback, a guarded Draft is the user's generation. Only this
+  /// marked entry may preserve changed bytes; other transaction resources keep
+  /// their normal checksum and type preconditions.
+  Future<bool> _preserveGuardedDraftRollback(
+    OperationRecoveryEntryManifest entry,
+  ) async {
+    final live = await FileSystemEntity.type(
+      entry.targetPath,
+      followLinks: false,
+    );
+    if (live != FileSystemEntityType.notFound &&
+        !await _matches(entry.targetPath, entry.before)) {
+      return true; // Preserve a later file, directory or link without following it.
+    }
+    final displaced = await FileSystemEntity.type(
+      entry.displacedPath,
+      followLinks: false,
+    );
+    if (live == FileSystemEntityType.notFound &&
+        displaced != FileSystemEntityType.notFound &&
+        !await _matches(entry.displacedPath, entry.before)) {
+      // A writer may still hold the renamed directory while applying verifies
+      // its before image. Move that same generation back instead of restoring
+      // stale captured bytes over it. This is pre-BCP rollback only.
+      await _filesystem.displace(
+        destinationPath: entry.displacedPath,
+        displacedPath: entry.targetPath,
+        kind: _durableKind(switch (displaced) {
+          FileSystemEntityType.directory =>
+            OperationRecoveryEntryKind.directory,
+          FileSystemEntityType.link => OperationRecoveryEntryKind.symbolicLink,
+          _ => OperationRecoveryEntryKind.file,
+        }),
+        verify: (restored) async {
+          if (await FileSystemEntity.type(restored, followLinks: false) !=
+              displaced) {
+            throw const ExternalOperationPreconditionChanged();
+          }
+        },
+      );
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _establish(
     OperationRecoveryBundleManifest manifest,
     OperationRecoveryEntryManifest entry, {
@@ -898,6 +1002,10 @@ final class FilesystemOperationRecovery
         await FileSystemEntity.type(entry.targetPath, followLinks: false) ==
         FileSystemEntityType.notFound;
     if (!targetAbsent && !await _matches(entry.targetPath, alternate)) {
+      if (entry.preserveChangedDraftOnRollback &&
+          identical(desired, entry.intended)) {
+        throw const ExternalOperationPreconditionChanged();
+      }
       throw const OperationRecoveryException(
         OperationRecoveryFailureReason.entryTypeChanged,
       );
@@ -1318,6 +1426,8 @@ final class FilesystemOperationRecovery
               (expected.intendedSourcePath != null ||
                   expected.intendedSymbolicLinkTarget != null) ||
           actual.intended.kind != expected.intendedKind ||
+          actual.preserveChangedDraftOnRollback !=
+              (expected.expectedBeforeFingerprint != null) ||
           (expected.intendedSymbolicLinkTarget != null &&
               actual.intended.linkTarget !=
                   expected.intendedSymbolicLinkTarget)) {

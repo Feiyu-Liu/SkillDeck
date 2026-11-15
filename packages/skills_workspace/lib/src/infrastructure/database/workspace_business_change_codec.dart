@@ -84,6 +84,15 @@ Map<String, Object?> _encodeMutation(WorkspaceBusinessMutation mutation) =>
         'validationCode': mutation.validationCode,
         'createdAtMicros': mutation.createdAtMicros,
       },
+      PutRevisionPublishedEvent() => {
+        'kind': 'putRevisionPublishedEvent',
+        'sourceLineageId': mutation.sourceLineageId,
+        'eventFingerprint': mutation.eventFingerprint,
+        'objectId': mutation.objectId,
+        'eventKind': mutation.kind,
+        'contentHash': mutation.contentHash,
+        'publishedAtMicros': mutation.publishedAtMicros,
+      },
       PutProjectRoot() => {
         'kind': 'putProjectRoot',
         'projectRootId': mutation.projectRootId,
@@ -122,6 +131,14 @@ Map<String, Object?> _encodeMutation(WorkspaceBusinessMutation mutation) =>
       DeleteSkillUserData() => {
         'kind': 'deleteSkillUserData',
         'managedSkillId': mutation.managedSkillId.value,
+      },
+      PutGlobalCommandOutcome() => {
+        'kind': 'putGlobalCommandOutcome',
+        'operationId': mutation.operationId.value,
+        'requestFingerprint': mutation.requestFingerprint,
+        'personalTagId': mutation.personalTagId,
+        'committedRepositoryRevision':
+            mutation.committedRepositoryRevision.value,
       },
       PutPersonalTag() => {
         'kind': 'putPersonalTag',
@@ -243,6 +260,14 @@ WorkspaceBusinessMutation _decodeMutation(Object? value) {
       validationCode: _optionalString(map, 'validationCode'),
       createdAtMicros: _integer(map, 'createdAtMicros'),
     ),
+    'putRevisionPublishedEvent' => PutRevisionPublishedEvent(
+      sourceLineageId: _string(map, 'sourceLineageId'),
+      eventFingerprint: _string(map, 'eventFingerprint'),
+      objectId: _string(map, 'objectId'),
+      kind: _string(map, 'eventKind'),
+      contentHash: _string(map, 'contentHash'),
+      publishedAtMicros: _integer(map, 'publishedAtMicros'),
+    ),
     'putProjectRoot' => PutProjectRoot(
       projectRootId: _string(map, 'projectRootId'),
       canonicalPath: _string(map, 'canonicalPath'),
@@ -273,6 +298,14 @@ WorkspaceBusinessMutation _decodeMutation(Object? value) {
       noteUpdatedAtMicros: _optionalInteger(map, 'noteUpdatedAtMicros'),
     ),
     'deleteSkillUserData' => DeleteSkillUserData(_managedSkillId(map)),
+    'putGlobalCommandOutcome' => PutGlobalCommandOutcome(
+      operationId: OperationId(_string(map, 'operationId')),
+      requestFingerprint: _string(map, 'requestFingerprint'),
+      personalTagId: _string(map, 'personalTagId'),
+      committedRepositoryRevision: RepositoryRevision(
+        _integer(map, 'committedRepositoryRevision'),
+      ),
+    ),
     'putPersonalTag' => PutPersonalTag(
       personalTagId: _string(map, 'personalTagId'),
       normalizedKey: _string(map, 'normalizedKey'),

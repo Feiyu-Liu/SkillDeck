@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'dart:isolate';
+import 'dart:ffi' as ffi;
+import 'package:ffi/ffi.dart';
+
+import '../../domain/cancellation.dart';
 
 import '../../application/ports/draft_snapshot_ports.dart';
 import '../../application/ports/revision_bundle_worker_ports.dart';
@@ -479,20 +483,128 @@ final class RevisionWorker
   }
 
   @override
+  Future<RevisionCommitTopology> inspectCommit(
+    String repositoryPath,
+    RevisionObjectId commit, {
+    RevisionCommitInspectionLimits limits =
+        const RevisionCommitInspectionLimits(),
+  }) => _send<RevisionCommitTopology>(
+    RevisionWorkerInspectCommitCommand(
+      repositoryPath: repositoryPath,
+      commitOid: commit.value,
+      limits: limits,
+    ),
+    (payload) {
+      if (payload is RevisionCommitTopology) return payload;
+      throw const RevisionWorkerException(
+        RevisionWorkerFailureCode.invalidResponse,
+      );
+    },
+  );
+
+  @override
+  Future<RevisionObjectImportReport> importObjects({
+    required String repositoryPath,
+    required String stagedRepositoryPath,
+    required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
+  }) async {
+    final cancellation = cancellationToken;
+    if (cancellation?.isCancelled == true) {
+      throw const RevisionEngineException(RevisionEngineFailureCode.cancelled);
+    }
+    final flag = calloc<ffi.Int32>();
+    var completed = false;
+    if (cancellation != null) {
+      unawaited(
+        cancellation.whenCancelled.then((_) {
+          if (!completed) flag.value = 1;
+        }),
+      );
+    }
+    try {
+      return await _send<RevisionObjectImportReport>(
+        RevisionWorkerImportObjectsCommand(
+          repositoryPath: repositoryPath,
+          stagedRepositoryPath: stagedRepositoryPath,
+          retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+          limits: limits,
+          cancelFlagAddress: flag.address,
+        ),
+        (payload) {
+          if (payload is RevisionObjectImportReport) return payload;
+          throw const RevisionWorkerException(
+            RevisionWorkerFailureCode.invalidResponse,
+          );
+        },
+      );
+    } finally {
+      completed = true;
+      calloc.free(flag);
+    }
+  }
+
+  Future<T> _withCancellationFlag<T>(
+    CancellationToken? token,
+    Future<T> Function(int address) run,
+  ) async {
+    if (token?.isCancelled == true) {
+      throw const RevisionEngineException(RevisionEngineFailureCode.cancelled);
+    }
+    final flag = calloc<ffi.Int32>();
+    var completed = false;
+    if (token != null) {
+      unawaited(
+        token.whenCancelled.then((_) {
+          if (!completed) flag.value = 1;
+        }),
+      );
+    }
+    try {
+      return await run(flag.address);
+    } finally {
+      completed = true;
+      calloc.free(flag);
+    }
+  }
+
+  @override
   Future<void> createRecoveryPack({
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) {
     return _send<void>(
       RevisionWorkerCreateRecoveryPackCommand(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundleStagingPath,
         retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+        limits: limits,
       ),
       _decodeVoid,
     );
   }
+
+  @override
+  Future<void> createPackIndex({
+    required String packPath,
+    required String stagingDirectory,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
+  }) => _withCancellationFlag<void>(
+    cancellationToken,
+    (address) => _send<void>(
+      RevisionWorkerCreatePackIndexCommand(
+        packPath: packPath,
+        stagingDirectory: stagingDirectory,
+        limits: limits,
+        cancelFlagAddress: address,
+      ),
+      _decodeVoid,
+    ),
+  );
 
   @override
   Future<void> restoreRecoveryPack({
@@ -500,15 +612,22 @@ final class RevisionWorker
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) {
-    return _send<void>(
-      RevisionWorkerRestoreRecoveryPackCommand(
-        stagedRepositoryPath: stagedRepositoryPath,
-        packPath: packPath,
-        indexPath: indexPath,
-        retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+    return _withCancellationFlag<void>(
+      cancellationToken,
+      (address) => _send<void>(
+        RevisionWorkerRestoreRecoveryPackCommand(
+          stagedRepositoryPath: stagedRepositoryPath,
+          packPath: packPath,
+          indexPath: indexPath,
+          retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+          limits: limits,
+          cancelFlagAddress: address,
+        ),
+        _decodeVoid,
       ),
-      _decodeVoid,
     );
   }
 

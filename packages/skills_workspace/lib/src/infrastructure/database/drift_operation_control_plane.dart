@@ -201,54 +201,121 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
       );
 
   @override
-  Future<void> commitBusinessState(OperationPlan plan) =>
-      _database.transaction(() async {
-        await _requireRepositoryRevision(plan.expectedRepositoryRevision);
-        final journal = await _requireJournal(plan.operationId);
-        _requireJournalMatchesPlan(journal, plan);
-        _requirePhase(journal, OperationJournalPhase.applying);
+  Future<void> commitBusinessState(
+    OperationPlan plan,
+  ) => _database.transaction(() async {
+    await _requireRepositoryRevision(plan.expectedRepositoryRevision);
+    final journal = await _requireJournal(plan.operationId);
+    _requireJournalMatchesPlan(journal, plan);
+    _requirePhase(journal, OperationJournalPhase.applying);
 
-        // Validate every old pointer before any ordered mutation can cascade it
-        // away (especially Removal and Source Replacement).
-        for (final change in plan.revisionSelectionChanges) {
-          await _requirePreviousSelection(change);
-        }
+    // Validate every old pointer before any ordered mutation can cascade it
+    // away (especially Removal and Source Replacement).
+    for (final change in plan.revisionSelectionChanges) {
+      await _requirePreviousSelection(change);
+    }
 
-        for (final mutation in plan.businessChanges.mutations) {
-          await _applyBusinessMutation(mutation);
-        }
-        for (final change in plan.revisionSelectionChanges) {
-          await _applyIntendedSelection(change);
-        }
+    for (final mutation in plan.businessChanges.mutations) {
+      if (mutation is DeleteManagedSkill) {
+        await (_database.delete(_database.workspaceIncomingReservations)..where(
+              (row) => row.managedSkillId.equals(mutation.managedSkillId.value),
+            ))
+            .go();
+      }
+      if (mutation is DeleteSourceLineage) {
+        await (_database.delete(_database.workspaceIncomingReservations)..where(
+              (row) => row.sourceLineageId.equals(mutation.sourceLineageId),
+            ))
+            .go();
+      }
+      await _applyBusinessMutation(mutation);
+    }
+    for (final change in plan.revisionSelectionChanges) {
+      await _applyIntendedSelection(change);
+    }
 
-        final metadata = await _database
-            .select(_database.workspaceMetadata)
-            .getSingle();
-        final now = _clock();
-        await (_database.update(
-          _database.workspaceMetadata,
-        )..where((row) => row.singleton.equals(1))).write(
-          WorkspaceMetadataCompanion(
-            repositoryRevision: Value(plan.committedRepositoryRevision.value),
-            destructionEpoch: Value(
-              metadata.destructionEpoch +
-                  (plan.businessChanges.incrementsDestructionEpoch ? 1 : 0),
-            ),
-            updatedAtMicros: Value(now),
-          ),
+    if (plan.localCommandBinding case final binding?) {
+      final reservation =
+          await (_database.select(
+                _database.workspaceIncomingReservations,
+              )..where((row) => row.operationId.equals(plan.operationId.value)))
+              .getSingle();
+      if (reservation.requestFingerprint != binding.requestFingerprint ||
+          reservation.managedSkillId != binding.managedSkillId.value ||
+          reservation.sourceLineageId != binding.sourceLineage.encoded) {
+        throw const OperationControlPlaneStateException(
+          'commandBindingMismatch',
         );
-        await (_database.update(_database.operationJournals)
-              ..where((row) => row.operationId.equals(plan.operationId.value)))
-            .write(
-              OperationJournalsCompanion(
-                phase: Value(OperationJournalPhase.committed.name),
-                committedRepositoryRevision: Value(
-                  plan.committedRepositoryRevision.value,
-                ),
-                updatedAtMicros: Value(now),
+      }
+      final selection = plan.revisionSelectionChanges
+          .where((change) => change.managedSkillId == binding.managedSkillId)
+          .firstOrNull;
+      final selected = selection == null
+          ? await (_database.select(_database.currentRevisionSelection)..where(
+                  (row) =>
+                      row.managedSkillId.equals(binding.managedSkillId.value) &
+                      row.sourceLineageId.equals(binding.sourceLineage.encoded),
+                ))
+                .getSingle()
+          : null;
+      await _database
+          .into(_database.workspaceIncomingOutcomes)
+          .insert(
+            WorkspaceIncomingOutcomesCompanion.insert(
+              operationId: plan.operationId.value,
+              requestFingerprint: binding.requestFingerprint,
+              managedSkillId: binding.managedSkillId.value,
+              sourceLineageId: binding.sourceLineage.encoded,
+              expectedEffectiveObjectId: Value(
+                reservation.replacement
+                    ? null
+                    : reservation.expectedEffectiveObjectId,
               ),
-            );
-      });
+              contentManifestDigest: reservation.contentManifestDigest,
+              newInstallation: reservation.newInstallation,
+              replacement: Value(reservation.replacement),
+              effectiveObjectId:
+                  selection?.intendedEffective?.objectId.value ??
+                  selected!.effectiveObjectId,
+              upstreamObjectId:
+                  selection?.intendedUpstream?.objectId.value ??
+                  selected!.upstreamObjectId,
+              committedRepositoryRevision:
+                  plan.committedRepositoryRevision.value,
+            ),
+          );
+      await (_database.delete(
+        _database.workspaceIncomingReservations,
+      )..where((row) => row.operationId.equals(plan.operationId.value))).go();
+    }
+    final metadata = await _database
+        .select(_database.workspaceMetadata)
+        .getSingle();
+    final now = _clock();
+    await (_database.update(
+      _database.workspaceMetadata,
+    )..where((row) => row.singleton.equals(1))).write(
+      WorkspaceMetadataCompanion(
+        repositoryRevision: Value(plan.committedRepositoryRevision.value),
+        destructionEpoch: Value(
+          metadata.destructionEpoch +
+              (plan.businessChanges.incrementsDestructionEpoch ? 1 : 0),
+        ),
+        updatedAtMicros: Value(now),
+      ),
+    );
+    await (_database.update(
+      _database.operationJournals,
+    )..where((row) => row.operationId.equals(plan.operationId.value))).write(
+      OperationJournalsCompanion(
+        phase: Value(OperationJournalPhase.committed.name),
+        committedRepositoryRevision: Value(
+          plan.committedRepositoryRevision.value,
+        ),
+        updatedAtMicros: Value(now),
+      ),
+    );
+  });
 
   @override
   Future<void> applyFinalizationEffect(
@@ -432,6 +499,70 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
           _database.operationJournals,
         )..where((row) => row.operationId.equals(operationId.value))).go();
       });
+
+  Future<void> _putGlobalCommandOutcome(
+    PutGlobalCommandOutcome mutation,
+  ) async {
+    final reservation =
+        await (_database.select(_database.workspaceGlobalCommandReservations)
+              ..where(
+                (row) => row.operationId.equals(mutation.operationId.value),
+              ))
+            .getSingle();
+    if (reservation.requestFingerprint != mutation.requestFingerprint ||
+        reservation.personalTagId != mutation.personalTagId) {
+      throw const OperationControlPlaneStateException(
+        'globalCommandBindingMismatch',
+      );
+    }
+    await _database
+        .into(_database.workspaceGlobalCommandOutcomes)
+        .insert(
+          WorkspaceGlobalCommandOutcomesCompanion.insert(
+            operationId: mutation.operationId.value,
+            requestFingerprint: mutation.requestFingerprint,
+            personalTagId: mutation.personalTagId,
+            committedRepositoryRevision:
+                mutation.committedRepositoryRevision.value,
+          ),
+        );
+    await (_database.delete(
+      _database.workspaceGlobalCommandReservations,
+    )..where((row) => row.operationId.equals(mutation.operationId.value))).go();
+  }
+
+  Future<void> _putPublishedEvent(PutRevisionPublishedEvent mutation) async {
+    final current =
+        await (_database.select(_database.revisionPublishedEvents)..where(
+              (row) =>
+                  row.sourceLineageId.equals(mutation.sourceLineageId) &
+                  row.eventFingerprint.equals(mutation.eventFingerprint),
+            ))
+            .getSingleOrNull();
+    if (current != null) {
+      if (current.objectId != mutation.objectId ||
+          current.kind != mutation.kind ||
+          current.contentHash != mutation.contentHash ||
+          current.publishedAtMicros != mutation.publishedAtMicros) {
+        throw const OperationControlPlaneStateException(
+          'publishedEventConflict',
+        );
+      }
+      return;
+    }
+    await _database
+        .into(_database.revisionPublishedEvents)
+        .insert(
+          RevisionPublishedEventsCompanion.insert(
+            sourceLineageId: mutation.sourceLineageId,
+            eventFingerprint: mutation.eventFingerprint,
+            objectId: mutation.objectId,
+            kind: mutation.kind,
+            contentHash: mutation.contentHash,
+            publishedAtMicros: mutation.publishedAtMicros,
+          ),
+        );
+  }
 
   Future<void> _transitionPhase(
     OperationId operationId, {
@@ -684,6 +815,7 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
                   createdAtMicros: mutation.createdAtMicros,
                 ),
               ),
+        PutRevisionPublishedEvent() => _putPublishedEvent(mutation),
         PutProjectRoot() =>
           _database
               .into(_database.projectRoots)
@@ -722,6 +854,7 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
                     row.managedSkillId.equals(mutation.managedSkillId.value),
               ))
               .go(),
+        PutGlobalCommandOutcome() => _putGlobalCommandOutcome(mutation),
         PutPersonalTag() =>
           _database
               .into(_database.personalTags)
@@ -1036,6 +1169,7 @@ bool _sameEnvelope(
     left.committedRepositoryRevision == right.committedRepositoryRevision &&
     left.operationGeneration == right.operationGeneration &&
     left.record.kind == right.record.kind &&
+    left.localCommandBinding == right.localCommandBinding &&
     left.preparationSteps.length == right.preparationSteps.length &&
     Iterable<int>.generate(left.preparationSteps.length).every((index) {
       final leftStep = left.preparationSteps[index];

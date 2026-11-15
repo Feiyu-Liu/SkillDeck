@@ -1,4 +1,5 @@
 import '../../domain/identifiers.dart';
+import '../../domain/draft_snapshot.dart';
 import '../runtime/revision_engine_port.dart';
 import 'operation_models.dart';
 import 'workspace_business_changes.dart';
@@ -23,6 +24,7 @@ final class DestructiveSkillRecoveryIntent {
     required List<String> activationIds,
     required this.hasDraft,
     required this.hasUpdateCandidateSession,
+    this.expectedCleanDraftFingerprint,
   }) : sourceLineages = List.unmodifiable(sourceLineages),
        activationIds = List.unmodifiable(activationIds) {
     _requireText(slotKey, 'slotKey');
@@ -57,6 +59,9 @@ final class DestructiveSkillRecoveryIntent {
   final List<String> activationIds;
   final bool hasDraft;
   final bool hasUpdateCandidateSession;
+
+  /// In-memory pre-capture evidence. The durable before image seals it later.
+  final DraftFingerprint? expectedCleanDraftFingerprint;
 }
 
 sealed class DestructiveOperationRecoveryIntent {

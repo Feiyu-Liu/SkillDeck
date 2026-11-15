@@ -36,11 +36,13 @@ final class OperationCoordinator {
     required OperationControlPlanePort controlPlane,
     required OperationRecoveryPort recovery,
     required OperationRevisionReferenceMaintenancePort referenceMaintenance,
+    required OperationCompletedCheckpointPort checkpoints,
     OperationAbortClassifier classifyAbort = classifyOperationAbort,
   }) : _writerLock = writerLock,
        _controlPlane = controlPlane,
        _recovery = recovery,
        _referenceMaintenance = referenceMaintenance,
+       _checkpoints = checkpoints,
        _classifyAbort = classifyAbort;
 
   final WorkspaceWriterLockPort _writerLock;
@@ -48,6 +50,7 @@ final class OperationCoordinator {
   final OperationRecoveryPort _recovery;
   final OperationRevisionReferenceMaintenancePort _referenceMaintenance;
   final OperationAbortClassifier _classifyAbort;
+  final OperationCompletedCheckpointPort _checkpoints;
 
   Future<OperationExecutionOutcome> execute({
     required OperationId operationId,
@@ -336,26 +339,19 @@ final class OperationCoordinator {
       );
     }
 
-    var cleanupPending = false;
     try {
-      await _recovery.cleanupCompleted(plan);
-      await _controlPlane.deleteCompletedJournal(plan.operationId);
-      await _referenceMaintenance.reconcileRevisionReferences(
-        selectedSkillIds: _referenceSkillIds(plan),
-      );
+      await _cleanupRecoveredCompleted(plan);
     } on Object {
-      if (plan.businessChanges.incrementsDestructionEpoch) {
-        return OperationCommittedFinalizationPending(
-          operationId: plan.operationId,
-          committedRepositoryRevision: plan.committedRepositoryRevision,
-        );
-      }
-      cleanupPending = true;
+      return OperationCommittedFinalizationPending(
+        operationId: plan.operationId,
+        committedRepositoryRevision: plan.committedRepositoryRevision,
+      );
     }
+
     return OperationCompleted(
       operationId: plan.operationId,
       committedRepositoryRevision: plan.committedRepositoryRevision,
-      cleanupPending: cleanupPending,
+      cleanupPending: false,
     );
   }
 
@@ -495,7 +491,10 @@ final class OperationCoordinator {
               plan,
               OperationAbortReason.preparationFailed,
             );
-            await _cleanupRecoveredCompleted(plan);
+            await _cleanupRecoveredCompleted(
+              plan,
+              isolatedSkillIds: isolatedSkillIds,
+            );
             recovered.add(
               RecoveredOperation(
                 operationId: plan.operationId,
@@ -519,7 +518,10 @@ final class OperationCoordinator {
               selectedSkillIds: _referenceSkillIds(plan),
             );
             await _controlPlane.complete(plan);
-            await _cleanupRecoveredCompleted(plan);
+            await _cleanupRecoveredCompleted(
+              plan,
+              isolatedSkillIds: isolatedSkillIds,
+            );
             recovered.add(
               RecoveredOperation(
                 operationId: plan.operationId,
@@ -529,7 +531,10 @@ final class OperationCoordinator {
             );
             break;
           case OperationJournalPhase.completed:
-            await _cleanupRecoveredCompleted(plan);
+            await _cleanupRecoveredCompleted(
+              plan,
+              isolatedSkillIds: isolatedSkillIds,
+            );
             recovered.add(
               RecoveredOperation(
                 operationId: plan.operationId,
@@ -552,8 +557,19 @@ final class OperationCoordinator {
     return OperationRecoveryReport(recovered);
   }
 
-  Future<void> _cleanupRecoveredCompleted(OperationPlan plan) async {
+  Future<void> _cleanupRecoveredCompleted(
+    OperationPlan plan, {
+    Set<ManagedSkillId>? isolatedSkillIds,
+  }) async {
+    await _checkpoints.terminalCheckpoint(plan);
     await _recovery.cleanupCompleted(plan);
+    if (plan.businessChanges.incrementsDestructionEpoch) {
+      await _referenceMaintenance.reconcileRevisionReferences(
+        isolatedSkillIds: isolatedSkillIds,
+        selectedSkillIds: _referenceSkillIds(plan),
+      );
+    }
+    await _checkpoints.cleanCheckpoint(plan);
     await _controlPlane.deleteCompletedJournal(plan.operationId);
   }
 

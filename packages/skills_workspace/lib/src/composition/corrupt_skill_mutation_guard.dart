@@ -1,5 +1,6 @@
 import '../api/composite_command_dispatcher.dart';
 import '../api/requests.dart';
+import '../api/revision_transfer.dart';
 import '../api/result.dart';
 import '../application/runtime/workspace_snapshot_publisher.dart';
 import '../domain/identifiers.dart';
@@ -105,6 +106,7 @@ final class _CorruptSkillMutationGuard implements SkillsCommandHandler {
 }
 
 bool _requiresIntegrity(WorkspaceOperationKind kind) => switch (kind) {
+  WorkspaceOperationKind.applyIncomingRevision ||
   WorkspaceOperationKind.update ||
   WorkspaceOperationKind.replaceSource ||
   WorkspaceOperationKind.activate ||
@@ -134,6 +136,19 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.inspectSource ||
   WorkspaceOperationKind.listEffectiveFiles ||
   WorkspaceOperationKind.readEffectiveFile ||
+  WorkspaceOperationKind.exportCommittedRevision ||
+  WorkspaceOperationKind.captureAuthoritativeState ||
+  WorkspaceOperationKind.prepareIncomingRevision ||
+  WorkspaceOperationKind.installIncomingRevision ||
+  WorkspaceOperationKind.pushCommittedRevision ||
+  WorkspaceOperationKind.fetchIncomingRevision ||
+  WorkspaceOperationKind.inspectIncomingRevisionOutcome ||
+  WorkspaceOperationKind.reserveSkillExtraDataPatch ||
+  WorkspaceOperationKind.applySkillExtraDataPatch ||
+  WorkspaceOperationKind.reservePersonalTagMutation ||
+  WorkspaceOperationKind.applyPersonalTagMutation ||
+  WorkspaceOperationKind.inspectPersonalTagMutationOutcome ||
+  WorkspaceOperationKind.replaceIncomingRevision ||
   WorkspaceOperationKind.install ||
   WorkspaceOperationKind.confirmInstallTakeover ||
   WorkspaceOperationKind.adopt ||
@@ -158,6 +173,9 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.exportSkillDriftArtifact ||
   WorkspaceOperationKind.resolveSkillDrift => const <ManagedSkillId>{},
 
+  WorkspaceOperationKind.applyIncomingRevision => {
+    (request as ApplyIncomingRevisionRequest).managedSkillId,
+  },
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,
   WorkspaceOperationKind.activate =>
     (request as ActivateRequest).managedSkillIds,

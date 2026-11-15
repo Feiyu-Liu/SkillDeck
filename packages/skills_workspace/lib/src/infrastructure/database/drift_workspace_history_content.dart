@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:crypto/crypto.dart';
 
 import '../../application/history/history_models.dart';
 import '../../application/history/history_ports.dart';
@@ -44,7 +45,7 @@ final class DriftWorkspaceHistoryContent
   @override
   Future<HistoricalRevisionSelection?> resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   }) => _database.transaction(
     () => _resolvePublishedRevision(
       managedSkillId: managedSkillId,
@@ -183,8 +184,49 @@ final class DriftWorkspaceHistoryContent
 
   Future<HistoricalRevisionSelection?> _resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   }) async {
+    if (reference is ImportedPublishedRevisionReference) {
+      final skills = _database.managedSkills;
+      final events = _database.revisionPublishedEvents;
+      final metadata = _database.revisionMetadata;
+      final query =
+          _database.select(events).join([
+            innerJoin(
+              skills,
+              skills.activeSourceLineageId.equalsExp(events.sourceLineageId),
+            ),
+            innerJoin(
+              metadata,
+              metadata.sourceLineageId.equalsExp(events.sourceLineageId) &
+                  metadata.objectId.equalsExp(events.objectId),
+            ),
+          ])..where(
+            skills.id.equals(managedSkillId.value) &
+                events.eventFingerprint.equals(reference.eventFingerprint),
+          );
+      final row = await query.getSingleOrNull();
+      if (row == null) return null;
+      final event = row.readTable(events), revision = row.readTable(metadata);
+      if (sha256
+                  .convert(
+                    utf8.encode('local-lineage:${event.sourceLineageId}'),
+                  )
+                  .toString() !=
+              reference.localLineageFingerprint ||
+          event.contentHash != revision.contentHash) {
+        return null;
+      }
+      return HistoricalRevisionSelection(
+        reference: reference,
+        managedSkillId: managedSkillId,
+        sourceLineage: SourceLineageReference(event.sourceLineageId),
+        objectId: RevisionObjectId(event.objectId),
+        contentHash: event.contentHash,
+        declaredName: revision.declaredName,
+      );
+    }
+    if (reference is! OperationSubjectReference) return null;
     final subjects = _database.operationSubjects;
     final records = _database.operationRecords;
     final lineages = _database.sourceLineages;

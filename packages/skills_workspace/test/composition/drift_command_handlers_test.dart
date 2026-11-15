@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:skills_workspace/src/api/requests.dart';
 import 'package:skills_workspace/src/api/result.dart';
 import 'package:skills_workspace/src/application/drift/drift_models.dart';
+import 'package:skills_workspace/src/application/operations/operation_models.dart';
 import 'package:skills_workspace/src/application/ports/workspace_lifecycle_ports.dart';
 import 'package:skills_workspace/src/application/runtime/revision_engine_port.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
@@ -95,19 +96,31 @@ void main() {
   );
 
   test(
-    'cleanup failure remains a validated success with recovery warning',
+    'cleanup failure preserves validated state and requires finalization',
     () async {
       final review = await fixture.inspect();
       fixture.operations.failures.failures.add('recovery.cleanup');
       final result = await fixture.restore(review);
 
-      expect(result.isSuccess, isTrue);
+      expect(result.isCommittedFinalizationPending, isTrue);
       expect(
         result.warnings.single.code,
-        SkillsWarningCode.recoveryCleanupDeferred,
+        SkillsWarningCode.finalizationDeferred,
       );
       expect(fixture.materializations.validations, 1);
       expect(fixture.status, SkillIntegrityStatus.healthy);
+      expect(
+        fixture.operations.controlPlane.repositoryRevision,
+        RepositoryRevision(1),
+      );
+      expect(
+        fixture.operations.controlPlane.journals.single.phase,
+        OperationJournalPhase.completed,
+      );
+      expect(
+        fixture.operations.log.events,
+        isNot(contains('control.rollback-complete')),
+      );
     },
   );
 

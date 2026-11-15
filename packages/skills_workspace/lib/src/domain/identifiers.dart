@@ -76,11 +76,39 @@ final class OperationId {
   String toString() => 'OperationId($value)';
 }
 
+/// A local published/restorable selection, with explicit reference provenance.
+sealed class PublishedRevisionReference {
+  const PublishedRevisionReference();
+}
+
+final class ImportedPublishedRevisionReference
+    extends PublishedRevisionReference {
+  ImportedPublishedRevisionReference({
+    required this.eventFingerprint,
+    required this.localLineageFingerprint,
+  }) {
+    for (final value in [eventFingerprint, localLineageFingerprint]) {
+      if (value.length != 64 || !RegExp(r'^[0-9a-f]{64}$').hasMatch(value)) {
+        throw ArgumentError('Invalid imported revision reference.');
+      }
+    }
+  }
+  final String eventFingerprint;
+  final String localLineageFingerprint;
+  @override
+  bool operator ==(Object other) =>
+      other is ImportedPublishedRevisionReference &&
+      other.eventFingerprint == eventFingerprint &&
+      other.localLineageFingerprint == localLineageFingerprint;
+  @override
+  int get hashCode => Object.hash(eventFingerprint, localLineageFingerprint);
+}
+
 /// Identifies one per-Skill subject within a user-visible operation.
 ///
 /// The composite reference is used for historical selection so no independent
 /// public Skill Revision identity is required.
-final class OperationSubjectReference {
+final class OperationSubjectReference extends PublishedRevisionReference {
   /// Creates a reference to a persisted operation subject.
   OperationSubjectReference({
     required this.operationId,

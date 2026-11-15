@@ -1,5 +1,6 @@
 #include "skills_workspace_native.h"
 #include "skills_workspace_runtime.h"
+#include "internal_repository_policy.h"
 
 #include <git2.h>
 #include <stdint.h>
@@ -322,6 +323,319 @@ static int32_t transport_fetch(const char *repository_path,
   git_repository_free(repository);
   return result;
 }
+
+// Per-operation object transport is deliberately separate from public Source
+// acquisition. Nothing here selects an Effective Revision or persists auth.
+typedef struct operation_transport_context {
+  fetch_context cancellation;
+  git_refspec **specs;
+  intptr_t count;
+  int32_t *statuses;
+  int unexpected_ref;
+  int64_t *transferred_bytes;
+} operation_transport_context;
+
+static int operation_push_status(const char *ref, const char *status,
+                                  void *payload) {
+  operation_transport_context *context = payload;
+  intptr_t i;
+  // Record a known remote result even when cancellation raced its delivery.
+  for (i = 0; i < context->count; ++i) {
+    if (strcmp(git_refspec_dst(context->specs[i]), ref) == 0) {
+      context->statuses[i] = status == NULL
+          ? SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED
+          : SKILLS_WORKSPACE_TRANSPORT_REF_REJECTED;
+      return is_cancelled(&context->cancellation) ? GIT_EUSER : 0;
+    }
+  }
+  context->unexpected_ref = 1;
+  return GIT_EUSER;
+}
+
+static int operation_push_transfer(unsigned int current, unsigned int total,
+                                    size_t bytes, void *payload) {
+  (void)current;
+  (void)total;
+  operation_transport_context *context = payload;
+  if (context->transferred_bytes != NULL)
+    *(volatile int64_t *)context->transferred_bytes =
+        bytes > INT64_MAX ? INT64_MAX : (int64_t)bytes;
+  return is_cancelled(&context->cancellation) ? GIT_EUSER : 0;
+}
+
+static int operation_fetch_transfer(const git_indexer_progress *stats,
+                                    void *payload) {
+  operation_transport_context *context = payload;
+  if (context->transferred_bytes != NULL)
+    *(volatile int64_t *)context->transferred_bytes =
+        stats->received_bytes > INT64_MAX ? INT64_MAX : (int64_t)stats->received_bytes;
+  return is_cancelled(&context->cancellation) ? GIT_EUSER : 0;
+}
+
+static int operation_pack_progress(int stage, uint32_t current, uint32_t total,
+                                   void *payload) {
+  (void)stage;
+  (void)current;
+  (void)total;
+  return is_cancelled((fetch_context *)payload) ? GIT_EUSER : 0;
+}
+
+static int operation_push_negotiate(const git_push_update **updates,
+                                     size_t count, void *payload) {
+  operation_transport_context *context = payload;
+  size_t u;
+  intptr_t i;
+  // Already-present refs need no wire update/status report. They are accepted
+  // only when negotiation proves the exact same object is already selected.
+  for (u = 0; u < count; ++u) {
+    if (git_oid_equal(&updates[u]->src, &updates[u]->dst)) {
+      for (i = 0; i < context->count; ++i) {
+        if (strcmp(git_refspec_dst(context->specs[i]),
+                   updates[u]->dst_refname) == 0) {
+          context->statuses[i] = SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED;
+        }
+      }
+    }
+  }
+  return is_cancelled(&context->cancellation) ? GIT_EUSER : 0;
+}
+
+static int operation_url_valid(const char *url, int allow_loopback) {
+  const char *authority;
+  const char *end;
+  const unsigned char *p;
+  if (is_empty(url)) return 0;
+  if (strncmp(url, "https://", 8) == 0) {
+    authority = url + 8;
+  } else if (allow_loopback && strncmp(url, "http://127.0.0.1:", 17) == 0) {
+    authority = url + 7;
+    p = (const unsigned char *)url + 17;
+    if (*p < '0' || *p > '9') return 0;
+    while (*p >= '0' && *p <= '9') ++p;
+    if (*p != '/') return 0;
+  } else {
+    return 0;
+  }
+  end = strchr(authority, '/');
+  if (end == NULL || end == authority) return 0;
+  for (p = (const unsigned char *)url; *p; ++p) {
+    if (*p <= 32 || *p == 127 || *p == '\\' || *p == '?' || *p == '#')
+      return 0;
+    if ((const char *)p < end && *p == '@') return 0;
+  }
+  return 1;
+}
+
+static int operation_headers_valid(const char *const *headers, intptr_t count) {
+  intptr_t i;
+  size_t total = 0;
+  if (count < 0 || count > 32 || (count > 0 && headers == NULL)) return 0;
+  for (i = 0; i < count; ++i) {
+    const unsigned char *p = (const unsigned char *)headers[i];
+    const unsigned char *start = p;
+    if (p == NULL || *p == '\0') return 0;
+    while (*p && *p != ':') {
+      if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
+            (*p >= '0' && *p <= '9') || strchr("!#$%&'*+-.^_`|~", *p)))
+        return 0;
+      ++p;
+    }
+    if (p == start || *p != ':') return 0;
+    ++p;
+    for (; *p; ++p) if (*p < 32 || *p == 127) return 0;
+    total += (size_t)(p - start);
+    if (total > 65536) return 0;
+  }
+  return 1;
+}
+
+static int32_t operation_transport(
+    const char *repository_path, const char *url,
+    const char *const *refspecs, intptr_t ref_count,
+    const char *const *custom_headers, intptr_t header_count,
+    int32_t proxy_mode, const char *proxy_url, const int32_t *cancel_flag,
+    int32_t allow_loopback, int32_t *ref_statuses,
+    int64_t *transferred_bytes, int push) {
+  git_repository *repository = NULL;
+  git_remote *remote = NULL;
+  git_fetch_options fetch_options = GIT_FETCH_OPTIONS_INIT;
+  git_push_options push_options = GIT_PUSH_OPTIONS_INIT;
+  git_remote_callbacks callbacks = GIT_REMOTE_CALLBACKS_INIT;
+  git_remote_create_options remote_options = GIT_REMOTE_CREATE_OPTIONS_INIT;
+  git_proxy_options proxy = GIT_PROXY_OPTIONS_INIT;
+  git_strarray specs;
+  operation_transport_context context;
+  intptr_t i, j;
+  int code = 0;
+  int32_t result = SKILLS_WORKSPACE_TRANSPORT_INVALID_ARGUMENT;
+
+  if (transferred_bytes != NULL) *transferred_bytes = 0;
+  if (ref_count < 1 || ref_count > 256 || refspecs == NULL ||
+      ref_statuses == NULL) return result;
+  for (i = 0; i < ref_count; ++i)
+    ref_statuses[i] = SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED;
+  if (is_empty(repository_path) || !operation_url_valid(url, allow_loopback) ||
+      !operation_headers_valid(custom_headers, header_count) ||
+      proxy_mode < SKILLS_WORKSPACE_TRANSPORT_PROXY_NONE ||
+      proxy_mode > SKILLS_WORKSPACE_TRANSPORT_PROXY_SPECIFIED ||
+      ((proxy_mode == SKILLS_WORKSPACE_TRANSPORT_PROXY_SPECIFIED) ==
+       is_empty(proxy_url))) return result;
+  memset(&context, 0, sizeof(context));
+  context.cancellation.cancel_flag = cancel_flag;
+  context.count = ref_count;
+  context.statuses = ref_statuses;
+  context.transferred_bytes = transferred_bytes;
+  if (is_cancelled(&context.cancellation))
+    return SKILLS_WORKSPACE_TRANSPORT_CANCELLED;
+  context.specs = calloc((size_t)ref_count, sizeof(git_refspec *));
+  if (context.specs == NULL) return SKILLS_WORKSPACE_TRANSPORT_RUNTIME_FAILURE;
+  for (i = 0; i < ref_count; ++i) {
+    const char *src;
+    const char *dst;
+    git_oid oid;
+    int valid = 0;
+    if (is_empty(refspecs[i]) || strchr(refspecs[i], '*') != NULL ||
+        refspecs[i][0] == '+' ||
+        git_refspec_parse(&context.specs[i], refspecs[i], !push) < 0)
+      goto cleanup;
+    src = git_refspec_src(context.specs[i]);
+    dst = git_refspec_dst(context.specs[i]);
+    if (is_empty(src) || is_empty(dst) || strncmp(dst, "refs/", 5) != 0 ||
+        git_reference_name_is_valid(&valid, dst) < 0 || !valid)
+      goto cleanup;
+    valid = 0;
+    if (!(strlen(src) == GIT_OID_SHA1_HEXSIZE && git_oid_fromstr(&oid, src) == 0) &&
+        !(strncmp(src, "refs/", 5) == 0 &&
+          git_reference_name_is_valid(&valid, src) == 0 && valid))
+      goto cleanup;
+    for (j = 0; j < i; ++j)
+      if (strcmp(dst, git_refspec_dst(context.specs[j])) == 0) goto cleanup;
+  }
+  if (git_repository_open_bare(&repository, repository_path) < 0 ||
+      skills_workspace_configure_internal_repository(repository) < 0) {
+    result = SKILLS_WORKSPACE_TRANSPORT_REPOSITORY_FAILURE;
+    goto cleanup;
+  }
+  if (push) {
+    for (i = 0; i < ref_count; ++i) {
+      git_object *object = NULL;
+      int valid_commit = git_revparse_single(&object, repository,
+          git_refspec_src(context.specs[i])) == 0 &&
+          git_object_type(object) == GIT_OBJECT_COMMIT;
+      git_object_free(object);
+      if (!valid_commit) {
+        result = SKILLS_WORKSPACE_TRANSPORT_OBJECT_FAILURE;
+        goto cleanup;
+      }
+    }
+  }
+  remote_options.repository = repository;
+  remote_options.flags = GIT_REMOTE_CREATE_SKIP_INSTEADOF |
+                         GIT_REMOTE_CREATE_SKIP_DEFAULT_FETCHSPEC;
+  if (git_remote_create_with_opts(&remote, url, &remote_options) < 0)
+    goto cleanup;
+  callbacks.sideband_progress = fetch_sideband;
+  callbacks.transfer_progress = operation_fetch_transfer;
+  callbacks.remote_ready = fetch_ready;
+  callbacks.credentials = refuse_source_credentials;
+  callbacks.push_update_reference = operation_push_status;
+  callbacks.push_transfer_progress = operation_push_transfer;
+  callbacks.pack_progress = operation_pack_progress;
+  callbacks.push_negotiation = operation_push_negotiate;
+  callbacks.payload = &context;
+  proxy.type = proxy_mode == SKILLS_WORKSPACE_TRANSPORT_PROXY_SPECIFIED
+      ? GIT_PROXY_SPECIFIED : proxy_mode == SKILLS_WORKSPACE_TRANSPORT_PROXY_ENVIRONMENT
+      ? GIT_PROXY_AUTO : GIT_PROXY_NONE;
+  proxy.url = proxy_url;
+  specs.strings = (char **)refspecs;
+  specs.count = (size_t)ref_count;
+  if (push) {
+    push_options.callbacks = callbacks;
+    push_options.proxy_opts = proxy;
+    push_options.follow_redirects = GIT_REMOTE_REDIRECT_NONE;
+    push_options.custom_headers.strings = (char **)custom_headers;
+    push_options.custom_headers.count = (size_t)header_count;
+    // No worker threads outlive the operation context.
+    push_options.pb_parallelism = 1;
+    code = git_remote_push(remote, &specs, &push_options);
+  } else {
+    fetch_options.callbacks = callbacks;
+    fetch_options.proxy_opts = proxy;
+    fetch_options.follow_redirects = GIT_REMOTE_REDIRECT_NONE;
+    fetch_options.custom_headers.strings = (char **)custom_headers;
+    fetch_options.custom_headers.count = (size_t)header_count;
+    fetch_options.download_tags = GIT_REMOTE_DOWNLOAD_TAGS_NONE;
+    fetch_options.update_fetchhead = 0;
+    fetch_options.prune = GIT_FETCH_NO_PRUNE;
+    code = git_remote_fetch(remote, &specs, &fetch_options, "object transfer");
+    if (code == 0) {
+      for (i = 0; i < ref_count; ++i) {
+        git_reference *reference = NULL;
+        git_object *commit = NULL;
+        if (git_reference_lookup(&reference, repository,
+                                  git_refspec_dst(context.specs[i])) == 0 &&
+            git_reference_type(reference) == GIT_REFERENCE_DIRECT &&
+            git_object_lookup(&commit, repository,
+                git_reference_target(reference), GIT_OBJECT_COMMIT) == 0) {
+          const char *src = git_refspec_src(context.specs[i]);
+          git_oid expected;
+          if (strlen(src) != GIT_OID_SHA1_HEXSIZE ||
+              git_oid_fromstr(&expected, src) != 0 ||
+              git_oid_equal(&expected, git_object_id(commit)))
+            ref_statuses[i] = SKILLS_WORKSPACE_TRANSPORT_REF_ACCEPTED;
+        }
+        git_object_free(commit);
+        git_reference_free(reference);
+      }
+    }
+  }
+  if (is_cancelled(&context.cancellation)) {
+    result = SKILLS_WORKSPACE_TRANSPORT_CANCELLED;
+  } else if (context.unexpected_ref) {
+    result = SKILLS_WORKSPACE_TRANSPORT_OUTCOME_UNKNOWN;
+  } else if (code < 0) {
+    // Non-fast-forward is a transport-level rejection before report-status.
+    result = code == GIT_ENONFASTFORWARD
+        ? SKILLS_WORKSPACE_TRANSPORT_REJECTED_REF
+        : classify_fetch_failure(code, &context.cancellation);
+  } else {
+    result = SKILLS_WORKSPACE_TRANSPORT_OK;
+    for (i = 0; i < ref_count; ++i) {
+      if (ref_statuses[i] == SKILLS_WORKSPACE_TRANSPORT_REF_REJECTED) {
+        result = SKILLS_WORKSPACE_TRANSPORT_REJECTED_REF;
+        break;
+      }
+      if (ref_statuses[i] == SKILLS_WORKSPACE_TRANSPORT_REF_UNREPORTED)
+        result = SKILLS_WORKSPACE_TRANSPORT_OUTCOME_UNKNOWN;
+    }
+  }
+cleanup:
+  git_remote_free(remote);
+  git_repository_free(repository);
+  for (i = 0; i < ref_count; ++i) git_refspec_free(context.specs[i]);
+  free(context.specs);
+  return result;
+}
+
+#define OPERATION_TRANSPORT_ENTRY(name, push) \
+int32_t name(const char *repository_path, const char *url, \
+    const char *const *refspecs, intptr_t ref_count, \
+    const char *const *custom_headers, intptr_t header_count, \
+    int32_t proxy_mode, const char *proxy_url, const int32_t *cancel_flag, \
+    int32_t allow_loopback_http_for_testing, int32_t *ref_statuses, \
+    int64_t *transferred_bytes) { \
+  int32_t result; \
+  if (skills_workspace_runtime_acquire() != 0) \
+    return SKILLS_WORKSPACE_TRANSPORT_RUNTIME_FAILURE; \
+  result = operation_transport(repository_path, url, refspecs, ref_count, \
+      custom_headers, header_count, proxy_mode, proxy_url, cancel_flag, \
+      allow_loopback_http_for_testing, ref_statuses, transferred_bytes, push); \
+  skills_workspace_runtime_release(); \
+  return result; \
+}
+OPERATION_TRANSPORT_ENTRY(skills_workspace_transport_fetch_into, 0)
+OPERATION_TRANSPORT_ENTRY(skills_workspace_transport_push, 1)
+#undef OPERATION_TRANSPORT_ENTRY
 
 static int32_t open_repository(git_repository **repository,
                                const char *repository_path) {

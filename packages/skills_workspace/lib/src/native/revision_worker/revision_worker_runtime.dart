@@ -7,6 +7,7 @@ import '../../application/operations/operation_models.dart';
 import '../../application/runtime/revision_engine_port.dart';
 import '../../domain/draft_snapshot.dart';
 import '../../domain/revision_content.dart';
+import '../../domain/cancellation.dart';
 import 'revision_worker.dart';
 import 'revision_worker_protocol.dart';
 
@@ -216,15 +217,59 @@ final class RevisionWorkerRuntime
   );
 
   @override
+  Future<RevisionCommitTopology> inspectCommit(
+    String repositoryPath,
+    RevisionObjectId commit, {
+    RevisionCommitInspectionLimits limits =
+        const RevisionCommitInspectionLimits(),
+  }) => _delegate(
+    (worker) => worker.inspectCommit(repositoryPath, commit, limits: limits),
+  );
+
+  @override
+  Future<RevisionObjectImportReport> importObjects({
+    required String repositoryPath,
+    required String stagedRepositoryPath,
+    required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
+  }) => _delegate(
+    (worker) => worker.importObjects(
+      repositoryPath: repositoryPath,
+      stagedRepositoryPath: stagedRepositoryPath,
+      retainedRoots: retainedRoots,
+      limits: limits,
+      cancellationToken: cancellationToken,
+    ),
+  );
+
+  @override
   Future<void> createRecoveryPack({
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) => _delegate(
     (worker) => worker.createRecoveryPack(
       repositoryPath: repositoryPath,
       bundleStagingPath: bundleStagingPath,
       retainedRoots: retainedRoots,
+      limits: limits,
+    ),
+  );
+
+  @override
+  Future<void> createPackIndex({
+    required String packPath,
+    required String stagingDirectory,
+    RevisionObjectImportLimits limits = const RevisionObjectImportLimits(),
+    CancellationToken? cancellationToken,
+  }) => _delegate(
+    (worker) => worker.createPackIndex(
+      packPath: packPath,
+      stagingDirectory: stagingDirectory,
+      limits: limits,
+      cancellationToken: cancellationToken,
     ),
   );
 
@@ -234,12 +279,16 @@ final class RevisionWorkerRuntime
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) => _delegate(
     (worker) => worker.restoreRecoveryPack(
       stagedRepositoryPath: stagedRepositoryPath,
       packPath: packPath,
       indexPath: indexPath,
       retainedRoots: retainedRoots,
+      limits: limits,
+      cancellationToken: cancellationToken,
     ),
   );
 

@@ -6,6 +6,7 @@ import '../application/operations/destructive_recovery_intent.dart';
 import '../application/ports/destructive_operation_ports.dart';
 import '../application/runtime/revision_engine_port.dart';
 import '../domain/cancellation.dart';
+import '../domain/draft_snapshot.dart';
 import '../domain/identifiers.dart';
 import '../domain/revision_content.dart';
 import '../infrastructure/database/workspace_database.dart' as db;
@@ -133,7 +134,11 @@ final class WorkspaceDestructiveRecoveryEntries
         }
         if (skill.hasDraft) {
           add(
-            _absent(entryId('draft'), _layout.draftPath(skill.managedSkillId)),
+            _absent(
+              entryId('draft'),
+              _layout.draftPath(skill.managedSkillId),
+              expectedBeforeFingerprint: skill.expectedCleanDraftFingerprint,
+            ),
           );
         }
       case final RemovalRecoveryIntent removal:
@@ -172,6 +177,7 @@ final class WorkspaceDestructiveRecoveryEntries
               _absent(
                 entryId('draft'),
                 _layout.draftPath(skill.managedSkillId),
+                expectedBeforeFingerprint: skill.expectedCleanDraftFingerprint,
               ),
             );
           }
@@ -255,15 +261,19 @@ final class WorkspaceDestructiveRecoveryEntries
     requirePlainDirectory: false,
   );
 
-  OperationRecoveryEntrySpec _absent(String id, String target) =>
-      OperationRecoveryEntrySpec(
-        entryId: id,
-        targetPath: target,
-        intendedSourcePath: null,
-        intendedKind: null,
-        makeReadOnly: false,
-        requirePlainDirectory: false,
-      );
+  OperationRecoveryEntrySpec _absent(
+    String id,
+    String target, {
+    DraftFingerprint? expectedBeforeFingerprint,
+  }) => OperationRecoveryEntrySpec(
+    entryId: id,
+    targetPath: target,
+    intendedSourcePath: null,
+    intendedKind: null,
+    expectedBeforeFingerprint: expectedBeforeFingerprint,
+    makeReadOnly: false,
+    requirePlainDirectory: false,
+  );
 }
 
 String _identity(String value) => Platform.isWindows

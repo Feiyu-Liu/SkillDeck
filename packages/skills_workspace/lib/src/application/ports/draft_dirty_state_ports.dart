@@ -1,4 +1,5 @@
 import '../../domain/cancellation.dart';
+import '../../domain/draft_snapshot.dart';
 import '../../domain/public_models.dart';
 
 sealed class DraftDirtyStateInspectionResult {
@@ -7,9 +8,13 @@ sealed class DraftDirtyStateInspectionResult {
 
 final class DraftDirtyStateInspectionSuccess
     extends DraftDirtyStateInspectionResult {
-  const DraftDirtyStateInspectionSuccess({required this.isDirty});
+  const DraftDirtyStateInspectionSuccess({
+    required this.isDirty,
+    this.cleanFingerprint,
+  });
 
   final bool isDirty;
+  final DraftFingerprint? cleanFingerprint;
 }
 
 final class DraftDirtyStateInspectionFailure

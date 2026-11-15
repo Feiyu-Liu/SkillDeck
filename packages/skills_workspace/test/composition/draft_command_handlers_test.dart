@@ -246,7 +246,7 @@ void main() {
   );
 
   test(
-    'Ensure Draft reports deferred non-destructive cleanup as a warning',
+    'Ensure Draft retains committed recovery state when cleanup fails',
     () async {
       fixture = await _Fixture.create(_snapshot());
       fixture.reader.value = _snapshot(revision: 1, draft: _draft(false));
@@ -257,10 +257,22 @@ void main() {
         EnsureDraftRequest(managedSkillId: _skillId),
       );
 
-      expect(result.valueOrNull, isNotNull);
+      expect(result, isA<SkillsCommittedFinalizationPending<DraftSummary>>());
       expect(
         result.warnings.single.code,
-        SkillsWarningCode.recoveryCleanupDeferred,
+        SkillsWarningCode.finalizationDeferred,
+      );
+      expect(
+        fixture.operations.controlPlane.repositoryRevision,
+        RepositoryRevision(1),
+      );
+      expect(
+        fixture.operations.controlPlane.journals.single.phase,
+        OperationJournalPhase.completed,
+      );
+      expect(
+        fixture.operations.log.events,
+        isNot(contains('control.rollback-complete')),
       );
     },
   );

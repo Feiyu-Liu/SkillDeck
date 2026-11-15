@@ -5,6 +5,7 @@ import '../../application/ports/update_ports.dart';
 import '../../application/runtime/revision_engine_port.dart';
 import '../../application/update/update_models.dart';
 import '../../domain/cancellation.dart';
+import '../../domain/draft_snapshot.dart';
 import '../../domain/identifiers.dart';
 import '../../domain/public_models.dart';
 import 'workspace_database.dart' as db;
@@ -112,6 +113,7 @@ final class DriftDestructivePlanningState
 
       final draft = draftBySkill[id];
       final DestructiveDraftState draftState;
+      DraftFingerprint? cleanDraftFingerprint;
       if (draft == null) {
         draftState = DestructiveDraftState.absent;
       } else if (purpose == DestructivePlanningPurpose.removal ||
@@ -125,6 +127,9 @@ final class DriftDestructivePlanningState
           skill: publicSkill,
           cancellationToken: cancellationToken,
         );
+        if (inspected case UpdateDraftInspectionSuccess(:final inspection)) {
+          cleanDraftFingerprint = inspection.cleanFingerprint;
+        }
         draftState = switch (inspected) {
           UpdateDraftInspectionSuccess(:final inspection) =>
             inspection.isDirty
@@ -169,6 +174,7 @@ final class DriftDestructivePlanningState
           currentContentHash: effectiveMetadata.contentHash,
           activationIds: activationIds,
           draftState: draftState,
+          cleanDraftFingerprint: cleanDraftFingerprint,
           hasUpdateCandidateSession: sessionSkillIds.contains(id),
         ),
       );

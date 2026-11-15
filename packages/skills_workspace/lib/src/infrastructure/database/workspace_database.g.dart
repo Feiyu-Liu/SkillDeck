@@ -20,6 +20,28 @@ class $WorkspaceMetadataTable extends WorkspaceMetadata
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recoveryIncarnationMeta =
+      const VerificationMeta('recoveryIncarnation');
+  @override
+  late final GeneratedColumn<String> recoveryIncarnation =
+      GeneratedColumn<String>(
+        'recovery_incarnation',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
   static const VerificationMeta _repositoryRevisionMeta =
       const VerificationMeta('repositoryRevision');
   @override
@@ -66,6 +88,8 @@ class $WorkspaceMetadataTable extends WorkspaceMetadata
   @override
   List<GeneratedColumn> get $columns => [
     singleton,
+    workspaceId,
+    recoveryIncarnation,
     repositoryRevision,
     destructionEpoch,
     createdAtMicros,
@@ -88,6 +112,28 @@ class $WorkspaceMetadataTable extends WorkspaceMetadata
         _singletonMeta,
         singleton.isAcceptableOrUnknown(data['singleton']!, _singletonMeta),
       );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('recovery_incarnation')) {
+      context.handle(
+        _recoveryIncarnationMeta,
+        recoveryIncarnation.isAcceptableOrUnknown(
+          data['recovery_incarnation']!,
+          _recoveryIncarnationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recoveryIncarnationMeta);
     }
     if (data.containsKey('repository_revision')) {
       context.handle(
@@ -146,6 +192,14 @@ class $WorkspaceMetadataTable extends WorkspaceMetadata
         DriftSqlType.int,
         data['${effectivePrefix}singleton'],
       )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      recoveryIncarnation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recovery_incarnation'],
+      )!,
       repositoryRevision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}repository_revision'],
@@ -174,12 +228,16 @@ class $WorkspaceMetadataTable extends WorkspaceMetadata
 class WorkspaceMetadataData extends DataClass
     implements Insertable<WorkspaceMetadataData> {
   final int singleton;
+  final String workspaceId;
+  final String recoveryIncarnation;
   final int repositoryRevision;
   final int destructionEpoch;
   final int createdAtMicros;
   final int updatedAtMicros;
   const WorkspaceMetadataData({
     required this.singleton,
+    required this.workspaceId,
+    required this.recoveryIncarnation,
     required this.repositoryRevision,
     required this.destructionEpoch,
     required this.createdAtMicros,
@@ -189,6 +247,8 @@ class WorkspaceMetadataData extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['singleton'] = Variable<int>(singleton);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['recovery_incarnation'] = Variable<String>(recoveryIncarnation);
     map['repository_revision'] = Variable<int>(repositoryRevision);
     map['destruction_epoch'] = Variable<int>(destructionEpoch);
     map['created_at_micros'] = Variable<int>(createdAtMicros);
@@ -199,6 +259,8 @@ class WorkspaceMetadataData extends DataClass
   WorkspaceMetadataCompanion toCompanion(bool nullToAbsent) {
     return WorkspaceMetadataCompanion(
       singleton: Value(singleton),
+      workspaceId: Value(workspaceId),
+      recoveryIncarnation: Value(recoveryIncarnation),
       repositoryRevision: Value(repositoryRevision),
       destructionEpoch: Value(destructionEpoch),
       createdAtMicros: Value(createdAtMicros),
@@ -213,6 +275,10 @@ class WorkspaceMetadataData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return WorkspaceMetadataData(
       singleton: serializer.fromJson<int>(json['singleton']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      recoveryIncarnation: serializer.fromJson<String>(
+        json['recoveryIncarnation'],
+      ),
       repositoryRevision: serializer.fromJson<int>(json['repositoryRevision']),
       destructionEpoch: serializer.fromJson<int>(json['destructionEpoch']),
       createdAtMicros: serializer.fromJson<int>(json['createdAtMicros']),
@@ -224,6 +290,8 @@ class WorkspaceMetadataData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'singleton': serializer.toJson<int>(singleton),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'recoveryIncarnation': serializer.toJson<String>(recoveryIncarnation),
       'repositoryRevision': serializer.toJson<int>(repositoryRevision),
       'destructionEpoch': serializer.toJson<int>(destructionEpoch),
       'createdAtMicros': serializer.toJson<int>(createdAtMicros),
@@ -233,12 +301,16 @@ class WorkspaceMetadataData extends DataClass
 
   WorkspaceMetadataData copyWith({
     int? singleton,
+    String? workspaceId,
+    String? recoveryIncarnation,
     int? repositoryRevision,
     int? destructionEpoch,
     int? createdAtMicros,
     int? updatedAtMicros,
   }) => WorkspaceMetadataData(
     singleton: singleton ?? this.singleton,
+    workspaceId: workspaceId ?? this.workspaceId,
+    recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
     repositoryRevision: repositoryRevision ?? this.repositoryRevision,
     destructionEpoch: destructionEpoch ?? this.destructionEpoch,
     createdAtMicros: createdAtMicros ?? this.createdAtMicros,
@@ -247,6 +319,12 @@ class WorkspaceMetadataData extends DataClass
   WorkspaceMetadataData copyWithCompanion(WorkspaceMetadataCompanion data) {
     return WorkspaceMetadataData(
       singleton: data.singleton.present ? data.singleton.value : this.singleton,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      recoveryIncarnation: data.recoveryIncarnation.present
+          ? data.recoveryIncarnation.value
+          : this.recoveryIncarnation,
       repositoryRevision: data.repositoryRevision.present
           ? data.repositoryRevision.value
           : this.repositoryRevision,
@@ -266,6 +344,8 @@ class WorkspaceMetadataData extends DataClass
   String toString() {
     return (StringBuffer('WorkspaceMetadataData(')
           ..write('singleton: $singleton, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
           ..write('repositoryRevision: $repositoryRevision, ')
           ..write('destructionEpoch: $destructionEpoch, ')
           ..write('createdAtMicros: $createdAtMicros, ')
@@ -277,6 +357,8 @@ class WorkspaceMetadataData extends DataClass
   @override
   int get hashCode => Object.hash(
     singleton,
+    workspaceId,
+    recoveryIncarnation,
     repositoryRevision,
     destructionEpoch,
     createdAtMicros,
@@ -287,6 +369,8 @@ class WorkspaceMetadataData extends DataClass
       identical(this, other) ||
       (other is WorkspaceMetadataData &&
           other.singleton == this.singleton &&
+          other.workspaceId == this.workspaceId &&
+          other.recoveryIncarnation == this.recoveryIncarnation &&
           other.repositoryRevision == this.repositoryRevision &&
           other.destructionEpoch == this.destructionEpoch &&
           other.createdAtMicros == this.createdAtMicros &&
@@ -296,12 +380,16 @@ class WorkspaceMetadataData extends DataClass
 class WorkspaceMetadataCompanion
     extends UpdateCompanion<WorkspaceMetadataData> {
   final Value<int> singleton;
+  final Value<String> workspaceId;
+  final Value<String> recoveryIncarnation;
   final Value<int> repositoryRevision;
   final Value<int> destructionEpoch;
   final Value<int> createdAtMicros;
   final Value<int> updatedAtMicros;
   const WorkspaceMetadataCompanion({
     this.singleton = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.recoveryIncarnation = const Value.absent(),
     this.repositoryRevision = const Value.absent(),
     this.destructionEpoch = const Value.absent(),
     this.createdAtMicros = const Value.absent(),
@@ -309,16 +397,22 @@ class WorkspaceMetadataCompanion
   });
   WorkspaceMetadataCompanion.insert({
     this.singleton = const Value.absent(),
+    required String workspaceId,
+    required String recoveryIncarnation,
     required int repositoryRevision,
     required int destructionEpoch,
     required int createdAtMicros,
     required int updatedAtMicros,
-  }) : repositoryRevision = Value(repositoryRevision),
+  }) : workspaceId = Value(workspaceId),
+       recoveryIncarnation = Value(recoveryIncarnation),
+       repositoryRevision = Value(repositoryRevision),
        destructionEpoch = Value(destructionEpoch),
        createdAtMicros = Value(createdAtMicros),
        updatedAtMicros = Value(updatedAtMicros);
   static Insertable<WorkspaceMetadataData> custom({
     Expression<int>? singleton,
+    Expression<String>? workspaceId,
+    Expression<String>? recoveryIncarnation,
     Expression<int>? repositoryRevision,
     Expression<int>? destructionEpoch,
     Expression<int>? createdAtMicros,
@@ -326,6 +420,9 @@ class WorkspaceMetadataCompanion
   }) {
     return RawValuesInsertable({
       if (singleton != null) 'singleton': singleton,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (recoveryIncarnation != null)
+        'recovery_incarnation': recoveryIncarnation,
       if (repositoryRevision != null) 'repository_revision': repositoryRevision,
       if (destructionEpoch != null) 'destruction_epoch': destructionEpoch,
       if (createdAtMicros != null) 'created_at_micros': createdAtMicros,
@@ -335,6 +432,8 @@ class WorkspaceMetadataCompanion
 
   WorkspaceMetadataCompanion copyWith({
     Value<int>? singleton,
+    Value<String>? workspaceId,
+    Value<String>? recoveryIncarnation,
     Value<int>? repositoryRevision,
     Value<int>? destructionEpoch,
     Value<int>? createdAtMicros,
@@ -342,6 +441,8 @@ class WorkspaceMetadataCompanion
   }) {
     return WorkspaceMetadataCompanion(
       singleton: singleton ?? this.singleton,
+      workspaceId: workspaceId ?? this.workspaceId,
+      recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
       repositoryRevision: repositoryRevision ?? this.repositoryRevision,
       destructionEpoch: destructionEpoch ?? this.destructionEpoch,
       createdAtMicros: createdAtMicros ?? this.createdAtMicros,
@@ -354,6 +455,12 @@ class WorkspaceMetadataCompanion
     final map = <String, Expression>{};
     if (singleton.present) {
       map['singleton'] = Variable<int>(singleton.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (recoveryIncarnation.present) {
+      map['recovery_incarnation'] = Variable<String>(recoveryIncarnation.value);
     }
     if (repositoryRevision.present) {
       map['repository_revision'] = Variable<int>(repositoryRevision.value);
@@ -374,6 +481,8 @@ class WorkspaceMetadataCompanion
   String toString() {
     return (StringBuffer('WorkspaceMetadataCompanion(')
           ..write('singleton: $singleton, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
           ..write('repositoryRevision: $repositoryRevision, ')
           ..write('destructionEpoch: $destructionEpoch, ')
           ..write('createdAtMicros: $createdAtMicros, ')
@@ -2205,6 +2314,3162 @@ class RevisionMetadataCompanion extends UpdateCompanion<RevisionMetadataData> {
           ..write('validationState: $validationState, ')
           ..write('validationCode: $validationCode, ')
           ..write('createdAtMicros: $createdAtMicros, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RevisionPublishedEventsTable extends RevisionPublishedEvents
+    with TableInfo<$RevisionPublishedEventsTable, RevisionPublishedEvent> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RevisionPublishedEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceLineageIdMeta = const VerificationMeta(
+    'sourceLineageId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceLineageId = GeneratedColumn<String>(
+    'source_lineage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES source_lineages (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _eventFingerprintMeta = const VerificationMeta(
+    'eventFingerprint',
+  );
+  @override
+  late final GeneratedColumn<String> eventFingerprint = GeneratedColumn<String>(
+    'event_fingerprint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _objectIdMeta = const VerificationMeta(
+    'objectId',
+  );
+  @override
+  late final GeneratedColumn<String> objectId = GeneratedColumn<String>(
+    'object_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentHashMeta = const VerificationMeta(
+    'contentHash',
+  );
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+    'content_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _publishedAtMicrosMeta = const VerificationMeta(
+    'publishedAtMicros',
+  );
+  @override
+  late final GeneratedColumn<int> publishedAtMicros = GeneratedColumn<int>(
+    'published_at_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceLineageId,
+    eventFingerprint,
+    objectId,
+    kind,
+    contentHash,
+    publishedAtMicros,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'revision_published_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RevisionPublishedEvent> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_lineage_id')) {
+      context.handle(
+        _sourceLineageIdMeta,
+        sourceLineageId.isAcceptableOrUnknown(
+          data['source_lineage_id']!,
+          _sourceLineageIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceLineageIdMeta);
+    }
+    if (data.containsKey('event_fingerprint')) {
+      context.handle(
+        _eventFingerprintMeta,
+        eventFingerprint.isAcceptableOrUnknown(
+          data['event_fingerprint']!,
+          _eventFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eventFingerprintMeta);
+    }
+    if (data.containsKey('object_id')) {
+      context.handle(
+        _objectIdMeta,
+        objectId.isAcceptableOrUnknown(data['object_id']!, _objectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_objectIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('content_hash')) {
+      context.handle(
+        _contentHashMeta,
+        contentHash.isAcceptableOrUnknown(
+          data['content_hash']!,
+          _contentHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentHashMeta);
+    }
+    if (data.containsKey('published_at_micros')) {
+      context.handle(
+        _publishedAtMicrosMeta,
+        publishedAtMicros.isAcceptableOrUnknown(
+          data['published_at_micros']!,
+          _publishedAtMicrosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_publishedAtMicrosMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceLineageId, eventFingerprint};
+  @override
+  RevisionPublishedEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RevisionPublishedEvent(
+      sourceLineageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_lineage_id'],
+      )!,
+      eventFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_fingerprint'],
+      )!,
+      objectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}object_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      contentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_hash'],
+      )!,
+      publishedAtMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}published_at_micros'],
+      )!,
+    );
+  }
+
+  @override
+  $RevisionPublishedEventsTable createAlias(String alias) {
+    return $RevisionPublishedEventsTable(attachedDatabase, alias);
+  }
+}
+
+class RevisionPublishedEvent extends DataClass
+    implements Insertable<RevisionPublishedEvent> {
+  final String sourceLineageId;
+  final String eventFingerprint;
+  final String objectId;
+  final String kind;
+  final String contentHash;
+  final int publishedAtMicros;
+  const RevisionPublishedEvent({
+    required this.sourceLineageId,
+    required this.eventFingerprint,
+    required this.objectId,
+    required this.kind,
+    required this.contentHash,
+    required this.publishedAtMicros,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_lineage_id'] = Variable<String>(sourceLineageId);
+    map['event_fingerprint'] = Variable<String>(eventFingerprint);
+    map['object_id'] = Variable<String>(objectId);
+    map['kind'] = Variable<String>(kind);
+    map['content_hash'] = Variable<String>(contentHash);
+    map['published_at_micros'] = Variable<int>(publishedAtMicros);
+    return map;
+  }
+
+  RevisionPublishedEventsCompanion toCompanion(bool nullToAbsent) {
+    return RevisionPublishedEventsCompanion(
+      sourceLineageId: Value(sourceLineageId),
+      eventFingerprint: Value(eventFingerprint),
+      objectId: Value(objectId),
+      kind: Value(kind),
+      contentHash: Value(contentHash),
+      publishedAtMicros: Value(publishedAtMicros),
+    );
+  }
+
+  factory RevisionPublishedEvent.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RevisionPublishedEvent(
+      sourceLineageId: serializer.fromJson<String>(json['sourceLineageId']),
+      eventFingerprint: serializer.fromJson<String>(json['eventFingerprint']),
+      objectId: serializer.fromJson<String>(json['objectId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      contentHash: serializer.fromJson<String>(json['contentHash']),
+      publishedAtMicros: serializer.fromJson<int>(json['publishedAtMicros']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceLineageId': serializer.toJson<String>(sourceLineageId),
+      'eventFingerprint': serializer.toJson<String>(eventFingerprint),
+      'objectId': serializer.toJson<String>(objectId),
+      'kind': serializer.toJson<String>(kind),
+      'contentHash': serializer.toJson<String>(contentHash),
+      'publishedAtMicros': serializer.toJson<int>(publishedAtMicros),
+    };
+  }
+
+  RevisionPublishedEvent copyWith({
+    String? sourceLineageId,
+    String? eventFingerprint,
+    String? objectId,
+    String? kind,
+    String? contentHash,
+    int? publishedAtMicros,
+  }) => RevisionPublishedEvent(
+    sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+    eventFingerprint: eventFingerprint ?? this.eventFingerprint,
+    objectId: objectId ?? this.objectId,
+    kind: kind ?? this.kind,
+    contentHash: contentHash ?? this.contentHash,
+    publishedAtMicros: publishedAtMicros ?? this.publishedAtMicros,
+  );
+  RevisionPublishedEvent copyWithCompanion(
+    RevisionPublishedEventsCompanion data,
+  ) {
+    return RevisionPublishedEvent(
+      sourceLineageId: data.sourceLineageId.present
+          ? data.sourceLineageId.value
+          : this.sourceLineageId,
+      eventFingerprint: data.eventFingerprint.present
+          ? data.eventFingerprint.value
+          : this.eventFingerprint,
+      objectId: data.objectId.present ? data.objectId.value : this.objectId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      contentHash: data.contentHash.present
+          ? data.contentHash.value
+          : this.contentHash,
+      publishedAtMicros: data.publishedAtMicros.present
+          ? data.publishedAtMicros.value
+          : this.publishedAtMicros,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RevisionPublishedEvent(')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('eventFingerprint: $eventFingerprint, ')
+          ..write('objectId: $objectId, ')
+          ..write('kind: $kind, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('publishedAtMicros: $publishedAtMicros')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceLineageId,
+    eventFingerprint,
+    objectId,
+    kind,
+    contentHash,
+    publishedAtMicros,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RevisionPublishedEvent &&
+          other.sourceLineageId == this.sourceLineageId &&
+          other.eventFingerprint == this.eventFingerprint &&
+          other.objectId == this.objectId &&
+          other.kind == this.kind &&
+          other.contentHash == this.contentHash &&
+          other.publishedAtMicros == this.publishedAtMicros);
+}
+
+class RevisionPublishedEventsCompanion
+    extends UpdateCompanion<RevisionPublishedEvent> {
+  final Value<String> sourceLineageId;
+  final Value<String> eventFingerprint;
+  final Value<String> objectId;
+  final Value<String> kind;
+  final Value<String> contentHash;
+  final Value<int> publishedAtMicros;
+  final Value<int> rowid;
+  const RevisionPublishedEventsCompanion({
+    this.sourceLineageId = const Value.absent(),
+    this.eventFingerprint = const Value.absent(),
+    this.objectId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.contentHash = const Value.absent(),
+    this.publishedAtMicros = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RevisionPublishedEventsCompanion.insert({
+    required String sourceLineageId,
+    required String eventFingerprint,
+    required String objectId,
+    required String kind,
+    required String contentHash,
+    required int publishedAtMicros,
+    this.rowid = const Value.absent(),
+  }) : sourceLineageId = Value(sourceLineageId),
+       eventFingerprint = Value(eventFingerprint),
+       objectId = Value(objectId),
+       kind = Value(kind),
+       contentHash = Value(contentHash),
+       publishedAtMicros = Value(publishedAtMicros);
+  static Insertable<RevisionPublishedEvent> custom({
+    Expression<String>? sourceLineageId,
+    Expression<String>? eventFingerprint,
+    Expression<String>? objectId,
+    Expression<String>? kind,
+    Expression<String>? contentHash,
+    Expression<int>? publishedAtMicros,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceLineageId != null) 'source_lineage_id': sourceLineageId,
+      if (eventFingerprint != null) 'event_fingerprint': eventFingerprint,
+      if (objectId != null) 'object_id': objectId,
+      if (kind != null) 'kind': kind,
+      if (contentHash != null) 'content_hash': contentHash,
+      if (publishedAtMicros != null) 'published_at_micros': publishedAtMicros,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RevisionPublishedEventsCompanion copyWith({
+    Value<String>? sourceLineageId,
+    Value<String>? eventFingerprint,
+    Value<String>? objectId,
+    Value<String>? kind,
+    Value<String>? contentHash,
+    Value<int>? publishedAtMicros,
+    Value<int>? rowid,
+  }) {
+    return RevisionPublishedEventsCompanion(
+      sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+      eventFingerprint: eventFingerprint ?? this.eventFingerprint,
+      objectId: objectId ?? this.objectId,
+      kind: kind ?? this.kind,
+      contentHash: contentHash ?? this.contentHash,
+      publishedAtMicros: publishedAtMicros ?? this.publishedAtMicros,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceLineageId.present) {
+      map['source_lineage_id'] = Variable<String>(sourceLineageId.value);
+    }
+    if (eventFingerprint.present) {
+      map['event_fingerprint'] = Variable<String>(eventFingerprint.value);
+    }
+    if (objectId.present) {
+      map['object_id'] = Variable<String>(objectId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
+    }
+    if (publishedAtMicros.present) {
+      map['published_at_micros'] = Variable<int>(publishedAtMicros.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RevisionPublishedEventsCompanion(')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('eventFingerprint: $eventFingerprint, ')
+          ..write('objectId: $objectId, ')
+          ..write('kind: $kind, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('publishedAtMicros: $publishedAtMicros, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceTransferArtifactsTable extends WorkspaceTransferArtifacts
+    with
+        TableInfo<$WorkspaceTransferArtifactsTable, WorkspaceTransferArtifact> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceTransferArtifactsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [operationId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_transfer_artifacts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceTransferArtifact> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceTransferArtifact map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceTransferArtifact(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceTransferArtifactsTable createAlias(String alias) {
+    return $WorkspaceTransferArtifactsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceTransferArtifact extends DataClass
+    implements Insertable<WorkspaceTransferArtifact> {
+  final String operationId;
+  const WorkspaceTransferArtifact({required this.operationId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    return map;
+  }
+
+  WorkspaceTransferArtifactsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceTransferArtifactsCompanion(operationId: Value(operationId));
+  }
+
+  factory WorkspaceTransferArtifact.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceTransferArtifact(
+      operationId: serializer.fromJson<String>(json['operationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+    };
+  }
+
+  WorkspaceTransferArtifact copyWith({String? operationId}) =>
+      WorkspaceTransferArtifact(operationId: operationId ?? this.operationId);
+  WorkspaceTransferArtifact copyWithCompanion(
+    WorkspaceTransferArtifactsCompanion data,
+  ) {
+    return WorkspaceTransferArtifact(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceTransferArtifact(')
+          ..write('operationId: $operationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => operationId.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceTransferArtifact &&
+          other.operationId == this.operationId);
+}
+
+class WorkspaceTransferArtifactsCompanion
+    extends UpdateCompanion<WorkspaceTransferArtifact> {
+  final Value<String> operationId;
+  final Value<int> rowid;
+  const WorkspaceTransferArtifactsCompanion({
+    this.operationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceTransferArtifactsCompanion.insert({
+    required String operationId,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId);
+  static Insertable<WorkspaceTransferArtifact> custom({
+    Expression<String>? operationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceTransferArtifactsCompanion copyWith({
+    Value<String>? operationId,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceTransferArtifactsCompanion(
+      operationId: operationId ?? this.operationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceTransferArtifactsCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceIncomingReservationsTable extends WorkspaceIncomingReservations
+    with
+        TableInfo<
+          $WorkspaceIncomingReservationsTable,
+          WorkspaceIncomingReservation
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceIncomingReservationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestFingerprintMeta =
+      const VerificationMeta('requestFingerprint');
+  @override
+  late final GeneratedColumn<String> requestFingerprint =
+      GeneratedColumn<String>(
+        'request_fingerprint',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _recoveryIncarnationMeta =
+      const VerificationMeta('recoveryIncarnation');
+  @override
+  late final GeneratedColumn<String> recoveryIncarnation =
+      GeneratedColumn<String>(
+        'recovery_incarnation',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _managedSkillIdMeta = const VerificationMeta(
+    'managedSkillId',
+  );
+  @override
+  late final GeneratedColumn<String> managedSkillId = GeneratedColumn<String>(
+    'managed_skill_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceLineageIdMeta = const VerificationMeta(
+    'sourceLineageId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceLineageId = GeneratedColumn<String>(
+    'source_lineage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _previousSourceLineageIdMeta =
+      const VerificationMeta('previousSourceLineageId');
+  @override
+  late final GeneratedColumn<String> previousSourceLineageId =
+      GeneratedColumn<String>(
+        'previous_source_lineage_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _expectedEffectiveObjectIdMeta =
+      const VerificationMeta('expectedEffectiveObjectId');
+  @override
+  late final GeneratedColumn<String> expectedEffectiveObjectId =
+      GeneratedColumn<String>(
+        'expected_effective_object_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _contentManifestDigestMeta =
+      const VerificationMeta('contentManifestDigest');
+  @override
+  late final GeneratedColumn<String> contentManifestDigest =
+      GeneratedColumn<String>(
+        'content_manifest_digest',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _newInstallationMeta = const VerificationMeta(
+    'newInstallation',
+  );
+  @override
+  late final GeneratedColumn<bool> newInstallation = GeneratedColumn<bool>(
+    'new_installation',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("new_installation" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _replacementMeta = const VerificationMeta(
+    'replacement',
+  );
+  @override
+  late final GeneratedColumn<bool> replacement = GeneratedColumn<bool>(
+    'replacement',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("replacement" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    requestFingerprint,
+    recoveryIncarnation,
+    managedSkillId,
+    sourceLineageId,
+    previousSourceLineageId,
+    expectedEffectiveObjectId,
+    contentManifestDigest,
+    newInstallation,
+    replacement,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_incoming_reservations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceIncomingReservation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('request_fingerprint')) {
+      context.handle(
+        _requestFingerprintMeta,
+        requestFingerprint.isAcceptableOrUnknown(
+          data['request_fingerprint']!,
+          _requestFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestFingerprintMeta);
+    }
+    if (data.containsKey('recovery_incarnation')) {
+      context.handle(
+        _recoveryIncarnationMeta,
+        recoveryIncarnation.isAcceptableOrUnknown(
+          data['recovery_incarnation']!,
+          _recoveryIncarnationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recoveryIncarnationMeta);
+    }
+    if (data.containsKey('managed_skill_id')) {
+      context.handle(
+        _managedSkillIdMeta,
+        managedSkillId.isAcceptableOrUnknown(
+          data['managed_skill_id']!,
+          _managedSkillIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_managedSkillIdMeta);
+    }
+    if (data.containsKey('source_lineage_id')) {
+      context.handle(
+        _sourceLineageIdMeta,
+        sourceLineageId.isAcceptableOrUnknown(
+          data['source_lineage_id']!,
+          _sourceLineageIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceLineageIdMeta);
+    }
+    if (data.containsKey('previous_source_lineage_id')) {
+      context.handle(
+        _previousSourceLineageIdMeta,
+        previousSourceLineageId.isAcceptableOrUnknown(
+          data['previous_source_lineage_id']!,
+          _previousSourceLineageIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expected_effective_object_id')) {
+      context.handle(
+        _expectedEffectiveObjectIdMeta,
+        expectedEffectiveObjectId.isAcceptableOrUnknown(
+          data['expected_effective_object_id']!,
+          _expectedEffectiveObjectIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_manifest_digest')) {
+      context.handle(
+        _contentManifestDigestMeta,
+        contentManifestDigest.isAcceptableOrUnknown(
+          data['content_manifest_digest']!,
+          _contentManifestDigestMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentManifestDigestMeta);
+    }
+    if (data.containsKey('new_installation')) {
+      context.handle(
+        _newInstallationMeta,
+        newInstallation.isAcceptableOrUnknown(
+          data['new_installation']!,
+          _newInstallationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_newInstallationMeta);
+    }
+    if (data.containsKey('replacement')) {
+      context.handle(
+        _replacementMeta,
+        replacement.isAcceptableOrUnknown(
+          data['replacement']!,
+          _replacementMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceIncomingReservation map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceIncomingReservation(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      requestFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_fingerprint'],
+      )!,
+      recoveryIncarnation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recovery_incarnation'],
+      )!,
+      managedSkillId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}managed_skill_id'],
+      )!,
+      sourceLineageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_lineage_id'],
+      )!,
+      previousSourceLineageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_source_lineage_id'],
+      ),
+      expectedEffectiveObjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expected_effective_object_id'],
+      ),
+      contentManifestDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_manifest_digest'],
+      )!,
+      newInstallation: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}new_installation'],
+      )!,
+      replacement: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}replacement'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceIncomingReservationsTable createAlias(String alias) {
+    return $WorkspaceIncomingReservationsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceIncomingReservation extends DataClass
+    implements Insertable<WorkspaceIncomingReservation> {
+  final String operationId;
+  final String requestFingerprint;
+  final String recoveryIncarnation;
+  final String managedSkillId;
+  final String sourceLineageId;
+  final String? previousSourceLineageId;
+  final String? expectedEffectiveObjectId;
+  final String contentManifestDigest;
+  final bool newInstallation;
+  final bool replacement;
+  const WorkspaceIncomingReservation({
+    required this.operationId,
+    required this.requestFingerprint,
+    required this.recoveryIncarnation,
+    required this.managedSkillId,
+    required this.sourceLineageId,
+    this.previousSourceLineageId,
+    this.expectedEffectiveObjectId,
+    required this.contentManifestDigest,
+    required this.newInstallation,
+    required this.replacement,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['request_fingerprint'] = Variable<String>(requestFingerprint);
+    map['recovery_incarnation'] = Variable<String>(recoveryIncarnation);
+    map['managed_skill_id'] = Variable<String>(managedSkillId);
+    map['source_lineage_id'] = Variable<String>(sourceLineageId);
+    if (!nullToAbsent || previousSourceLineageId != null) {
+      map['previous_source_lineage_id'] = Variable<String>(
+        previousSourceLineageId,
+      );
+    }
+    if (!nullToAbsent || expectedEffectiveObjectId != null) {
+      map['expected_effective_object_id'] = Variable<String>(
+        expectedEffectiveObjectId,
+      );
+    }
+    map['content_manifest_digest'] = Variable<String>(contentManifestDigest);
+    map['new_installation'] = Variable<bool>(newInstallation);
+    map['replacement'] = Variable<bool>(replacement);
+    return map;
+  }
+
+  WorkspaceIncomingReservationsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceIncomingReservationsCompanion(
+      operationId: Value(operationId),
+      requestFingerprint: Value(requestFingerprint),
+      recoveryIncarnation: Value(recoveryIncarnation),
+      managedSkillId: Value(managedSkillId),
+      sourceLineageId: Value(sourceLineageId),
+      previousSourceLineageId: previousSourceLineageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(previousSourceLineageId),
+      expectedEffectiveObjectId:
+          expectedEffectiveObjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedEffectiveObjectId),
+      contentManifestDigest: Value(contentManifestDigest),
+      newInstallation: Value(newInstallation),
+      replacement: Value(replacement),
+    );
+  }
+
+  factory WorkspaceIncomingReservation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceIncomingReservation(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      requestFingerprint: serializer.fromJson<String>(
+        json['requestFingerprint'],
+      ),
+      recoveryIncarnation: serializer.fromJson<String>(
+        json['recoveryIncarnation'],
+      ),
+      managedSkillId: serializer.fromJson<String>(json['managedSkillId']),
+      sourceLineageId: serializer.fromJson<String>(json['sourceLineageId']),
+      previousSourceLineageId: serializer.fromJson<String?>(
+        json['previousSourceLineageId'],
+      ),
+      expectedEffectiveObjectId: serializer.fromJson<String?>(
+        json['expectedEffectiveObjectId'],
+      ),
+      contentManifestDigest: serializer.fromJson<String>(
+        json['contentManifestDigest'],
+      ),
+      newInstallation: serializer.fromJson<bool>(json['newInstallation']),
+      replacement: serializer.fromJson<bool>(json['replacement']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'requestFingerprint': serializer.toJson<String>(requestFingerprint),
+      'recoveryIncarnation': serializer.toJson<String>(recoveryIncarnation),
+      'managedSkillId': serializer.toJson<String>(managedSkillId),
+      'sourceLineageId': serializer.toJson<String>(sourceLineageId),
+      'previousSourceLineageId': serializer.toJson<String?>(
+        previousSourceLineageId,
+      ),
+      'expectedEffectiveObjectId': serializer.toJson<String?>(
+        expectedEffectiveObjectId,
+      ),
+      'contentManifestDigest': serializer.toJson<String>(contentManifestDigest),
+      'newInstallation': serializer.toJson<bool>(newInstallation),
+      'replacement': serializer.toJson<bool>(replacement),
+    };
+  }
+
+  WorkspaceIncomingReservation copyWith({
+    String? operationId,
+    String? requestFingerprint,
+    String? recoveryIncarnation,
+    String? managedSkillId,
+    String? sourceLineageId,
+    Value<String?> previousSourceLineageId = const Value.absent(),
+    Value<String?> expectedEffectiveObjectId = const Value.absent(),
+    String? contentManifestDigest,
+    bool? newInstallation,
+    bool? replacement,
+  }) => WorkspaceIncomingReservation(
+    operationId: operationId ?? this.operationId,
+    requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+    recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
+    managedSkillId: managedSkillId ?? this.managedSkillId,
+    sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+    previousSourceLineageId: previousSourceLineageId.present
+        ? previousSourceLineageId.value
+        : this.previousSourceLineageId,
+    expectedEffectiveObjectId: expectedEffectiveObjectId.present
+        ? expectedEffectiveObjectId.value
+        : this.expectedEffectiveObjectId,
+    contentManifestDigest: contentManifestDigest ?? this.contentManifestDigest,
+    newInstallation: newInstallation ?? this.newInstallation,
+    replacement: replacement ?? this.replacement,
+  );
+  WorkspaceIncomingReservation copyWithCompanion(
+    WorkspaceIncomingReservationsCompanion data,
+  ) {
+    return WorkspaceIncomingReservation(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      requestFingerprint: data.requestFingerprint.present
+          ? data.requestFingerprint.value
+          : this.requestFingerprint,
+      recoveryIncarnation: data.recoveryIncarnation.present
+          ? data.recoveryIncarnation.value
+          : this.recoveryIncarnation,
+      managedSkillId: data.managedSkillId.present
+          ? data.managedSkillId.value
+          : this.managedSkillId,
+      sourceLineageId: data.sourceLineageId.present
+          ? data.sourceLineageId.value
+          : this.sourceLineageId,
+      previousSourceLineageId: data.previousSourceLineageId.present
+          ? data.previousSourceLineageId.value
+          : this.previousSourceLineageId,
+      expectedEffectiveObjectId: data.expectedEffectiveObjectId.present
+          ? data.expectedEffectiveObjectId.value
+          : this.expectedEffectiveObjectId,
+      contentManifestDigest: data.contentManifestDigest.present
+          ? data.contentManifestDigest.value
+          : this.contentManifestDigest,
+      newInstallation: data.newInstallation.present
+          ? data.newInstallation.value
+          : this.newInstallation,
+      replacement: data.replacement.present
+          ? data.replacement.value
+          : this.replacement,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceIncomingReservation(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('previousSourceLineageId: $previousSourceLineageId, ')
+          ..write('expectedEffectiveObjectId: $expectedEffectiveObjectId, ')
+          ..write('contentManifestDigest: $contentManifestDigest, ')
+          ..write('newInstallation: $newInstallation, ')
+          ..write('replacement: $replacement')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    operationId,
+    requestFingerprint,
+    recoveryIncarnation,
+    managedSkillId,
+    sourceLineageId,
+    previousSourceLineageId,
+    expectedEffectiveObjectId,
+    contentManifestDigest,
+    newInstallation,
+    replacement,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceIncomingReservation &&
+          other.operationId == this.operationId &&
+          other.requestFingerprint == this.requestFingerprint &&
+          other.recoveryIncarnation == this.recoveryIncarnation &&
+          other.managedSkillId == this.managedSkillId &&
+          other.sourceLineageId == this.sourceLineageId &&
+          other.previousSourceLineageId == this.previousSourceLineageId &&
+          other.expectedEffectiveObjectId == this.expectedEffectiveObjectId &&
+          other.contentManifestDigest == this.contentManifestDigest &&
+          other.newInstallation == this.newInstallation &&
+          other.replacement == this.replacement);
+}
+
+class WorkspaceIncomingReservationsCompanion
+    extends UpdateCompanion<WorkspaceIncomingReservation> {
+  final Value<String> operationId;
+  final Value<String> requestFingerprint;
+  final Value<String> recoveryIncarnation;
+  final Value<String> managedSkillId;
+  final Value<String> sourceLineageId;
+  final Value<String?> previousSourceLineageId;
+  final Value<String?> expectedEffectiveObjectId;
+  final Value<String> contentManifestDigest;
+  final Value<bool> newInstallation;
+  final Value<bool> replacement;
+  final Value<int> rowid;
+  const WorkspaceIncomingReservationsCompanion({
+    this.operationId = const Value.absent(),
+    this.requestFingerprint = const Value.absent(),
+    this.recoveryIncarnation = const Value.absent(),
+    this.managedSkillId = const Value.absent(),
+    this.sourceLineageId = const Value.absent(),
+    this.previousSourceLineageId = const Value.absent(),
+    this.expectedEffectiveObjectId = const Value.absent(),
+    this.contentManifestDigest = const Value.absent(),
+    this.newInstallation = const Value.absent(),
+    this.replacement = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceIncomingReservationsCompanion.insert({
+    required String operationId,
+    required String requestFingerprint,
+    required String recoveryIncarnation,
+    required String managedSkillId,
+    required String sourceLineageId,
+    this.previousSourceLineageId = const Value.absent(),
+    this.expectedEffectiveObjectId = const Value.absent(),
+    required String contentManifestDigest,
+    required bool newInstallation,
+    this.replacement = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       requestFingerprint = Value(requestFingerprint),
+       recoveryIncarnation = Value(recoveryIncarnation),
+       managedSkillId = Value(managedSkillId),
+       sourceLineageId = Value(sourceLineageId),
+       contentManifestDigest = Value(contentManifestDigest),
+       newInstallation = Value(newInstallation);
+  static Insertable<WorkspaceIncomingReservation> custom({
+    Expression<String>? operationId,
+    Expression<String>? requestFingerprint,
+    Expression<String>? recoveryIncarnation,
+    Expression<String>? managedSkillId,
+    Expression<String>? sourceLineageId,
+    Expression<String>? previousSourceLineageId,
+    Expression<String>? expectedEffectiveObjectId,
+    Expression<String>? contentManifestDigest,
+    Expression<bool>? newInstallation,
+    Expression<bool>? replacement,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (requestFingerprint != null) 'request_fingerprint': requestFingerprint,
+      if (recoveryIncarnation != null)
+        'recovery_incarnation': recoveryIncarnation,
+      if (managedSkillId != null) 'managed_skill_id': managedSkillId,
+      if (sourceLineageId != null) 'source_lineage_id': sourceLineageId,
+      if (previousSourceLineageId != null)
+        'previous_source_lineage_id': previousSourceLineageId,
+      if (expectedEffectiveObjectId != null)
+        'expected_effective_object_id': expectedEffectiveObjectId,
+      if (contentManifestDigest != null)
+        'content_manifest_digest': contentManifestDigest,
+      if (newInstallation != null) 'new_installation': newInstallation,
+      if (replacement != null) 'replacement': replacement,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceIncomingReservationsCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? requestFingerprint,
+    Value<String>? recoveryIncarnation,
+    Value<String>? managedSkillId,
+    Value<String>? sourceLineageId,
+    Value<String?>? previousSourceLineageId,
+    Value<String?>? expectedEffectiveObjectId,
+    Value<String>? contentManifestDigest,
+    Value<bool>? newInstallation,
+    Value<bool>? replacement,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceIncomingReservationsCompanion(
+      operationId: operationId ?? this.operationId,
+      requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+      recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
+      managedSkillId: managedSkillId ?? this.managedSkillId,
+      sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+      previousSourceLineageId:
+          previousSourceLineageId ?? this.previousSourceLineageId,
+      expectedEffectiveObjectId:
+          expectedEffectiveObjectId ?? this.expectedEffectiveObjectId,
+      contentManifestDigest:
+          contentManifestDigest ?? this.contentManifestDigest,
+      newInstallation: newInstallation ?? this.newInstallation,
+      replacement: replacement ?? this.replacement,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (requestFingerprint.present) {
+      map['request_fingerprint'] = Variable<String>(requestFingerprint.value);
+    }
+    if (recoveryIncarnation.present) {
+      map['recovery_incarnation'] = Variable<String>(recoveryIncarnation.value);
+    }
+    if (managedSkillId.present) {
+      map['managed_skill_id'] = Variable<String>(managedSkillId.value);
+    }
+    if (sourceLineageId.present) {
+      map['source_lineage_id'] = Variable<String>(sourceLineageId.value);
+    }
+    if (previousSourceLineageId.present) {
+      map['previous_source_lineage_id'] = Variable<String>(
+        previousSourceLineageId.value,
+      );
+    }
+    if (expectedEffectiveObjectId.present) {
+      map['expected_effective_object_id'] = Variable<String>(
+        expectedEffectiveObjectId.value,
+      );
+    }
+    if (contentManifestDigest.present) {
+      map['content_manifest_digest'] = Variable<String>(
+        contentManifestDigest.value,
+      );
+    }
+    if (newInstallation.present) {
+      map['new_installation'] = Variable<bool>(newInstallation.value);
+    }
+    if (replacement.present) {
+      map['replacement'] = Variable<bool>(replacement.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceIncomingReservationsCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('previousSourceLineageId: $previousSourceLineageId, ')
+          ..write('expectedEffectiveObjectId: $expectedEffectiveObjectId, ')
+          ..write('contentManifestDigest: $contentManifestDigest, ')
+          ..write('newInstallation: $newInstallation, ')
+          ..write('replacement: $replacement, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceIncomingOutcomesTable extends WorkspaceIncomingOutcomes
+    with TableInfo<$WorkspaceIncomingOutcomesTable, WorkspaceIncomingOutcome> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceIncomingOutcomesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestFingerprintMeta =
+      const VerificationMeta('requestFingerprint');
+  @override
+  late final GeneratedColumn<String> requestFingerprint =
+      GeneratedColumn<String>(
+        'request_fingerprint',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _managedSkillIdMeta = const VerificationMeta(
+    'managedSkillId',
+  );
+  @override
+  late final GeneratedColumn<String> managedSkillId = GeneratedColumn<String>(
+    'managed_skill_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES managed_skills (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sourceLineageIdMeta = const VerificationMeta(
+    'sourceLineageId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceLineageId = GeneratedColumn<String>(
+    'source_lineage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES source_lineages (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _expectedEffectiveObjectIdMeta =
+      const VerificationMeta('expectedEffectiveObjectId');
+  @override
+  late final GeneratedColumn<String> expectedEffectiveObjectId =
+      GeneratedColumn<String>(
+        'expected_effective_object_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _contentManifestDigestMeta =
+      const VerificationMeta('contentManifestDigest');
+  @override
+  late final GeneratedColumn<String> contentManifestDigest =
+      GeneratedColumn<String>(
+        'content_manifest_digest',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _newInstallationMeta = const VerificationMeta(
+    'newInstallation',
+  );
+  @override
+  late final GeneratedColumn<bool> newInstallation = GeneratedColumn<bool>(
+    'new_installation',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("new_installation" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _replacementMeta = const VerificationMeta(
+    'replacement',
+  );
+  @override
+  late final GeneratedColumn<bool> replacement = GeneratedColumn<bool>(
+    'replacement',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("replacement" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _effectiveObjectIdMeta = const VerificationMeta(
+    'effectiveObjectId',
+  );
+  @override
+  late final GeneratedColumn<String> effectiveObjectId =
+      GeneratedColumn<String>(
+        'effective_object_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _upstreamObjectIdMeta = const VerificationMeta(
+    'upstreamObjectId',
+  );
+  @override
+  late final GeneratedColumn<String> upstreamObjectId = GeneratedColumn<String>(
+    'upstream_object_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _committedRepositoryRevisionMeta =
+      const VerificationMeta('committedRepositoryRevision');
+  @override
+  late final GeneratedColumn<int> committedRepositoryRevision =
+      GeneratedColumn<int>(
+        'committed_repository_revision',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    requestFingerprint,
+    managedSkillId,
+    sourceLineageId,
+    expectedEffectiveObjectId,
+    contentManifestDigest,
+    newInstallation,
+    replacement,
+    effectiveObjectId,
+    upstreamObjectId,
+    committedRepositoryRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_incoming_outcomes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceIncomingOutcome> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('request_fingerprint')) {
+      context.handle(
+        _requestFingerprintMeta,
+        requestFingerprint.isAcceptableOrUnknown(
+          data['request_fingerprint']!,
+          _requestFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestFingerprintMeta);
+    }
+    if (data.containsKey('managed_skill_id')) {
+      context.handle(
+        _managedSkillIdMeta,
+        managedSkillId.isAcceptableOrUnknown(
+          data['managed_skill_id']!,
+          _managedSkillIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_managedSkillIdMeta);
+    }
+    if (data.containsKey('source_lineage_id')) {
+      context.handle(
+        _sourceLineageIdMeta,
+        sourceLineageId.isAcceptableOrUnknown(
+          data['source_lineage_id']!,
+          _sourceLineageIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceLineageIdMeta);
+    }
+    if (data.containsKey('expected_effective_object_id')) {
+      context.handle(
+        _expectedEffectiveObjectIdMeta,
+        expectedEffectiveObjectId.isAcceptableOrUnknown(
+          data['expected_effective_object_id']!,
+          _expectedEffectiveObjectIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_manifest_digest')) {
+      context.handle(
+        _contentManifestDigestMeta,
+        contentManifestDigest.isAcceptableOrUnknown(
+          data['content_manifest_digest']!,
+          _contentManifestDigestMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentManifestDigestMeta);
+    }
+    if (data.containsKey('new_installation')) {
+      context.handle(
+        _newInstallationMeta,
+        newInstallation.isAcceptableOrUnknown(
+          data['new_installation']!,
+          _newInstallationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_newInstallationMeta);
+    }
+    if (data.containsKey('replacement')) {
+      context.handle(
+        _replacementMeta,
+        replacement.isAcceptableOrUnknown(
+          data['replacement']!,
+          _replacementMeta,
+        ),
+      );
+    }
+    if (data.containsKey('effective_object_id')) {
+      context.handle(
+        _effectiveObjectIdMeta,
+        effectiveObjectId.isAcceptableOrUnknown(
+          data['effective_object_id']!,
+          _effectiveObjectIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_effectiveObjectIdMeta);
+    }
+    if (data.containsKey('upstream_object_id')) {
+      context.handle(
+        _upstreamObjectIdMeta,
+        upstreamObjectId.isAcceptableOrUnknown(
+          data['upstream_object_id']!,
+          _upstreamObjectIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_upstreamObjectIdMeta);
+    }
+    if (data.containsKey('committed_repository_revision')) {
+      context.handle(
+        _committedRepositoryRevisionMeta,
+        committedRepositoryRevision.isAcceptableOrUnknown(
+          data['committed_repository_revision']!,
+          _committedRepositoryRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_committedRepositoryRevisionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceIncomingOutcome map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceIncomingOutcome(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      requestFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_fingerprint'],
+      )!,
+      managedSkillId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}managed_skill_id'],
+      )!,
+      sourceLineageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_lineage_id'],
+      )!,
+      expectedEffectiveObjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expected_effective_object_id'],
+      ),
+      contentManifestDigest: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_manifest_digest'],
+      )!,
+      newInstallation: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}new_installation'],
+      )!,
+      replacement: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}replacement'],
+      )!,
+      effectiveObjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}effective_object_id'],
+      )!,
+      upstreamObjectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}upstream_object_id'],
+      )!,
+      committedRepositoryRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}committed_repository_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceIncomingOutcomesTable createAlias(String alias) {
+    return $WorkspaceIncomingOutcomesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceIncomingOutcome extends DataClass
+    implements Insertable<WorkspaceIncomingOutcome> {
+  final String operationId;
+  final String requestFingerprint;
+  final String managedSkillId;
+  final String sourceLineageId;
+  final String? expectedEffectiveObjectId;
+  final String contentManifestDigest;
+  final bool newInstallation;
+  final bool replacement;
+  final String effectiveObjectId;
+  final String upstreamObjectId;
+  final int committedRepositoryRevision;
+  const WorkspaceIncomingOutcome({
+    required this.operationId,
+    required this.requestFingerprint,
+    required this.managedSkillId,
+    required this.sourceLineageId,
+    this.expectedEffectiveObjectId,
+    required this.contentManifestDigest,
+    required this.newInstallation,
+    required this.replacement,
+    required this.effectiveObjectId,
+    required this.upstreamObjectId,
+    required this.committedRepositoryRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['request_fingerprint'] = Variable<String>(requestFingerprint);
+    map['managed_skill_id'] = Variable<String>(managedSkillId);
+    map['source_lineage_id'] = Variable<String>(sourceLineageId);
+    if (!nullToAbsent || expectedEffectiveObjectId != null) {
+      map['expected_effective_object_id'] = Variable<String>(
+        expectedEffectiveObjectId,
+      );
+    }
+    map['content_manifest_digest'] = Variable<String>(contentManifestDigest);
+    map['new_installation'] = Variable<bool>(newInstallation);
+    map['replacement'] = Variable<bool>(replacement);
+    map['effective_object_id'] = Variable<String>(effectiveObjectId);
+    map['upstream_object_id'] = Variable<String>(upstreamObjectId);
+    map['committed_repository_revision'] = Variable<int>(
+      committedRepositoryRevision,
+    );
+    return map;
+  }
+
+  WorkspaceIncomingOutcomesCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceIncomingOutcomesCompanion(
+      operationId: Value(operationId),
+      requestFingerprint: Value(requestFingerprint),
+      managedSkillId: Value(managedSkillId),
+      sourceLineageId: Value(sourceLineageId),
+      expectedEffectiveObjectId:
+          expectedEffectiveObjectId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedEffectiveObjectId),
+      contentManifestDigest: Value(contentManifestDigest),
+      newInstallation: Value(newInstallation),
+      replacement: Value(replacement),
+      effectiveObjectId: Value(effectiveObjectId),
+      upstreamObjectId: Value(upstreamObjectId),
+      committedRepositoryRevision: Value(committedRepositoryRevision),
+    );
+  }
+
+  factory WorkspaceIncomingOutcome.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceIncomingOutcome(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      requestFingerprint: serializer.fromJson<String>(
+        json['requestFingerprint'],
+      ),
+      managedSkillId: serializer.fromJson<String>(json['managedSkillId']),
+      sourceLineageId: serializer.fromJson<String>(json['sourceLineageId']),
+      expectedEffectiveObjectId: serializer.fromJson<String?>(
+        json['expectedEffectiveObjectId'],
+      ),
+      contentManifestDigest: serializer.fromJson<String>(
+        json['contentManifestDigest'],
+      ),
+      newInstallation: serializer.fromJson<bool>(json['newInstallation']),
+      replacement: serializer.fromJson<bool>(json['replacement']),
+      effectiveObjectId: serializer.fromJson<String>(json['effectiveObjectId']),
+      upstreamObjectId: serializer.fromJson<String>(json['upstreamObjectId']),
+      committedRepositoryRevision: serializer.fromJson<int>(
+        json['committedRepositoryRevision'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'requestFingerprint': serializer.toJson<String>(requestFingerprint),
+      'managedSkillId': serializer.toJson<String>(managedSkillId),
+      'sourceLineageId': serializer.toJson<String>(sourceLineageId),
+      'expectedEffectiveObjectId': serializer.toJson<String?>(
+        expectedEffectiveObjectId,
+      ),
+      'contentManifestDigest': serializer.toJson<String>(contentManifestDigest),
+      'newInstallation': serializer.toJson<bool>(newInstallation),
+      'replacement': serializer.toJson<bool>(replacement),
+      'effectiveObjectId': serializer.toJson<String>(effectiveObjectId),
+      'upstreamObjectId': serializer.toJson<String>(upstreamObjectId),
+      'committedRepositoryRevision': serializer.toJson<int>(
+        committedRepositoryRevision,
+      ),
+    };
+  }
+
+  WorkspaceIncomingOutcome copyWith({
+    String? operationId,
+    String? requestFingerprint,
+    String? managedSkillId,
+    String? sourceLineageId,
+    Value<String?> expectedEffectiveObjectId = const Value.absent(),
+    String? contentManifestDigest,
+    bool? newInstallation,
+    bool? replacement,
+    String? effectiveObjectId,
+    String? upstreamObjectId,
+    int? committedRepositoryRevision,
+  }) => WorkspaceIncomingOutcome(
+    operationId: operationId ?? this.operationId,
+    requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+    managedSkillId: managedSkillId ?? this.managedSkillId,
+    sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+    expectedEffectiveObjectId: expectedEffectiveObjectId.present
+        ? expectedEffectiveObjectId.value
+        : this.expectedEffectiveObjectId,
+    contentManifestDigest: contentManifestDigest ?? this.contentManifestDigest,
+    newInstallation: newInstallation ?? this.newInstallation,
+    replacement: replacement ?? this.replacement,
+    effectiveObjectId: effectiveObjectId ?? this.effectiveObjectId,
+    upstreamObjectId: upstreamObjectId ?? this.upstreamObjectId,
+    committedRepositoryRevision:
+        committedRepositoryRevision ?? this.committedRepositoryRevision,
+  );
+  WorkspaceIncomingOutcome copyWithCompanion(
+    WorkspaceIncomingOutcomesCompanion data,
+  ) {
+    return WorkspaceIncomingOutcome(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      requestFingerprint: data.requestFingerprint.present
+          ? data.requestFingerprint.value
+          : this.requestFingerprint,
+      managedSkillId: data.managedSkillId.present
+          ? data.managedSkillId.value
+          : this.managedSkillId,
+      sourceLineageId: data.sourceLineageId.present
+          ? data.sourceLineageId.value
+          : this.sourceLineageId,
+      expectedEffectiveObjectId: data.expectedEffectiveObjectId.present
+          ? data.expectedEffectiveObjectId.value
+          : this.expectedEffectiveObjectId,
+      contentManifestDigest: data.contentManifestDigest.present
+          ? data.contentManifestDigest.value
+          : this.contentManifestDigest,
+      newInstallation: data.newInstallation.present
+          ? data.newInstallation.value
+          : this.newInstallation,
+      replacement: data.replacement.present
+          ? data.replacement.value
+          : this.replacement,
+      effectiveObjectId: data.effectiveObjectId.present
+          ? data.effectiveObjectId.value
+          : this.effectiveObjectId,
+      upstreamObjectId: data.upstreamObjectId.present
+          ? data.upstreamObjectId.value
+          : this.upstreamObjectId,
+      committedRepositoryRevision: data.committedRepositoryRevision.present
+          ? data.committedRepositoryRevision.value
+          : this.committedRepositoryRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceIncomingOutcome(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('expectedEffectiveObjectId: $expectedEffectiveObjectId, ')
+          ..write('contentManifestDigest: $contentManifestDigest, ')
+          ..write('newInstallation: $newInstallation, ')
+          ..write('replacement: $replacement, ')
+          ..write('effectiveObjectId: $effectiveObjectId, ')
+          ..write('upstreamObjectId: $upstreamObjectId, ')
+          ..write('committedRepositoryRevision: $committedRepositoryRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    operationId,
+    requestFingerprint,
+    managedSkillId,
+    sourceLineageId,
+    expectedEffectiveObjectId,
+    contentManifestDigest,
+    newInstallation,
+    replacement,
+    effectiveObjectId,
+    upstreamObjectId,
+    committedRepositoryRevision,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceIncomingOutcome &&
+          other.operationId == this.operationId &&
+          other.requestFingerprint == this.requestFingerprint &&
+          other.managedSkillId == this.managedSkillId &&
+          other.sourceLineageId == this.sourceLineageId &&
+          other.expectedEffectiveObjectId == this.expectedEffectiveObjectId &&
+          other.contentManifestDigest == this.contentManifestDigest &&
+          other.newInstallation == this.newInstallation &&
+          other.replacement == this.replacement &&
+          other.effectiveObjectId == this.effectiveObjectId &&
+          other.upstreamObjectId == this.upstreamObjectId &&
+          other.committedRepositoryRevision ==
+              this.committedRepositoryRevision);
+}
+
+class WorkspaceIncomingOutcomesCompanion
+    extends UpdateCompanion<WorkspaceIncomingOutcome> {
+  final Value<String> operationId;
+  final Value<String> requestFingerprint;
+  final Value<String> managedSkillId;
+  final Value<String> sourceLineageId;
+  final Value<String?> expectedEffectiveObjectId;
+  final Value<String> contentManifestDigest;
+  final Value<bool> newInstallation;
+  final Value<bool> replacement;
+  final Value<String> effectiveObjectId;
+  final Value<String> upstreamObjectId;
+  final Value<int> committedRepositoryRevision;
+  final Value<int> rowid;
+  const WorkspaceIncomingOutcomesCompanion({
+    this.operationId = const Value.absent(),
+    this.requestFingerprint = const Value.absent(),
+    this.managedSkillId = const Value.absent(),
+    this.sourceLineageId = const Value.absent(),
+    this.expectedEffectiveObjectId = const Value.absent(),
+    this.contentManifestDigest = const Value.absent(),
+    this.newInstallation = const Value.absent(),
+    this.replacement = const Value.absent(),
+    this.effectiveObjectId = const Value.absent(),
+    this.upstreamObjectId = const Value.absent(),
+    this.committedRepositoryRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceIncomingOutcomesCompanion.insert({
+    required String operationId,
+    required String requestFingerprint,
+    required String managedSkillId,
+    required String sourceLineageId,
+    this.expectedEffectiveObjectId = const Value.absent(),
+    required String contentManifestDigest,
+    required bool newInstallation,
+    this.replacement = const Value.absent(),
+    required String effectiveObjectId,
+    required String upstreamObjectId,
+    required int committedRepositoryRevision,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       requestFingerprint = Value(requestFingerprint),
+       managedSkillId = Value(managedSkillId),
+       sourceLineageId = Value(sourceLineageId),
+       contentManifestDigest = Value(contentManifestDigest),
+       newInstallation = Value(newInstallation),
+       effectiveObjectId = Value(effectiveObjectId),
+       upstreamObjectId = Value(upstreamObjectId),
+       committedRepositoryRevision = Value(committedRepositoryRevision);
+  static Insertable<WorkspaceIncomingOutcome> custom({
+    Expression<String>? operationId,
+    Expression<String>? requestFingerprint,
+    Expression<String>? managedSkillId,
+    Expression<String>? sourceLineageId,
+    Expression<String>? expectedEffectiveObjectId,
+    Expression<String>? contentManifestDigest,
+    Expression<bool>? newInstallation,
+    Expression<bool>? replacement,
+    Expression<String>? effectiveObjectId,
+    Expression<String>? upstreamObjectId,
+    Expression<int>? committedRepositoryRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (requestFingerprint != null) 'request_fingerprint': requestFingerprint,
+      if (managedSkillId != null) 'managed_skill_id': managedSkillId,
+      if (sourceLineageId != null) 'source_lineage_id': sourceLineageId,
+      if (expectedEffectiveObjectId != null)
+        'expected_effective_object_id': expectedEffectiveObjectId,
+      if (contentManifestDigest != null)
+        'content_manifest_digest': contentManifestDigest,
+      if (newInstallation != null) 'new_installation': newInstallation,
+      if (replacement != null) 'replacement': replacement,
+      if (effectiveObjectId != null) 'effective_object_id': effectiveObjectId,
+      if (upstreamObjectId != null) 'upstream_object_id': upstreamObjectId,
+      if (committedRepositoryRevision != null)
+        'committed_repository_revision': committedRepositoryRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceIncomingOutcomesCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? requestFingerprint,
+    Value<String>? managedSkillId,
+    Value<String>? sourceLineageId,
+    Value<String?>? expectedEffectiveObjectId,
+    Value<String>? contentManifestDigest,
+    Value<bool>? newInstallation,
+    Value<bool>? replacement,
+    Value<String>? effectiveObjectId,
+    Value<String>? upstreamObjectId,
+    Value<int>? committedRepositoryRevision,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceIncomingOutcomesCompanion(
+      operationId: operationId ?? this.operationId,
+      requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+      managedSkillId: managedSkillId ?? this.managedSkillId,
+      sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+      expectedEffectiveObjectId:
+          expectedEffectiveObjectId ?? this.expectedEffectiveObjectId,
+      contentManifestDigest:
+          contentManifestDigest ?? this.contentManifestDigest,
+      newInstallation: newInstallation ?? this.newInstallation,
+      replacement: replacement ?? this.replacement,
+      effectiveObjectId: effectiveObjectId ?? this.effectiveObjectId,
+      upstreamObjectId: upstreamObjectId ?? this.upstreamObjectId,
+      committedRepositoryRevision:
+          committedRepositoryRevision ?? this.committedRepositoryRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (requestFingerprint.present) {
+      map['request_fingerprint'] = Variable<String>(requestFingerprint.value);
+    }
+    if (managedSkillId.present) {
+      map['managed_skill_id'] = Variable<String>(managedSkillId.value);
+    }
+    if (sourceLineageId.present) {
+      map['source_lineage_id'] = Variable<String>(sourceLineageId.value);
+    }
+    if (expectedEffectiveObjectId.present) {
+      map['expected_effective_object_id'] = Variable<String>(
+        expectedEffectiveObjectId.value,
+      );
+    }
+    if (contentManifestDigest.present) {
+      map['content_manifest_digest'] = Variable<String>(
+        contentManifestDigest.value,
+      );
+    }
+    if (newInstallation.present) {
+      map['new_installation'] = Variable<bool>(newInstallation.value);
+    }
+    if (replacement.present) {
+      map['replacement'] = Variable<bool>(replacement.value);
+    }
+    if (effectiveObjectId.present) {
+      map['effective_object_id'] = Variable<String>(effectiveObjectId.value);
+    }
+    if (upstreamObjectId.present) {
+      map['upstream_object_id'] = Variable<String>(upstreamObjectId.value);
+    }
+    if (committedRepositoryRevision.present) {
+      map['committed_repository_revision'] = Variable<int>(
+        committedRepositoryRevision.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceIncomingOutcomesCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('expectedEffectiveObjectId: $expectedEffectiveObjectId, ')
+          ..write('contentManifestDigest: $contentManifestDigest, ')
+          ..write('newInstallation: $newInstallation, ')
+          ..write('replacement: $replacement, ')
+          ..write('effectiveObjectId: $effectiveObjectId, ')
+          ..write('upstreamObjectId: $upstreamObjectId, ')
+          ..write('committedRepositoryRevision: $committedRepositoryRevision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceNetworkTransfersTable extends WorkspaceNetworkTransfers
+    with TableInfo<$WorkspaceNetworkTransfersTable, WorkspaceNetworkTransfer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceNetworkTransfersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _managedSkillIdMeta = const VerificationMeta(
+    'managedSkillId',
+  );
+  @override
+  late final GeneratedColumn<String> managedSkillId = GeneratedColumn<String>(
+    'managed_skill_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES managed_skills (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sourceLineageIdMeta = const VerificationMeta(
+    'sourceLineageId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceLineageId = GeneratedColumn<String>(
+    'source_lineage_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES source_lineages (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    managedSkillId,
+    sourceLineageId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_network_transfers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceNetworkTransfer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('managed_skill_id')) {
+      context.handle(
+        _managedSkillIdMeta,
+        managedSkillId.isAcceptableOrUnknown(
+          data['managed_skill_id']!,
+          _managedSkillIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_lineage_id')) {
+      context.handle(
+        _sourceLineageIdMeta,
+        sourceLineageId.isAcceptableOrUnknown(
+          data['source_lineage_id']!,
+          _sourceLineageIdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceNetworkTransfer map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceNetworkTransfer(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      managedSkillId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}managed_skill_id'],
+      ),
+      sourceLineageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_lineage_id'],
+      ),
+    );
+  }
+
+  @override
+  $WorkspaceNetworkTransfersTable createAlias(String alias) {
+    return $WorkspaceNetworkTransfersTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceNetworkTransfer extends DataClass
+    implements Insertable<WorkspaceNetworkTransfer> {
+  final String operationId;
+  final String? managedSkillId;
+  final String? sourceLineageId;
+  const WorkspaceNetworkTransfer({
+    required this.operationId,
+    this.managedSkillId,
+    this.sourceLineageId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    if (!nullToAbsent || managedSkillId != null) {
+      map['managed_skill_id'] = Variable<String>(managedSkillId);
+    }
+    if (!nullToAbsent || sourceLineageId != null) {
+      map['source_lineage_id'] = Variable<String>(sourceLineageId);
+    }
+    return map;
+  }
+
+  WorkspaceNetworkTransfersCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceNetworkTransfersCompanion(
+      operationId: Value(operationId),
+      managedSkillId: managedSkillId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(managedSkillId),
+      sourceLineageId: sourceLineageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceLineageId),
+    );
+  }
+
+  factory WorkspaceNetworkTransfer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceNetworkTransfer(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      managedSkillId: serializer.fromJson<String?>(json['managedSkillId']),
+      sourceLineageId: serializer.fromJson<String?>(json['sourceLineageId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'managedSkillId': serializer.toJson<String?>(managedSkillId),
+      'sourceLineageId': serializer.toJson<String?>(sourceLineageId),
+    };
+  }
+
+  WorkspaceNetworkTransfer copyWith({
+    String? operationId,
+    Value<String?> managedSkillId = const Value.absent(),
+    Value<String?> sourceLineageId = const Value.absent(),
+  }) => WorkspaceNetworkTransfer(
+    operationId: operationId ?? this.operationId,
+    managedSkillId: managedSkillId.present
+        ? managedSkillId.value
+        : this.managedSkillId,
+    sourceLineageId: sourceLineageId.present
+        ? sourceLineageId.value
+        : this.sourceLineageId,
+  );
+  WorkspaceNetworkTransfer copyWithCompanion(
+    WorkspaceNetworkTransfersCompanion data,
+  ) {
+    return WorkspaceNetworkTransfer(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      managedSkillId: data.managedSkillId.present
+          ? data.managedSkillId.value
+          : this.managedSkillId,
+      sourceLineageId: data.sourceLineageId.present
+          ? data.sourceLineageId.value
+          : this.sourceLineageId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceNetworkTransfer(')
+          ..write('operationId: $operationId, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(operationId, managedSkillId, sourceLineageId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceNetworkTransfer &&
+          other.operationId == this.operationId &&
+          other.managedSkillId == this.managedSkillId &&
+          other.sourceLineageId == this.sourceLineageId);
+}
+
+class WorkspaceNetworkTransfersCompanion
+    extends UpdateCompanion<WorkspaceNetworkTransfer> {
+  final Value<String> operationId;
+  final Value<String?> managedSkillId;
+  final Value<String?> sourceLineageId;
+  final Value<int> rowid;
+  const WorkspaceNetworkTransfersCompanion({
+    this.operationId = const Value.absent(),
+    this.managedSkillId = const Value.absent(),
+    this.sourceLineageId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceNetworkTransfersCompanion.insert({
+    required String operationId,
+    this.managedSkillId = const Value.absent(),
+    this.sourceLineageId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId);
+  static Insertable<WorkspaceNetworkTransfer> custom({
+    Expression<String>? operationId,
+    Expression<String>? managedSkillId,
+    Expression<String>? sourceLineageId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (managedSkillId != null) 'managed_skill_id': managedSkillId,
+      if (sourceLineageId != null) 'source_lineage_id': sourceLineageId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceNetworkTransfersCompanion copyWith({
+    Value<String>? operationId,
+    Value<String?>? managedSkillId,
+    Value<String?>? sourceLineageId,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceNetworkTransfersCompanion(
+      operationId: operationId ?? this.operationId,
+      managedSkillId: managedSkillId ?? this.managedSkillId,
+      sourceLineageId: sourceLineageId ?? this.sourceLineageId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (managedSkillId.present) {
+      map['managed_skill_id'] = Variable<String>(managedSkillId.value);
+    }
+    if (sourceLineageId.present) {
+      map['source_lineage_id'] = Variable<String>(sourceLineageId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceNetworkTransfersCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('managedSkillId: $managedSkillId, ')
+          ..write('sourceLineageId: $sourceLineageId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceGlobalCommandReservationsTable
+    extends WorkspaceGlobalCommandReservations
+    with
+        TableInfo<
+          $WorkspaceGlobalCommandReservationsTable,
+          WorkspaceGlobalCommandReservation
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceGlobalCommandReservationsTable(
+    this.attachedDatabase, [
+    this._alias,
+  ]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestFingerprintMeta =
+      const VerificationMeta('requestFingerprint');
+  @override
+  late final GeneratedColumn<String> requestFingerprint =
+      GeneratedColumn<String>(
+        'request_fingerprint',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _recoveryIncarnationMeta =
+      const VerificationMeta('recoveryIncarnation');
+  @override
+  late final GeneratedColumn<String> recoveryIncarnation =
+      GeneratedColumn<String>(
+        'recovery_incarnation',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _personalTagIdMeta = const VerificationMeta(
+    'personalTagId',
+  );
+  @override
+  late final GeneratedColumn<String> personalTagId = GeneratedColumn<String>(
+    'personal_tag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    requestFingerprint,
+    recoveryIncarnation,
+    personalTagId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_global_command_reservations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceGlobalCommandReservation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('request_fingerprint')) {
+      context.handle(
+        _requestFingerprintMeta,
+        requestFingerprint.isAcceptableOrUnknown(
+          data['request_fingerprint']!,
+          _requestFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestFingerprintMeta);
+    }
+    if (data.containsKey('recovery_incarnation')) {
+      context.handle(
+        _recoveryIncarnationMeta,
+        recoveryIncarnation.isAcceptableOrUnknown(
+          data['recovery_incarnation']!,
+          _recoveryIncarnationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recoveryIncarnationMeta);
+    }
+    if (data.containsKey('personal_tag_id')) {
+      context.handle(
+        _personalTagIdMeta,
+        personalTagId.isAcceptableOrUnknown(
+          data['personal_tag_id']!,
+          _personalTagIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_personalTagIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceGlobalCommandReservation map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceGlobalCommandReservation(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      requestFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_fingerprint'],
+      )!,
+      recoveryIncarnation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recovery_incarnation'],
+      )!,
+      personalTagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}personal_tag_id'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceGlobalCommandReservationsTable createAlias(String alias) {
+    return $WorkspaceGlobalCommandReservationsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceGlobalCommandReservation extends DataClass
+    implements Insertable<WorkspaceGlobalCommandReservation> {
+  final String operationId;
+  final String requestFingerprint;
+  final String recoveryIncarnation;
+  final String personalTagId;
+  const WorkspaceGlobalCommandReservation({
+    required this.operationId,
+    required this.requestFingerprint,
+    required this.recoveryIncarnation,
+    required this.personalTagId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['request_fingerprint'] = Variable<String>(requestFingerprint);
+    map['recovery_incarnation'] = Variable<String>(recoveryIncarnation);
+    map['personal_tag_id'] = Variable<String>(personalTagId);
+    return map;
+  }
+
+  WorkspaceGlobalCommandReservationsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceGlobalCommandReservationsCompanion(
+      operationId: Value(operationId),
+      requestFingerprint: Value(requestFingerprint),
+      recoveryIncarnation: Value(recoveryIncarnation),
+      personalTagId: Value(personalTagId),
+    );
+  }
+
+  factory WorkspaceGlobalCommandReservation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceGlobalCommandReservation(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      requestFingerprint: serializer.fromJson<String>(
+        json['requestFingerprint'],
+      ),
+      recoveryIncarnation: serializer.fromJson<String>(
+        json['recoveryIncarnation'],
+      ),
+      personalTagId: serializer.fromJson<String>(json['personalTagId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'requestFingerprint': serializer.toJson<String>(requestFingerprint),
+      'recoveryIncarnation': serializer.toJson<String>(recoveryIncarnation),
+      'personalTagId': serializer.toJson<String>(personalTagId),
+    };
+  }
+
+  WorkspaceGlobalCommandReservation copyWith({
+    String? operationId,
+    String? requestFingerprint,
+    String? recoveryIncarnation,
+    String? personalTagId,
+  }) => WorkspaceGlobalCommandReservation(
+    operationId: operationId ?? this.operationId,
+    requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+    recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
+    personalTagId: personalTagId ?? this.personalTagId,
+  );
+  WorkspaceGlobalCommandReservation copyWithCompanion(
+    WorkspaceGlobalCommandReservationsCompanion data,
+  ) {
+    return WorkspaceGlobalCommandReservation(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      requestFingerprint: data.requestFingerprint.present
+          ? data.requestFingerprint.value
+          : this.requestFingerprint,
+      recoveryIncarnation: data.recoveryIncarnation.present
+          ? data.recoveryIncarnation.value
+          : this.recoveryIncarnation,
+      personalTagId: data.personalTagId.present
+          ? data.personalTagId.value
+          : this.personalTagId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceGlobalCommandReservation(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
+          ..write('personalTagId: $personalTagId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    operationId,
+    requestFingerprint,
+    recoveryIncarnation,
+    personalTagId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceGlobalCommandReservation &&
+          other.operationId == this.operationId &&
+          other.requestFingerprint == this.requestFingerprint &&
+          other.recoveryIncarnation == this.recoveryIncarnation &&
+          other.personalTagId == this.personalTagId);
+}
+
+class WorkspaceGlobalCommandReservationsCompanion
+    extends UpdateCompanion<WorkspaceGlobalCommandReservation> {
+  final Value<String> operationId;
+  final Value<String> requestFingerprint;
+  final Value<String> recoveryIncarnation;
+  final Value<String> personalTagId;
+  final Value<int> rowid;
+  const WorkspaceGlobalCommandReservationsCompanion({
+    this.operationId = const Value.absent(),
+    this.requestFingerprint = const Value.absent(),
+    this.recoveryIncarnation = const Value.absent(),
+    this.personalTagId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceGlobalCommandReservationsCompanion.insert({
+    required String operationId,
+    required String requestFingerprint,
+    required String recoveryIncarnation,
+    required String personalTagId,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       requestFingerprint = Value(requestFingerprint),
+       recoveryIncarnation = Value(recoveryIncarnation),
+       personalTagId = Value(personalTagId);
+  static Insertable<WorkspaceGlobalCommandReservation> custom({
+    Expression<String>? operationId,
+    Expression<String>? requestFingerprint,
+    Expression<String>? recoveryIncarnation,
+    Expression<String>? personalTagId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (requestFingerprint != null) 'request_fingerprint': requestFingerprint,
+      if (recoveryIncarnation != null)
+        'recovery_incarnation': recoveryIncarnation,
+      if (personalTagId != null) 'personal_tag_id': personalTagId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceGlobalCommandReservationsCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? requestFingerprint,
+    Value<String>? recoveryIncarnation,
+    Value<String>? personalTagId,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceGlobalCommandReservationsCompanion(
+      operationId: operationId ?? this.operationId,
+      requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+      recoveryIncarnation: recoveryIncarnation ?? this.recoveryIncarnation,
+      personalTagId: personalTagId ?? this.personalTagId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (requestFingerprint.present) {
+      map['request_fingerprint'] = Variable<String>(requestFingerprint.value);
+    }
+    if (recoveryIncarnation.present) {
+      map['recovery_incarnation'] = Variable<String>(recoveryIncarnation.value);
+    }
+    if (personalTagId.present) {
+      map['personal_tag_id'] = Variable<String>(personalTagId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceGlobalCommandReservationsCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('recoveryIncarnation: $recoveryIncarnation, ')
+          ..write('personalTagId: $personalTagId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WorkspaceGlobalCommandOutcomesTable
+    extends WorkspaceGlobalCommandOutcomes
+    with
+        TableInfo<
+          $WorkspaceGlobalCommandOutcomesTable,
+          WorkspaceGlobalCommandOutcome
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceGlobalCommandOutcomesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestFingerprintMeta =
+      const VerificationMeta('requestFingerprint');
+  @override
+  late final GeneratedColumn<String> requestFingerprint =
+      GeneratedColumn<String>(
+        'request_fingerprint',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _personalTagIdMeta = const VerificationMeta(
+    'personalTagId',
+  );
+  @override
+  late final GeneratedColumn<String> personalTagId = GeneratedColumn<String>(
+    'personal_tag_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _committedRepositoryRevisionMeta =
+      const VerificationMeta('committedRepositoryRevision');
+  @override
+  late final GeneratedColumn<int> committedRepositoryRevision =
+      GeneratedColumn<int>(
+        'committed_repository_revision',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    operationId,
+    requestFingerprint,
+    personalTagId,
+    committedRepositoryRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_global_command_outcomes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceGlobalCommandOutcome> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('request_fingerprint')) {
+      context.handle(
+        _requestFingerprintMeta,
+        requestFingerprint.isAcceptableOrUnknown(
+          data['request_fingerprint']!,
+          _requestFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestFingerprintMeta);
+    }
+    if (data.containsKey('personal_tag_id')) {
+      context.handle(
+        _personalTagIdMeta,
+        personalTagId.isAcceptableOrUnknown(
+          data['personal_tag_id']!,
+          _personalTagIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_personalTagIdMeta);
+    }
+    if (data.containsKey('committed_repository_revision')) {
+      context.handle(
+        _committedRepositoryRevisionMeta,
+        committedRepositoryRevision.isAcceptableOrUnknown(
+          data['committed_repository_revision']!,
+          _committedRepositoryRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_committedRepositoryRevisionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {operationId};
+  @override
+  WorkspaceGlobalCommandOutcome map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceGlobalCommandOutcome(
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      requestFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_fingerprint'],
+      )!,
+      personalTagId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}personal_tag_id'],
+      )!,
+      committedRepositoryRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}committed_repository_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceGlobalCommandOutcomesTable createAlias(String alias) {
+    return $WorkspaceGlobalCommandOutcomesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceGlobalCommandOutcome extends DataClass
+    implements Insertable<WorkspaceGlobalCommandOutcome> {
+  final String operationId;
+  final String requestFingerprint;
+  final String personalTagId;
+  final int committedRepositoryRevision;
+  const WorkspaceGlobalCommandOutcome({
+    required this.operationId,
+    required this.requestFingerprint,
+    required this.personalTagId,
+    required this.committedRepositoryRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['operation_id'] = Variable<String>(operationId);
+    map['request_fingerprint'] = Variable<String>(requestFingerprint);
+    map['personal_tag_id'] = Variable<String>(personalTagId);
+    map['committed_repository_revision'] = Variable<int>(
+      committedRepositoryRevision,
+    );
+    return map;
+  }
+
+  WorkspaceGlobalCommandOutcomesCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceGlobalCommandOutcomesCompanion(
+      operationId: Value(operationId),
+      requestFingerprint: Value(requestFingerprint),
+      personalTagId: Value(personalTagId),
+      committedRepositoryRevision: Value(committedRepositoryRevision),
+    );
+  }
+
+  factory WorkspaceGlobalCommandOutcome.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceGlobalCommandOutcome(
+      operationId: serializer.fromJson<String>(json['operationId']),
+      requestFingerprint: serializer.fromJson<String>(
+        json['requestFingerprint'],
+      ),
+      personalTagId: serializer.fromJson<String>(json['personalTagId']),
+      committedRepositoryRevision: serializer.fromJson<int>(
+        json['committedRepositoryRevision'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'operationId': serializer.toJson<String>(operationId),
+      'requestFingerprint': serializer.toJson<String>(requestFingerprint),
+      'personalTagId': serializer.toJson<String>(personalTagId),
+      'committedRepositoryRevision': serializer.toJson<int>(
+        committedRepositoryRevision,
+      ),
+    };
+  }
+
+  WorkspaceGlobalCommandOutcome copyWith({
+    String? operationId,
+    String? requestFingerprint,
+    String? personalTagId,
+    int? committedRepositoryRevision,
+  }) => WorkspaceGlobalCommandOutcome(
+    operationId: operationId ?? this.operationId,
+    requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+    personalTagId: personalTagId ?? this.personalTagId,
+    committedRepositoryRevision:
+        committedRepositoryRevision ?? this.committedRepositoryRevision,
+  );
+  WorkspaceGlobalCommandOutcome copyWithCompanion(
+    WorkspaceGlobalCommandOutcomesCompanion data,
+  ) {
+    return WorkspaceGlobalCommandOutcome(
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      requestFingerprint: data.requestFingerprint.present
+          ? data.requestFingerprint.value
+          : this.requestFingerprint,
+      personalTagId: data.personalTagId.present
+          ? data.personalTagId.value
+          : this.personalTagId,
+      committedRepositoryRevision: data.committedRepositoryRevision.present
+          ? data.committedRepositoryRevision.value
+          : this.committedRepositoryRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceGlobalCommandOutcome(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('personalTagId: $personalTagId, ')
+          ..write('committedRepositoryRevision: $committedRepositoryRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    operationId,
+    requestFingerprint,
+    personalTagId,
+    committedRepositoryRevision,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceGlobalCommandOutcome &&
+          other.operationId == this.operationId &&
+          other.requestFingerprint == this.requestFingerprint &&
+          other.personalTagId == this.personalTagId &&
+          other.committedRepositoryRevision ==
+              this.committedRepositoryRevision);
+}
+
+class WorkspaceGlobalCommandOutcomesCompanion
+    extends UpdateCompanion<WorkspaceGlobalCommandOutcome> {
+  final Value<String> operationId;
+  final Value<String> requestFingerprint;
+  final Value<String> personalTagId;
+  final Value<int> committedRepositoryRevision;
+  final Value<int> rowid;
+  const WorkspaceGlobalCommandOutcomesCompanion({
+    this.operationId = const Value.absent(),
+    this.requestFingerprint = const Value.absent(),
+    this.personalTagId = const Value.absent(),
+    this.committedRepositoryRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceGlobalCommandOutcomesCompanion.insert({
+    required String operationId,
+    required String requestFingerprint,
+    required String personalTagId,
+    required int committedRepositoryRevision,
+    this.rowid = const Value.absent(),
+  }) : operationId = Value(operationId),
+       requestFingerprint = Value(requestFingerprint),
+       personalTagId = Value(personalTagId),
+       committedRepositoryRevision = Value(committedRepositoryRevision);
+  static Insertable<WorkspaceGlobalCommandOutcome> custom({
+    Expression<String>? operationId,
+    Expression<String>? requestFingerprint,
+    Expression<String>? personalTagId,
+    Expression<int>? committedRepositoryRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (operationId != null) 'operation_id': operationId,
+      if (requestFingerprint != null) 'request_fingerprint': requestFingerprint,
+      if (personalTagId != null) 'personal_tag_id': personalTagId,
+      if (committedRepositoryRevision != null)
+        'committed_repository_revision': committedRepositoryRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceGlobalCommandOutcomesCompanion copyWith({
+    Value<String>? operationId,
+    Value<String>? requestFingerprint,
+    Value<String>? personalTagId,
+    Value<int>? committedRepositoryRevision,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceGlobalCommandOutcomesCompanion(
+      operationId: operationId ?? this.operationId,
+      requestFingerprint: requestFingerprint ?? this.requestFingerprint,
+      personalTagId: personalTagId ?? this.personalTagId,
+      committedRepositoryRevision:
+          committedRepositoryRevision ?? this.committedRepositoryRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (requestFingerprint.present) {
+      map['request_fingerprint'] = Variable<String>(requestFingerprint.value);
+    }
+    if (personalTagId.present) {
+      map['personal_tag_id'] = Variable<String>(personalTagId.value);
+    }
+    if (committedRepositoryRevision.present) {
+      map['committed_repository_revision'] = Variable<int>(
+        committedRepositoryRevision.value,
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceGlobalCommandOutcomesCompanion(')
+          ..write('operationId: $operationId, ')
+          ..write('requestFingerprint: $requestFingerprint, ')
+          ..write('personalTagId: $personalTagId, ')
+          ..write('committedRepositoryRevision: $committedRepositoryRevision, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9364,6 +12629,22 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
   late final $RevisionMetadataTable revisionMetadata = $RevisionMetadataTable(
     this,
   );
+  late final $RevisionPublishedEventsTable revisionPublishedEvents =
+      $RevisionPublishedEventsTable(this);
+  late final $WorkspaceTransferArtifactsTable workspaceTransferArtifacts =
+      $WorkspaceTransferArtifactsTable(this);
+  late final $WorkspaceIncomingReservationsTable workspaceIncomingReservations =
+      $WorkspaceIncomingReservationsTable(this);
+  late final $WorkspaceIncomingOutcomesTable workspaceIncomingOutcomes =
+      $WorkspaceIncomingOutcomesTable(this);
+  late final $WorkspaceNetworkTransfersTable workspaceNetworkTransfers =
+      $WorkspaceNetworkTransfersTable(this);
+  late final $WorkspaceGlobalCommandReservationsTable
+  workspaceGlobalCommandReservations = $WorkspaceGlobalCommandReservationsTable(
+    this,
+  );
+  late final $WorkspaceGlobalCommandOutcomesTable
+  workspaceGlobalCommandOutcomes = $WorkspaceGlobalCommandOutcomesTable(this);
   late final $CurrentRevisionSelectionTable currentRevisionSelection =
       $CurrentRevisionSelectionTable(this);
   late final $DraftWorkspacesTable draftWorkspaces = $DraftWorkspacesTable(
@@ -9406,6 +12687,13 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
     managedSkills,
     skillSources,
     revisionMetadata,
+    revisionPublishedEvents,
+    workspaceTransferArtifacts,
+    workspaceIncomingReservations,
+    workspaceIncomingOutcomes,
+    workspaceNetworkTransfers,
+    workspaceGlobalCommandReservations,
+    workspaceGlobalCommandOutcomes,
     currentRevisionSelection,
     draftWorkspaces,
     updateCandidateSessions,
@@ -9445,6 +12733,51 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('revision_metadata', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'source_lineages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('revision_published_events', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'managed_skills',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_incoming_outcomes', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'source_lineages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_incoming_outcomes', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'managed_skills',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_network_transfers', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'source_lineages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('workspace_network_transfers', kind: UpdateKind.delete),
+      ],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -9549,6 +12882,8 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
 typedef $$WorkspaceMetadataTableCreateCompanionBuilder =
     WorkspaceMetadataCompanion Function({
       Value<int> singleton,
+      required String workspaceId,
+      required String recoveryIncarnation,
       required int repositoryRevision,
       required int destructionEpoch,
       required int createdAtMicros,
@@ -9557,6 +12892,8 @@ typedef $$WorkspaceMetadataTableCreateCompanionBuilder =
 typedef $$WorkspaceMetadataTableUpdateCompanionBuilder =
     WorkspaceMetadataCompanion Function({
       Value<int> singleton,
+      Value<String> workspaceId,
+      Value<String> recoveryIncarnation,
       Value<int> repositoryRevision,
       Value<int> destructionEpoch,
       Value<int> createdAtMicros,
@@ -9574,6 +12911,16 @@ class $$WorkspaceMetadataTableFilterComposer
   });
   ColumnFilters<int> get singleton => $composableBuilder(
     column: $table.singleton,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9612,6 +12959,16 @@ class $$WorkspaceMetadataTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get repositoryRevision => $composableBuilder(
     column: $table.repositoryRevision,
     builder: (column) => ColumnOrderings(column),
@@ -9644,6 +13001,16 @@ class $$WorkspaceMetadataTableAnnotationComposer
   });
   GeneratedColumn<int> get singleton =>
       $composableBuilder(column: $table.singleton, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get repositoryRevision => $composableBuilder(
     column: $table.repositoryRevision,
@@ -9707,12 +13074,16 @@ class $$WorkspaceMetadataTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> singleton = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> recoveryIncarnation = const Value.absent(),
                 Value<int> repositoryRevision = const Value.absent(),
                 Value<int> destructionEpoch = const Value.absent(),
                 Value<int> createdAtMicros = const Value.absent(),
                 Value<int> updatedAtMicros = const Value.absent(),
               }) => WorkspaceMetadataCompanion(
                 singleton: singleton,
+                workspaceId: workspaceId,
+                recoveryIncarnation: recoveryIncarnation,
                 repositoryRevision: repositoryRevision,
                 destructionEpoch: destructionEpoch,
                 createdAtMicros: createdAtMicros,
@@ -9721,12 +13092,16 @@ class $$WorkspaceMetadataTableTableManager
           createCompanionCallback:
               ({
                 Value<int> singleton = const Value.absent(),
+                required String workspaceId,
+                required String recoveryIncarnation,
                 required int repositoryRevision,
                 required int destructionEpoch,
                 required int createdAtMicros,
                 required int updatedAtMicros,
               }) => WorkspaceMetadataCompanion.insert(
                 singleton: singleton,
+                workspaceId: workspaceId,
+                recoveryIncarnation: recoveryIncarnation,
                 repositoryRevision: repositoryRevision,
                 destructionEpoch: destructionEpoch,
                 createdAtMicros: createdAtMicros,
@@ -9843,6 +13218,95 @@ final class $$SourceLineagesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _revisionMetadataRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $RevisionPublishedEventsTable,
+    List<RevisionPublishedEvent>
+  >
+  _revisionPublishedEventsRefsTable(_$WorkspaceDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.revisionPublishedEvents,
+        aliasName:
+            'source_lineages__id__revision_published_events__source_lineage_id',
+      );
+
+  $$RevisionPublishedEventsTableProcessedTableManager
+  get revisionPublishedEventsRefs {
+    final manager =
+        $$RevisionPublishedEventsTableTableManager(
+          $_db,
+          $_db.revisionPublishedEvents,
+        ).filter(
+          (f) => f.sourceLineageId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _revisionPublishedEventsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceIncomingOutcomesTable,
+    List<WorkspaceIncomingOutcome>
+  >
+  _workspaceIncomingOutcomesRefsTable(
+    _$WorkspaceDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.workspaceIncomingOutcomes,
+    aliasName:
+        'source_lineages__id__workspace_incoming_outcomes__source_lineage_id',
+  );
+
+  $$WorkspaceIncomingOutcomesTableProcessedTableManager
+  get workspaceIncomingOutcomesRefs {
+    final manager =
+        $$WorkspaceIncomingOutcomesTableTableManager(
+          $_db,
+          $_db.workspaceIncomingOutcomes,
+        ).filter(
+          (f) => f.sourceLineageId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceIncomingOutcomesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceNetworkTransfersTable,
+    List<WorkspaceNetworkTransfer>
+  >
+  _workspaceNetworkTransfersRefsTable(
+    _$WorkspaceDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.workspaceNetworkTransfers,
+    aliasName:
+        'source_lineages__id__workspace_network_transfers__source_lineage_id',
+  );
+
+  $$WorkspaceNetworkTransfersTableProcessedTableManager
+  get workspaceNetworkTransfersRefs {
+    final manager =
+        $$WorkspaceNetworkTransfersTableTableManager(
+          $_db,
+          $_db.workspaceNetworkTransfers,
+        ).filter(
+          (f) => f.sourceLineageId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceNetworkTransfersRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -9968,6 +13432,86 @@ class $$SourceLineagesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> revisionPublishedEventsRefs(
+    Expression<bool> Function($$RevisionPublishedEventsTableFilterComposer f) f,
+  ) {
+    final $$RevisionPublishedEventsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.revisionPublishedEvents,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RevisionPublishedEventsTableFilterComposer(
+                $db: $db,
+                $table: $db.revisionPublishedEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceIncomingOutcomesRefs(
+    Expression<bool> Function($$WorkspaceIncomingOutcomesTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceIncomingOutcomesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceIncomingOutcomes,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceIncomingOutcomesTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceIncomingOutcomes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceNetworkTransfersRefs(
+    Expression<bool> Function($$WorkspaceNetworkTransfersTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceNetworkTransfersTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceNetworkTransfers,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceNetworkTransfersTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceNetworkTransfers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -10140,6 +13684,87 @@ class $$SourceLineagesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> revisionPublishedEventsRefs<T extends Object>(
+    Expression<T> Function($$RevisionPublishedEventsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$RevisionPublishedEventsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.revisionPublishedEvents,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RevisionPublishedEventsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.revisionPublishedEvents,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceIncomingOutcomesRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceIncomingOutcomesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceIncomingOutcomesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceIncomingOutcomes,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceIncomingOutcomesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceIncomingOutcomes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceNetworkTransfersRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceNetworkTransfersTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceNetworkTransfersTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceNetworkTransfers,
+          getReferencedColumn: (t) => t.sourceLineageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceNetworkTransfersTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceNetworkTransfers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> operationSubjectsRefs<T extends Object>(
     Expression<T> Function($$OperationSubjectsTableAnnotationComposer a) f,
   ) {
@@ -10184,6 +13809,9 @@ class $$SourceLineagesTableTableManager
             bool managedSkillId,
             bool skillSourcesRefs,
             bool revisionMetadataRefs,
+            bool revisionPublishedEventsRefs,
+            bool workspaceIncomingOutcomesRefs,
+            bool workspaceNetworkTransfersRefs,
             bool operationSubjectsRefs,
           })
         > {
@@ -10241,6 +13869,9 @@ class $$SourceLineagesTableTableManager
                 managedSkillId = false,
                 skillSourcesRefs = false,
                 revisionMetadataRefs = false,
+                revisionPublishedEventsRefs = false,
+                workspaceIncomingOutcomesRefs = false,
+                workspaceNetworkTransfersRefs = false,
                 operationSubjectsRefs = false,
               }) {
                 return PrefetchHooks(
@@ -10248,6 +13879,11 @@ class $$SourceLineagesTableTableManager
                   explicitlyWatchedTables: [
                     if (skillSourcesRefs) db.skillSources,
                     if (revisionMetadataRefs) db.revisionMetadata,
+                    if (revisionPublishedEventsRefs) db.revisionPublishedEvents,
+                    if (workspaceIncomingOutcomesRefs)
+                      db.workspaceIncomingOutcomes,
+                    if (workspaceNetworkTransfersRefs)
+                      db.workspaceNetworkTransfers,
                     if (operationSubjectsRefs) db.operationSubjects,
                   ],
                   addJoins:
@@ -10328,6 +13964,69 @@ class $$SourceLineagesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (revisionPublishedEventsRefs)
+                        await $_getPrefetchedData<
+                          SourceLineage,
+                          $SourceLineagesTable,
+                          RevisionPublishedEvent
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SourceLineagesTableReferences
+                              ._revisionPublishedEventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SourceLineagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).revisionPublishedEventsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceLineageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceIncomingOutcomesRefs)
+                        await $_getPrefetchedData<
+                          SourceLineage,
+                          $SourceLineagesTable,
+                          WorkspaceIncomingOutcome
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SourceLineagesTableReferences
+                              ._workspaceIncomingOutcomesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SourceLineagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceIncomingOutcomesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceLineageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceNetworkTransfersRefs)
+                        await $_getPrefetchedData<
+                          SourceLineage,
+                          $SourceLineagesTable,
+                          WorkspaceNetworkTransfer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SourceLineagesTableReferences
+                              ._workspaceNetworkTransfersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SourceLineagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceNetworkTransfersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceLineageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (operationSubjectsRefs)
                         await $_getPrefetchedData<
                           SourceLineage,
@@ -10373,6 +14072,9 @@ typedef $$SourceLineagesTableProcessedTableManager =
         bool managedSkillId,
         bool skillSourcesRefs,
         bool revisionMetadataRefs,
+        bool revisionPublishedEventsRefs,
+        bool workspaceIncomingOutcomesRefs,
+        bool workspaceNetworkTransfersRefs,
         bool operationSubjectsRefs,
       })
     >;
@@ -10424,6 +14126,58 @@ final class $$ManagedSkillsTableReferences
     ).filter((f) => f.managedSkillId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_sourceLineagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceIncomingOutcomesTable,
+    List<WorkspaceIncomingOutcome>
+  >
+  _workspaceIncomingOutcomesRefsTable(_$WorkspaceDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceIncomingOutcomes,
+        aliasName:
+            'managed_skills__id__workspace_incoming_outcomes__managed_skill_id',
+      );
+
+  $$WorkspaceIncomingOutcomesTableProcessedTableManager
+  get workspaceIncomingOutcomesRefs {
+    final manager = $$WorkspaceIncomingOutcomesTableTableManager(
+      $_db,
+      $_db.workspaceIncomingOutcomes,
+    ).filter((f) => f.managedSkillId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceIncomingOutcomesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $WorkspaceNetworkTransfersTable,
+    List<WorkspaceNetworkTransfer>
+  >
+  _workspaceNetworkTransfersRefsTable(_$WorkspaceDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.workspaceNetworkTransfers,
+        aliasName:
+            'managed_skills__id__workspace_network_transfers__managed_skill_id',
+      );
+
+  $$WorkspaceNetworkTransfersTableProcessedTableManager
+  get workspaceNetworkTransfersRefs {
+    final manager = $$WorkspaceNetworkTransfersTableTableManager(
+      $_db,
+      $_db.workspaceNetworkTransfers,
+    ).filter((f) => f.managedSkillId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _workspaceNetworkTransfersRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -10689,6 +14443,60 @@ class $$ManagedSkillsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceIncomingOutcomesRefs(
+    Expression<bool> Function($$WorkspaceIncomingOutcomesTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceIncomingOutcomesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceIncomingOutcomes,
+          getReferencedColumn: (t) => t.managedSkillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceIncomingOutcomesTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceIncomingOutcomes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> workspaceNetworkTransfersRefs(
+    Expression<bool> Function($$WorkspaceNetworkTransfersTableFilterComposer f)
+    f,
+  ) {
+    final $$WorkspaceNetworkTransfersTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceNetworkTransfers,
+          getReferencedColumn: (t) => t.managedSkillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceNetworkTransfersTableFilterComposer(
+                $db: $db,
+                $table: $db.workspaceNetworkTransfers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -11017,6 +14825,60 @@ class $$ManagedSkillsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> workspaceIncomingOutcomesRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceIncomingOutcomesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceIncomingOutcomesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceIncomingOutcomes,
+          getReferencedColumn: (t) => t.managedSkillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceIncomingOutcomesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceIncomingOutcomes,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> workspaceNetworkTransfersRefs<T extends Object>(
+    Expression<T> Function($$WorkspaceNetworkTransfersTableAnnotationComposer a)
+    f,
+  ) {
+    final $$WorkspaceNetworkTransfersTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.workspaceNetworkTransfers,
+          getReferencedColumn: (t) => t.managedSkillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$WorkspaceNetworkTransfersTableAnnotationComposer(
+                $db: $db,
+                $table: $db.workspaceNetworkTransfers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> currentRevisionSelectionRefs<T extends Object>(
     Expression<T> Function($$CurrentRevisionSelectionTableAnnotationComposer a)
     f,
@@ -11242,6 +15104,8 @@ class $$ManagedSkillsTableTableManager
           ManagedSkill,
           PrefetchHooks Function({
             bool sourceLineagesRefs,
+            bool workspaceIncomingOutcomesRefs,
+            bool workspaceNetworkTransfersRefs,
             bool currentRevisionSelectionRefs,
             bool draftWorkspacesRefs,
             bool updateCandidateSessionsRefs,
@@ -11320,6 +15184,8 @@ class $$ManagedSkillsTableTableManager
           prefetchHooksCallback:
               ({
                 sourceLineagesRefs = false,
+                workspaceIncomingOutcomesRefs = false,
+                workspaceNetworkTransfersRefs = false,
                 currentRevisionSelectionRefs = false,
                 draftWorkspacesRefs = false,
                 updateCandidateSessionsRefs = false,
@@ -11333,6 +15199,10 @@ class $$ManagedSkillsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (sourceLineagesRefs) db.sourceLineages,
+                    if (workspaceIncomingOutcomesRefs)
+                      db.workspaceIncomingOutcomes,
+                    if (workspaceNetworkTransfersRefs)
+                      db.workspaceNetworkTransfers,
                     if (currentRevisionSelectionRefs)
                       db.currentRevisionSelection,
                     if (draftWorkspacesRefs) db.draftWorkspaces,
@@ -11361,6 +15231,48 @@ class $$ManagedSkillsTableTableManager
                                 table,
                                 p0,
                               ).sourceLineagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.managedSkillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceIncomingOutcomesRefs)
+                        await $_getPrefetchedData<
+                          ManagedSkill,
+                          $ManagedSkillsTable,
+                          WorkspaceIncomingOutcome
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ManagedSkillsTableReferences
+                              ._workspaceIncomingOutcomesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ManagedSkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceIncomingOutcomesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.managedSkillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (workspaceNetworkTransfersRefs)
+                        await $_getPrefetchedData<
+                          ManagedSkill,
+                          $ManagedSkillsTable,
+                          WorkspaceNetworkTransfer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ManagedSkillsTableReferences
+                              ._workspaceNetworkTransfersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ManagedSkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).workspaceNetworkTransfersRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.managedSkillId == item.id,
@@ -11557,6 +15469,8 @@ typedef $$ManagedSkillsTableProcessedTableManager =
       ManagedSkill,
       PrefetchHooks Function({
         bool sourceLineagesRefs,
+        bool workspaceIncomingOutcomesRefs,
+        bool workspaceNetworkTransfersRefs,
         bool currentRevisionSelectionRefs,
         bool draftWorkspacesRefs,
         bool updateCandidateSessionsRefs,
@@ -12291,6 +16205,2246 @@ typedef $$RevisionMetadataTableProcessedTableManager =
       (RevisionMetadataData, $$RevisionMetadataTableReferences),
       RevisionMetadataData,
       PrefetchHooks Function({bool sourceLineageId})
+    >;
+typedef $$RevisionPublishedEventsTableCreateCompanionBuilder =
+    RevisionPublishedEventsCompanion Function({
+      required String sourceLineageId,
+      required String eventFingerprint,
+      required String objectId,
+      required String kind,
+      required String contentHash,
+      required int publishedAtMicros,
+      Value<int> rowid,
+    });
+typedef $$RevisionPublishedEventsTableUpdateCompanionBuilder =
+    RevisionPublishedEventsCompanion Function({
+      Value<String> sourceLineageId,
+      Value<String> eventFingerprint,
+      Value<String> objectId,
+      Value<String> kind,
+      Value<String> contentHash,
+      Value<int> publishedAtMicros,
+      Value<int> rowid,
+    });
+
+final class $$RevisionPublishedEventsTableReferences
+    extends
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $RevisionPublishedEventsTable,
+          RevisionPublishedEvent
+        > {
+  $$RevisionPublishedEventsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SourceLineagesTable _sourceLineageIdTable(_$WorkspaceDatabase db) =>
+      db.sourceLineages.createAlias(
+        'revision_published_events__source_lineage_id__source_lineages__id',
+      );
+
+  $$SourceLineagesTableProcessedTableManager get sourceLineageId {
+    final $_column = $_itemColumn<String>('source_lineage_id')!;
+
+    final manager = $$SourceLineagesTableTableManager(
+      $_db,
+      $_db.sourceLineages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceLineageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RevisionPublishedEventsTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $RevisionPublishedEventsTable> {
+  $$RevisionPublishedEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventFingerprint => $composableBuilder(
+    column: $table.eventFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get objectId => $composableBuilder(
+    column: $table.objectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get publishedAtMicros => $composableBuilder(
+    column: $table.publishedAtMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SourceLineagesTableFilterComposer get sourceLineageId {
+    final $$SourceLineagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableFilterComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RevisionPublishedEventsTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $RevisionPublishedEventsTable> {
+  $$RevisionPublishedEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventFingerprint => $composableBuilder(
+    column: $table.eventFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get objectId => $composableBuilder(
+    column: $table.objectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get publishedAtMicros => $composableBuilder(
+    column: $table.publishedAtMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SourceLineagesTableOrderingComposer get sourceLineageId {
+    final $$SourceLineagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RevisionPublishedEventsTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $RevisionPublishedEventsTable> {
+  $$RevisionPublishedEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventFingerprint => $composableBuilder(
+    column: $table.eventFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get objectId =>
+      $composableBuilder(column: $table.objectId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get publishedAtMicros => $composableBuilder(
+    column: $table.publishedAtMicros,
+    builder: (column) => column,
+  );
+
+  $$SourceLineagesTableAnnotationComposer get sourceLineageId {
+    final $$SourceLineagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RevisionPublishedEventsTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $RevisionPublishedEventsTable,
+          RevisionPublishedEvent,
+          $$RevisionPublishedEventsTableFilterComposer,
+          $$RevisionPublishedEventsTableOrderingComposer,
+          $$RevisionPublishedEventsTableAnnotationComposer,
+          $$RevisionPublishedEventsTableCreateCompanionBuilder,
+          $$RevisionPublishedEventsTableUpdateCompanionBuilder,
+          (RevisionPublishedEvent, $$RevisionPublishedEventsTableReferences),
+          RevisionPublishedEvent,
+          PrefetchHooks Function({bool sourceLineageId})
+        > {
+  $$RevisionPublishedEventsTableTableManager(
+    _$WorkspaceDatabase db,
+    $RevisionPublishedEventsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RevisionPublishedEventsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$RevisionPublishedEventsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RevisionPublishedEventsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceLineageId = const Value.absent(),
+                Value<String> eventFingerprint = const Value.absent(),
+                Value<String> objectId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> contentHash = const Value.absent(),
+                Value<int> publishedAtMicros = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RevisionPublishedEventsCompanion(
+                sourceLineageId: sourceLineageId,
+                eventFingerprint: eventFingerprint,
+                objectId: objectId,
+                kind: kind,
+                contentHash: contentHash,
+                publishedAtMicros: publishedAtMicros,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceLineageId,
+                required String eventFingerprint,
+                required String objectId,
+                required String kind,
+                required String contentHash,
+                required int publishedAtMicros,
+                Value<int> rowid = const Value.absent(),
+              }) => RevisionPublishedEventsCompanion.insert(
+                sourceLineageId: sourceLineageId,
+                eventFingerprint: eventFingerprint,
+                objectId: objectId,
+                kind: kind,
+                contentHash: contentHash,
+                publishedAtMicros: publishedAtMicros,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RevisionPublishedEventsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sourceLineageId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sourceLineageId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sourceLineageId,
+                                referencedTable:
+                                    $$RevisionPublishedEventsTableReferences
+                                        ._sourceLineageIdTable(db),
+                                referencedColumn:
+                                    $$RevisionPublishedEventsTableReferences
+                                        ._sourceLineageIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RevisionPublishedEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $RevisionPublishedEventsTable,
+      RevisionPublishedEvent,
+      $$RevisionPublishedEventsTableFilterComposer,
+      $$RevisionPublishedEventsTableOrderingComposer,
+      $$RevisionPublishedEventsTableAnnotationComposer,
+      $$RevisionPublishedEventsTableCreateCompanionBuilder,
+      $$RevisionPublishedEventsTableUpdateCompanionBuilder,
+      (RevisionPublishedEvent, $$RevisionPublishedEventsTableReferences),
+      RevisionPublishedEvent,
+      PrefetchHooks Function({bool sourceLineageId})
+    >;
+typedef $$WorkspaceTransferArtifactsTableCreateCompanionBuilder =
+    WorkspaceTransferArtifactsCompanion Function({
+      required String operationId,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceTransferArtifactsTableUpdateCompanionBuilder =
+    WorkspaceTransferArtifactsCompanion Function({
+      Value<String> operationId,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceTransferArtifactsTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceTransferArtifactsTable> {
+  $$WorkspaceTransferArtifactsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceTransferArtifactsTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceTransferArtifactsTable> {
+  $$WorkspaceTransferArtifactsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceTransferArtifactsTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceTransferArtifactsTable> {
+  $$WorkspaceTransferArtifactsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceTransferArtifactsTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceTransferArtifactsTable,
+          WorkspaceTransferArtifact,
+          $$WorkspaceTransferArtifactsTableFilterComposer,
+          $$WorkspaceTransferArtifactsTableOrderingComposer,
+          $$WorkspaceTransferArtifactsTableAnnotationComposer,
+          $$WorkspaceTransferArtifactsTableCreateCompanionBuilder,
+          $$WorkspaceTransferArtifactsTableUpdateCompanionBuilder,
+          (
+            WorkspaceTransferArtifact,
+            BaseReferences<
+              _$WorkspaceDatabase,
+              $WorkspaceTransferArtifactsTable,
+              WorkspaceTransferArtifact
+            >,
+          ),
+          WorkspaceTransferArtifact,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceTransferArtifactsTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceTransferArtifactsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceTransferArtifactsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceTransferArtifactsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceTransferArtifactsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceTransferArtifactsCompanion(
+                operationId: operationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceTransferArtifactsCompanion.insert(
+                operationId: operationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceTransferArtifactsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceTransferArtifactsTable,
+      WorkspaceTransferArtifact,
+      $$WorkspaceTransferArtifactsTableFilterComposer,
+      $$WorkspaceTransferArtifactsTableOrderingComposer,
+      $$WorkspaceTransferArtifactsTableAnnotationComposer,
+      $$WorkspaceTransferArtifactsTableCreateCompanionBuilder,
+      $$WorkspaceTransferArtifactsTableUpdateCompanionBuilder,
+      (
+        WorkspaceTransferArtifact,
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceTransferArtifactsTable,
+          WorkspaceTransferArtifact
+        >,
+      ),
+      WorkspaceTransferArtifact,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkspaceIncomingReservationsTableCreateCompanionBuilder =
+    WorkspaceIncomingReservationsCompanion Function({
+      required String operationId,
+      required String requestFingerprint,
+      required String recoveryIncarnation,
+      required String managedSkillId,
+      required String sourceLineageId,
+      Value<String?> previousSourceLineageId,
+      Value<String?> expectedEffectiveObjectId,
+      required String contentManifestDigest,
+      required bool newInstallation,
+      Value<bool> replacement,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceIncomingReservationsTableUpdateCompanionBuilder =
+    WorkspaceIncomingReservationsCompanion Function({
+      Value<String> operationId,
+      Value<String> requestFingerprint,
+      Value<String> recoveryIncarnation,
+      Value<String> managedSkillId,
+      Value<String> sourceLineageId,
+      Value<String?> previousSourceLineageId,
+      Value<String?> expectedEffectiveObjectId,
+      Value<String> contentManifestDigest,
+      Value<bool> newInstallation,
+      Value<bool> replacement,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceIncomingReservationsTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingReservationsTable> {
+  $$WorkspaceIncomingReservationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get managedSkillId => $composableBuilder(
+    column: $table.managedSkillId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceLineageId => $composableBuilder(
+    column: $table.sourceLineageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousSourceLineageId => $composableBuilder(
+    column: $table.previousSourceLineageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceIncomingReservationsTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingReservationsTable> {
+  $$WorkspaceIncomingReservationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get managedSkillId => $composableBuilder(
+    column: $table.managedSkillId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceLineageId => $composableBuilder(
+    column: $table.sourceLineageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousSourceLineageId => $composableBuilder(
+    column: $table.previousSourceLineageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceIncomingReservationsTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingReservationsTable> {
+  $$WorkspaceIncomingReservationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get managedSkillId => $composableBuilder(
+    column: $table.managedSkillId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceLineageId => $composableBuilder(
+    column: $table.sourceLineageId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousSourceLineageId => $composableBuilder(
+    column: $table.previousSourceLineageId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceIncomingReservationsTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceIncomingReservationsTable,
+          WorkspaceIncomingReservation,
+          $$WorkspaceIncomingReservationsTableFilterComposer,
+          $$WorkspaceIncomingReservationsTableOrderingComposer,
+          $$WorkspaceIncomingReservationsTableAnnotationComposer,
+          $$WorkspaceIncomingReservationsTableCreateCompanionBuilder,
+          $$WorkspaceIncomingReservationsTableUpdateCompanionBuilder,
+          (
+            WorkspaceIncomingReservation,
+            BaseReferences<
+              _$WorkspaceDatabase,
+              $WorkspaceIncomingReservationsTable,
+              WorkspaceIncomingReservation
+            >,
+          ),
+          WorkspaceIncomingReservation,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceIncomingReservationsTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceIncomingReservationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceIncomingReservationsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceIncomingReservationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceIncomingReservationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> requestFingerprint = const Value.absent(),
+                Value<String> recoveryIncarnation = const Value.absent(),
+                Value<String> managedSkillId = const Value.absent(),
+                Value<String> sourceLineageId = const Value.absent(),
+                Value<String?> previousSourceLineageId = const Value.absent(),
+                Value<String?> expectedEffectiveObjectId = const Value.absent(),
+                Value<String> contentManifestDigest = const Value.absent(),
+                Value<bool> newInstallation = const Value.absent(),
+                Value<bool> replacement = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceIncomingReservationsCompanion(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                recoveryIncarnation: recoveryIncarnation,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                previousSourceLineageId: previousSourceLineageId,
+                expectedEffectiveObjectId: expectedEffectiveObjectId,
+                contentManifestDigest: contentManifestDigest,
+                newInstallation: newInstallation,
+                replacement: replacement,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String requestFingerprint,
+                required String recoveryIncarnation,
+                required String managedSkillId,
+                required String sourceLineageId,
+                Value<String?> previousSourceLineageId = const Value.absent(),
+                Value<String?> expectedEffectiveObjectId = const Value.absent(),
+                required String contentManifestDigest,
+                required bool newInstallation,
+                Value<bool> replacement = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceIncomingReservationsCompanion.insert(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                recoveryIncarnation: recoveryIncarnation,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                previousSourceLineageId: previousSourceLineageId,
+                expectedEffectiveObjectId: expectedEffectiveObjectId,
+                contentManifestDigest: contentManifestDigest,
+                newInstallation: newInstallation,
+                replacement: replacement,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceIncomingReservationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceIncomingReservationsTable,
+      WorkspaceIncomingReservation,
+      $$WorkspaceIncomingReservationsTableFilterComposer,
+      $$WorkspaceIncomingReservationsTableOrderingComposer,
+      $$WorkspaceIncomingReservationsTableAnnotationComposer,
+      $$WorkspaceIncomingReservationsTableCreateCompanionBuilder,
+      $$WorkspaceIncomingReservationsTableUpdateCompanionBuilder,
+      (
+        WorkspaceIncomingReservation,
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceIncomingReservationsTable,
+          WorkspaceIncomingReservation
+        >,
+      ),
+      WorkspaceIncomingReservation,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkspaceIncomingOutcomesTableCreateCompanionBuilder =
+    WorkspaceIncomingOutcomesCompanion Function({
+      required String operationId,
+      required String requestFingerprint,
+      required String managedSkillId,
+      required String sourceLineageId,
+      Value<String?> expectedEffectiveObjectId,
+      required String contentManifestDigest,
+      required bool newInstallation,
+      Value<bool> replacement,
+      required String effectiveObjectId,
+      required String upstreamObjectId,
+      required int committedRepositoryRevision,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceIncomingOutcomesTableUpdateCompanionBuilder =
+    WorkspaceIncomingOutcomesCompanion Function({
+      Value<String> operationId,
+      Value<String> requestFingerprint,
+      Value<String> managedSkillId,
+      Value<String> sourceLineageId,
+      Value<String?> expectedEffectiveObjectId,
+      Value<String> contentManifestDigest,
+      Value<bool> newInstallation,
+      Value<bool> replacement,
+      Value<String> effectiveObjectId,
+      Value<String> upstreamObjectId,
+      Value<int> committedRepositoryRevision,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceIncomingOutcomesTableReferences
+    extends
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceIncomingOutcomesTable,
+          WorkspaceIncomingOutcome
+        > {
+  $$WorkspaceIncomingOutcomesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ManagedSkillsTable _managedSkillIdTable(_$WorkspaceDatabase db) =>
+      db.managedSkills.createAlias(
+        'workspace_incoming_outcomes__managed_skill_id__managed_skills__id',
+      );
+
+  $$ManagedSkillsTableProcessedTableManager get managedSkillId {
+    final $_column = $_itemColumn<String>('managed_skill_id')!;
+
+    final manager = $$ManagedSkillsTableTableManager(
+      $_db,
+      $_db.managedSkills,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_managedSkillIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SourceLineagesTable _sourceLineageIdTable(_$WorkspaceDatabase db) =>
+      db.sourceLineages.createAlias(
+        'workspace_incoming_outcomes__source_lineage_id__source_lineages__id',
+      );
+
+  $$SourceLineagesTableProcessedTableManager get sourceLineageId {
+    final $_column = $_itemColumn<String>('source_lineage_id')!;
+
+    final manager = $$SourceLineagesTableTableManager(
+      $_db,
+      $_db.sourceLineages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceLineageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceIncomingOutcomesTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingOutcomesTable> {
+  $$WorkspaceIncomingOutcomesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get effectiveObjectId => $composableBuilder(
+    column: $table.effectiveObjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get upstreamObjectId => $composableBuilder(
+    column: $table.upstreamObjectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ManagedSkillsTableFilterComposer get managedSkillId {
+    final $$ManagedSkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableFilterComposer get sourceLineageId {
+    final $$SourceLineagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableFilterComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceIncomingOutcomesTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingOutcomesTable> {
+  $$WorkspaceIncomingOutcomesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get effectiveObjectId => $composableBuilder(
+    column: $table.effectiveObjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get upstreamObjectId => $composableBuilder(
+    column: $table.upstreamObjectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ManagedSkillsTableOrderingComposer get managedSkillId {
+    final $$ManagedSkillsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableOrderingComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableOrderingComposer get sourceLineageId {
+    final $$SourceLineagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceIncomingOutcomesTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceIncomingOutcomesTable> {
+  $$WorkspaceIncomingOutcomesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get expectedEffectiveObjectId => $composableBuilder(
+    column: $table.expectedEffectiveObjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentManifestDigest => $composableBuilder(
+    column: $table.contentManifestDigest,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get newInstallation => $composableBuilder(
+    column: $table.newInstallation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get replacement => $composableBuilder(
+    column: $table.replacement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get effectiveObjectId => $composableBuilder(
+    column: $table.effectiveObjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get upstreamObjectId => $composableBuilder(
+    column: $table.upstreamObjectId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => column,
+  );
+
+  $$ManagedSkillsTableAnnotationComposer get managedSkillId {
+    final $$ManagedSkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableAnnotationComposer get sourceLineageId {
+    final $$SourceLineagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceIncomingOutcomesTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceIncomingOutcomesTable,
+          WorkspaceIncomingOutcome,
+          $$WorkspaceIncomingOutcomesTableFilterComposer,
+          $$WorkspaceIncomingOutcomesTableOrderingComposer,
+          $$WorkspaceIncomingOutcomesTableAnnotationComposer,
+          $$WorkspaceIncomingOutcomesTableCreateCompanionBuilder,
+          $$WorkspaceIncomingOutcomesTableUpdateCompanionBuilder,
+          (
+            WorkspaceIncomingOutcome,
+            $$WorkspaceIncomingOutcomesTableReferences,
+          ),
+          WorkspaceIncomingOutcome,
+          PrefetchHooks Function({bool managedSkillId, bool sourceLineageId})
+        > {
+  $$WorkspaceIncomingOutcomesTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceIncomingOutcomesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceIncomingOutcomesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceIncomingOutcomesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceIncomingOutcomesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> requestFingerprint = const Value.absent(),
+                Value<String> managedSkillId = const Value.absent(),
+                Value<String> sourceLineageId = const Value.absent(),
+                Value<String?> expectedEffectiveObjectId = const Value.absent(),
+                Value<String> contentManifestDigest = const Value.absent(),
+                Value<bool> newInstallation = const Value.absent(),
+                Value<bool> replacement = const Value.absent(),
+                Value<String> effectiveObjectId = const Value.absent(),
+                Value<String> upstreamObjectId = const Value.absent(),
+                Value<int> committedRepositoryRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceIncomingOutcomesCompanion(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                expectedEffectiveObjectId: expectedEffectiveObjectId,
+                contentManifestDigest: contentManifestDigest,
+                newInstallation: newInstallation,
+                replacement: replacement,
+                effectiveObjectId: effectiveObjectId,
+                upstreamObjectId: upstreamObjectId,
+                committedRepositoryRevision: committedRepositoryRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String requestFingerprint,
+                required String managedSkillId,
+                required String sourceLineageId,
+                Value<String?> expectedEffectiveObjectId = const Value.absent(),
+                required String contentManifestDigest,
+                required bool newInstallation,
+                Value<bool> replacement = const Value.absent(),
+                required String effectiveObjectId,
+                required String upstreamObjectId,
+                required int committedRepositoryRevision,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceIncomingOutcomesCompanion.insert(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                expectedEffectiveObjectId: expectedEffectiveObjectId,
+                contentManifestDigest: contentManifestDigest,
+                newInstallation: newInstallation,
+                replacement: replacement,
+                effectiveObjectId: effectiveObjectId,
+                upstreamObjectId: upstreamObjectId,
+                committedRepositoryRevision: committedRepositoryRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkspaceIncomingOutcomesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({managedSkillId = false, sourceLineageId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (managedSkillId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.managedSkillId,
+                                referencedTable:
+                                    $$WorkspaceIncomingOutcomesTableReferences
+                                        ._managedSkillIdTable(db),
+                                referencedColumn:
+                                    $$WorkspaceIncomingOutcomesTableReferences
+                                        ._managedSkillIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (sourceLineageId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sourceLineageId,
+                                referencedTable:
+                                    $$WorkspaceIncomingOutcomesTableReferences
+                                        ._sourceLineageIdTable(db),
+                                referencedColumn:
+                                    $$WorkspaceIncomingOutcomesTableReferences
+                                        ._sourceLineageIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceIncomingOutcomesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceIncomingOutcomesTable,
+      WorkspaceIncomingOutcome,
+      $$WorkspaceIncomingOutcomesTableFilterComposer,
+      $$WorkspaceIncomingOutcomesTableOrderingComposer,
+      $$WorkspaceIncomingOutcomesTableAnnotationComposer,
+      $$WorkspaceIncomingOutcomesTableCreateCompanionBuilder,
+      $$WorkspaceIncomingOutcomesTableUpdateCompanionBuilder,
+      (WorkspaceIncomingOutcome, $$WorkspaceIncomingOutcomesTableReferences),
+      WorkspaceIncomingOutcome,
+      PrefetchHooks Function({bool managedSkillId, bool sourceLineageId})
+    >;
+typedef $$WorkspaceNetworkTransfersTableCreateCompanionBuilder =
+    WorkspaceNetworkTransfersCompanion Function({
+      required String operationId,
+      Value<String?> managedSkillId,
+      Value<String?> sourceLineageId,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceNetworkTransfersTableUpdateCompanionBuilder =
+    WorkspaceNetworkTransfersCompanion Function({
+      Value<String> operationId,
+      Value<String?> managedSkillId,
+      Value<String?> sourceLineageId,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceNetworkTransfersTableReferences
+    extends
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceNetworkTransfersTable,
+          WorkspaceNetworkTransfer
+        > {
+  $$WorkspaceNetworkTransfersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ManagedSkillsTable _managedSkillIdTable(_$WorkspaceDatabase db) =>
+      db.managedSkills.createAlias(
+        'workspace_network_transfers__managed_skill_id__managed_skills__id',
+      );
+
+  $$ManagedSkillsTableProcessedTableManager? get managedSkillId {
+    final $_column = $_itemColumn<String>('managed_skill_id');
+    if ($_column == null) return null;
+    final manager = $$ManagedSkillsTableTableManager(
+      $_db,
+      $_db.managedSkills,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_managedSkillIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SourceLineagesTable _sourceLineageIdTable(_$WorkspaceDatabase db) =>
+      db.sourceLineages.createAlias(
+        'workspace_network_transfers__source_lineage_id__source_lineages__id',
+      );
+
+  $$SourceLineagesTableProcessedTableManager? get sourceLineageId {
+    final $_column = $_itemColumn<String>('source_lineage_id');
+    if ($_column == null) return null;
+    final manager = $$SourceLineagesTableTableManager(
+      $_db,
+      $_db.sourceLineages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceLineageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WorkspaceNetworkTransfersTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceNetworkTransfersTable> {
+  $$WorkspaceNetworkTransfersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ManagedSkillsTableFilterComposer get managedSkillId {
+    final $$ManagedSkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableFilterComposer get sourceLineageId {
+    final $$SourceLineagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableFilterComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceNetworkTransfersTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceNetworkTransfersTable> {
+  $$WorkspaceNetworkTransfersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ManagedSkillsTableOrderingComposer get managedSkillId {
+    final $$ManagedSkillsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableOrderingComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableOrderingComposer get sourceLineageId {
+    final $$SourceLineagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceNetworkTransfersTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $WorkspaceNetworkTransfersTable> {
+  $$WorkspaceNetworkTransfersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  $$ManagedSkillsTableAnnotationComposer get managedSkillId {
+    final $$ManagedSkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.managedSkillId,
+      referencedTable: $db.managedSkills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManagedSkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.managedSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SourceLineagesTableAnnotationComposer get sourceLineageId {
+    final $$SourceLineagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceLineageId,
+      referencedTable: $db.sourceLineages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SourceLineagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sourceLineages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceNetworkTransfersTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceNetworkTransfersTable,
+          WorkspaceNetworkTransfer,
+          $$WorkspaceNetworkTransfersTableFilterComposer,
+          $$WorkspaceNetworkTransfersTableOrderingComposer,
+          $$WorkspaceNetworkTransfersTableAnnotationComposer,
+          $$WorkspaceNetworkTransfersTableCreateCompanionBuilder,
+          $$WorkspaceNetworkTransfersTableUpdateCompanionBuilder,
+          (
+            WorkspaceNetworkTransfer,
+            $$WorkspaceNetworkTransfersTableReferences,
+          ),
+          WorkspaceNetworkTransfer,
+          PrefetchHooks Function({bool managedSkillId, bool sourceLineageId})
+        > {
+  $$WorkspaceNetworkTransfersTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceNetworkTransfersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceNetworkTransfersTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceNetworkTransfersTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceNetworkTransfersTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String?> managedSkillId = const Value.absent(),
+                Value<String?> sourceLineageId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceNetworkTransfersCompanion(
+                operationId: operationId,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                Value<String?> managedSkillId = const Value.absent(),
+                Value<String?> sourceLineageId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceNetworkTransfersCompanion.insert(
+                operationId: operationId,
+                managedSkillId: managedSkillId,
+                sourceLineageId: sourceLineageId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkspaceNetworkTransfersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({managedSkillId = false, sourceLineageId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (managedSkillId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.managedSkillId,
+                                referencedTable:
+                                    $$WorkspaceNetworkTransfersTableReferences
+                                        ._managedSkillIdTable(db),
+                                referencedColumn:
+                                    $$WorkspaceNetworkTransfersTableReferences
+                                        ._managedSkillIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (sourceLineageId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sourceLineageId,
+                                referencedTable:
+                                    $$WorkspaceNetworkTransfersTableReferences
+                                        ._sourceLineageIdTable(db),
+                                referencedColumn:
+                                    $$WorkspaceNetworkTransfersTableReferences
+                                        ._sourceLineageIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WorkspaceNetworkTransfersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceNetworkTransfersTable,
+      WorkspaceNetworkTransfer,
+      $$WorkspaceNetworkTransfersTableFilterComposer,
+      $$WorkspaceNetworkTransfersTableOrderingComposer,
+      $$WorkspaceNetworkTransfersTableAnnotationComposer,
+      $$WorkspaceNetworkTransfersTableCreateCompanionBuilder,
+      $$WorkspaceNetworkTransfersTableUpdateCompanionBuilder,
+      (WorkspaceNetworkTransfer, $$WorkspaceNetworkTransfersTableReferences),
+      WorkspaceNetworkTransfer,
+      PrefetchHooks Function({bool managedSkillId, bool sourceLineageId})
+    >;
+typedef $$WorkspaceGlobalCommandReservationsTableCreateCompanionBuilder =
+    WorkspaceGlobalCommandReservationsCompanion Function({
+      required String operationId,
+      required String requestFingerprint,
+      required String recoveryIncarnation,
+      required String personalTagId,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceGlobalCommandReservationsTableUpdateCompanionBuilder =
+    WorkspaceGlobalCommandReservationsCompanion Function({
+      Value<String> operationId,
+      Value<String> requestFingerprint,
+      Value<String> recoveryIncarnation,
+      Value<String> personalTagId,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceGlobalCommandReservationsTableFilterComposer
+    extends
+        Composer<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandReservationsTable
+        > {
+  $$WorkspaceGlobalCommandReservationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceGlobalCommandReservationsTableOrderingComposer
+    extends
+        Composer<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandReservationsTable
+        > {
+  $$WorkspaceGlobalCommandReservationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceGlobalCommandReservationsTableAnnotationComposer
+    extends
+        Composer<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandReservationsTable
+        > {
+  $$WorkspaceGlobalCommandReservationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recoveryIncarnation => $composableBuilder(
+    column: $table.recoveryIncarnation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceGlobalCommandReservationsTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandReservationsTable,
+          WorkspaceGlobalCommandReservation,
+          $$WorkspaceGlobalCommandReservationsTableFilterComposer,
+          $$WorkspaceGlobalCommandReservationsTableOrderingComposer,
+          $$WorkspaceGlobalCommandReservationsTableAnnotationComposer,
+          $$WorkspaceGlobalCommandReservationsTableCreateCompanionBuilder,
+          $$WorkspaceGlobalCommandReservationsTableUpdateCompanionBuilder,
+          (
+            WorkspaceGlobalCommandReservation,
+            BaseReferences<
+              _$WorkspaceDatabase,
+              $WorkspaceGlobalCommandReservationsTable,
+              WorkspaceGlobalCommandReservation
+            >,
+          ),
+          WorkspaceGlobalCommandReservation,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceGlobalCommandReservationsTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceGlobalCommandReservationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceGlobalCommandReservationsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceGlobalCommandReservationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceGlobalCommandReservationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> requestFingerprint = const Value.absent(),
+                Value<String> recoveryIncarnation = const Value.absent(),
+                Value<String> personalTagId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceGlobalCommandReservationsCompanion(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                recoveryIncarnation: recoveryIncarnation,
+                personalTagId: personalTagId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String requestFingerprint,
+                required String recoveryIncarnation,
+                required String personalTagId,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceGlobalCommandReservationsCompanion.insert(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                recoveryIncarnation: recoveryIncarnation,
+                personalTagId: personalTagId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceGlobalCommandReservationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceGlobalCommandReservationsTable,
+      WorkspaceGlobalCommandReservation,
+      $$WorkspaceGlobalCommandReservationsTableFilterComposer,
+      $$WorkspaceGlobalCommandReservationsTableOrderingComposer,
+      $$WorkspaceGlobalCommandReservationsTableAnnotationComposer,
+      $$WorkspaceGlobalCommandReservationsTableCreateCompanionBuilder,
+      $$WorkspaceGlobalCommandReservationsTableUpdateCompanionBuilder,
+      (
+        WorkspaceGlobalCommandReservation,
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandReservationsTable,
+          WorkspaceGlobalCommandReservation
+        >,
+      ),
+      WorkspaceGlobalCommandReservation,
+      PrefetchHooks Function()
+    >;
+typedef $$WorkspaceGlobalCommandOutcomesTableCreateCompanionBuilder =
+    WorkspaceGlobalCommandOutcomesCompanion Function({
+      required String operationId,
+      required String requestFingerprint,
+      required String personalTagId,
+      required int committedRepositoryRevision,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceGlobalCommandOutcomesTableUpdateCompanionBuilder =
+    WorkspaceGlobalCommandOutcomesCompanion Function({
+      Value<String> operationId,
+      Value<String> requestFingerprint,
+      Value<String> personalTagId,
+      Value<int> committedRepositoryRevision,
+      Value<int> rowid,
+    });
+
+class $$WorkspaceGlobalCommandOutcomesTableFilterComposer
+    extends
+        Composer<_$WorkspaceDatabase, $WorkspaceGlobalCommandOutcomesTable> {
+  $$WorkspaceGlobalCommandOutcomesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkspaceGlobalCommandOutcomesTableOrderingComposer
+    extends
+        Composer<_$WorkspaceDatabase, $WorkspaceGlobalCommandOutcomesTable> {
+  $$WorkspaceGlobalCommandOutcomesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkspaceGlobalCommandOutcomesTableAnnotationComposer
+    extends
+        Composer<_$WorkspaceDatabase, $WorkspaceGlobalCommandOutcomesTable> {
+  $$WorkspaceGlobalCommandOutcomesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestFingerprint => $composableBuilder(
+    column: $table.requestFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get personalTagId => $composableBuilder(
+    column: $table.personalTagId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get committedRepositoryRevision => $composableBuilder(
+    column: $table.committedRepositoryRevision,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkspaceGlobalCommandOutcomesTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandOutcomesTable,
+          WorkspaceGlobalCommandOutcome,
+          $$WorkspaceGlobalCommandOutcomesTableFilterComposer,
+          $$WorkspaceGlobalCommandOutcomesTableOrderingComposer,
+          $$WorkspaceGlobalCommandOutcomesTableAnnotationComposer,
+          $$WorkspaceGlobalCommandOutcomesTableCreateCompanionBuilder,
+          $$WorkspaceGlobalCommandOutcomesTableUpdateCompanionBuilder,
+          (
+            WorkspaceGlobalCommandOutcome,
+            BaseReferences<
+              _$WorkspaceDatabase,
+              $WorkspaceGlobalCommandOutcomesTable,
+              WorkspaceGlobalCommandOutcome
+            >,
+          ),
+          WorkspaceGlobalCommandOutcome,
+          PrefetchHooks Function()
+        > {
+  $$WorkspaceGlobalCommandOutcomesTableTableManager(
+    _$WorkspaceDatabase db,
+    $WorkspaceGlobalCommandOutcomesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceGlobalCommandOutcomesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceGlobalCommandOutcomesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceGlobalCommandOutcomesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> operationId = const Value.absent(),
+                Value<String> requestFingerprint = const Value.absent(),
+                Value<String> personalTagId = const Value.absent(),
+                Value<int> committedRepositoryRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceGlobalCommandOutcomesCompanion(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                personalTagId: personalTagId,
+                committedRepositoryRevision: committedRepositoryRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String operationId,
+                required String requestFingerprint,
+                required String personalTagId,
+                required int committedRepositoryRevision,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceGlobalCommandOutcomesCompanion.insert(
+                operationId: operationId,
+                requestFingerprint: requestFingerprint,
+                personalTagId: personalTagId,
+                committedRepositoryRevision: committedRepositoryRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkspaceGlobalCommandOutcomesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $WorkspaceGlobalCommandOutcomesTable,
+      WorkspaceGlobalCommandOutcome,
+      $$WorkspaceGlobalCommandOutcomesTableFilterComposer,
+      $$WorkspaceGlobalCommandOutcomesTableOrderingComposer,
+      $$WorkspaceGlobalCommandOutcomesTableAnnotationComposer,
+      $$WorkspaceGlobalCommandOutcomesTableCreateCompanionBuilder,
+      $$WorkspaceGlobalCommandOutcomesTableUpdateCompanionBuilder,
+      (
+        WorkspaceGlobalCommandOutcome,
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $WorkspaceGlobalCommandOutcomesTable,
+          WorkspaceGlobalCommandOutcome
+        >,
+      ),
+      WorkspaceGlobalCommandOutcome,
+      PrefetchHooks Function()
     >;
 typedef $$CurrentRevisionSelectionTableCreateCompanionBuilder =
     CurrentRevisionSelectionCompanion Function({
@@ -18054,6 +24208,45 @@ class $WorkspaceDatabaseManager {
       $$SkillSourcesTableTableManager(_db, _db.skillSources);
   $$RevisionMetadataTableTableManager get revisionMetadata =>
       $$RevisionMetadataTableTableManager(_db, _db.revisionMetadata);
+  $$RevisionPublishedEventsTableTableManager get revisionPublishedEvents =>
+      $$RevisionPublishedEventsTableTableManager(
+        _db,
+        _db.revisionPublishedEvents,
+      );
+  $$WorkspaceTransferArtifactsTableTableManager
+  get workspaceTransferArtifacts =>
+      $$WorkspaceTransferArtifactsTableTableManager(
+        _db,
+        _db.workspaceTransferArtifacts,
+      );
+  $$WorkspaceIncomingReservationsTableTableManager
+  get workspaceIncomingReservations =>
+      $$WorkspaceIncomingReservationsTableTableManager(
+        _db,
+        _db.workspaceIncomingReservations,
+      );
+  $$WorkspaceIncomingOutcomesTableTableManager get workspaceIncomingOutcomes =>
+      $$WorkspaceIncomingOutcomesTableTableManager(
+        _db,
+        _db.workspaceIncomingOutcomes,
+      );
+  $$WorkspaceNetworkTransfersTableTableManager get workspaceNetworkTransfers =>
+      $$WorkspaceNetworkTransfersTableTableManager(
+        _db,
+        _db.workspaceNetworkTransfers,
+      );
+  $$WorkspaceGlobalCommandReservationsTableTableManager
+  get workspaceGlobalCommandReservations =>
+      $$WorkspaceGlobalCommandReservationsTableTableManager(
+        _db,
+        _db.workspaceGlobalCommandReservations,
+      );
+  $$WorkspaceGlobalCommandOutcomesTableTableManager
+  get workspaceGlobalCommandOutcomes =>
+      $$WorkspaceGlobalCommandOutcomesTableTableManager(
+        _db,
+        _db.workspaceGlobalCommandOutcomes,
+      );
   $$CurrentRevisionSelectionTableTableManager get currentRevisionSelection =>
       $$CurrentRevisionSelectionTableTableManager(
         _db,

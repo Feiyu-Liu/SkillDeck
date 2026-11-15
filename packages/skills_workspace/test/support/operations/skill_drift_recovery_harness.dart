@@ -286,6 +286,10 @@ Future<OperationExecutionOutcome> _runSkillDriftRecovery({
       controlPlane: DriftOperationControlPlane(database: database),
       recovery: recovery,
       referenceMaintenance: const _DriftRecoveryReferences(),
+      checkpoints: WorkspaceOperationRecoveryBackupMaintenance(
+        backups: backups,
+        database: database,
+      ),
     );
     final cancellationToken = CancellationToken.none();
     return await coordinator.executeDeferred<PreparedRestorePublishPlan?>(

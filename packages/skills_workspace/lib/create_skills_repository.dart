@@ -43,6 +43,8 @@ import 'src/composition/operation_recovery_backup_maintenance.dart';
 import 'src/composition/operation_revision_reference_maintenance.dart';
 import 'src/composition/repository_command_composition.dart';
 import 'src/composition/revision_operation_plans.dart';
+import 'src/composition/revision_transfer_command_handlers.dart';
+import 'src/composition/revision_network_transfers.dart';
 import 'src/composition/revision_preparation_service.dart';
 import 'src/composition/revision_worker_task_executor.dart';
 import 'src/composition/skills_repository_runtime_adapter.dart';
@@ -255,6 +257,7 @@ SkillsRepository createSkillsRepository(
     controlPlane: controlPlane,
     recovery: recovery,
     referenceMaintenance: referenceMaintenance,
+    checkpoints: backupMaintenance,
     classifyAbort: classifyPlatformOperationAbort,
   );
   final finalizationRecovery = OperationCoordinatorFinalizationRecovery(
@@ -437,7 +440,35 @@ SkillsRepository createSkillsRepository(
     clock: () => DateTime.now().toUtc().microsecondsSinceEpoch,
   );
 
+  final networkTransfers = WorkspaceRevisionNetworkTransfers(
+    database: database,
+    writerLock: operationWriterLock,
+    layout: layout,
+    filesystem: filesystem,
+    revisions: revisionRuntime,
+  );
   final dispatcher = RepositoryCommandComposition(
+    revisionTransfers: WorkspaceRevisionTransferCommands(
+      network: networkTransfers,
+      destructiveEntries: destructiveEntries,
+      destructiveState: DriftDestructivePlanningState(
+        database: database,
+        draftInspection: draftInspection,
+      ),
+      planAssembler: operationPlans,
+      database: database,
+      snapshots: snapshots,
+      writerLock: operationWriterLock,
+      accessGate: revisionAccessGate,
+      layout: layout,
+      filesystem: filesystem,
+      revisions: revisionRuntime,
+      states: draftUpdateState,
+      drafts: draftInspection,
+      operations: operations,
+      preparation: revisionPreparation,
+      plans: revisionOperationPlans,
+    ),
     snapshots: snapshots,
     materializations: materializations,
     writerLock: operationWriterLock,

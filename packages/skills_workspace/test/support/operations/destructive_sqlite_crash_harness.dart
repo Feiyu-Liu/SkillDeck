@@ -19,6 +19,8 @@ import 'package:skills_workspace/src/application/runtime/workspace_journal_recov
 import 'package:skills_workspace/src/composition/destructive_recovery_maintenance.dart';
 import 'package:skills_workspace/src/composition/operation_recovery_backup_maintenance.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
+import 'package:skills_workspace/src/application/ports/draft_snapshot_ports.dart';
+import 'package:skills_workspace/src/platform/filesystem/filesystem_draft_snapshot.dart';
 import 'package:skills_workspace/src/domain/public_models.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
@@ -108,7 +110,7 @@ final class SourceReplacementSqliteCrashState {
 
   final int repositoryRevision;
   final int destructionEpoch;
-  final OperationJournalPhase journalPhase;
+  final OperationJournalPhase? journalPhase;
   final BackupEligibility eligibility;
   final String activeSourceLineageId;
   final List<String> sourceLineageIds;
@@ -247,6 +249,10 @@ Future<void> runDestructiveSqliteCrashChild({
     controlPlane: controlPlane,
     recovery: recovery,
     referenceMaintenance: const _NoopReferenceMaintenance(),
+    checkpoints: WorkspaceOperationRecoveryBackupMaintenance(
+      backups: backups,
+      database: database,
+    ),
   );
 
   final outcome = await operations.execute(
@@ -392,6 +398,10 @@ Future<void> runSourceReplacementSqliteCrashChild({
     controlPlane: controlPlane,
     recovery: recovery,
     referenceMaintenance: const _NoopReferenceMaintenance(),
+    checkpoints: WorkspaceOperationRecoveryBackupMaintenance(
+      backups: backups,
+      database: database,
+    ),
   );
 
   final outcome = await operations.execute(
@@ -447,7 +457,7 @@ inspectSourceReplacementSqliteCrashState(String workspaceRoot) async {
   final database = WorkspaceDatabase.forFile(File(layout.databasePath));
   try {
     final metadata = await database.workspaceMetadata.select().getSingle();
-    final journal = await database.operationJournals.select().getSingle();
+    final journal = await database.operationJournals.select().getSingleOrNull();
     final eligibility = const ControlPlaneBackupCodec().decodeEligibility(
       await File(layout.backupEligibilityPath).readAsBytes(),
     );
@@ -471,7 +481,9 @@ inspectSourceReplacementSqliteCrashState(String workspaceRoot) async {
     return SourceReplacementSqliteCrashState(
       repositoryRevision: metadata.repositoryRevision,
       destructionEpoch: metadata.destructionEpoch,
-      journalPhase: OperationJournalPhase.values.byName(journal.phase),
+      journalPhase: journal == null
+          ? null
+          : OperationJournalPhase.values.byName(journal.phase),
       eligibility: eligibility,
       activeSourceLineageId: managedSkill.activeSourceLineageId,
       sourceLineageIds: [for (final lineage in lineages) lineage.id],
@@ -499,6 +511,86 @@ inspectSourceReplacementSqliteCrashState(String workspaceRoot) async {
     );
   } finally {
     await database.close();
+  }
+}
+
+/// Test-owned completion window adapter. Production coordinator ordering is
+/// exercised unchanged; this only pauses around concrete checkpoint calls.
+Future<void> recoverDestructiveAtCompletedCheckpoint(
+  String workspaceRoot,
+  String phase,
+) async {
+  final layout = WorkspaceLayout(workspaceRoot);
+  final filesystem = PlatformDurableWorkspaceFilesystem();
+  final database = WorkspaceDatabase.forFile(File(layout.databasePath));
+  final backups = _backups(
+    database: database,
+    durability: PlatformControlPlaneBackupDurability(filesystem),
+    layout: layout,
+  );
+  final maintenance = WorkspaceOperationRecoveryBackupMaintenance(
+    backups: backups,
+    database: database,
+  );
+  final controlPlane = DriftOperationControlPlane(database: database);
+  final registry = OperationRecoverySpecRegistry();
+  final recovery = FilesystemOperationRecovery(
+    layout: layout,
+    filesystem: filesystem,
+    registry: registry,
+    backupMaintenance: maintenance,
+    destructiveMaintenance: _destructiveMaintenance(layout, filesystem),
+  );
+  final coordinator = OperationCoordinator(
+    writerLock: _writerLock(layout, filesystem),
+    controlPlane: controlPlane,
+    recovery: recovery,
+    referenceMaintenance: const _NoopReferenceMaintenance(),
+    checkpoints: _CompletedCheckpointPause(
+      delegate: maintenance,
+      layout: layout,
+      phase: phase,
+    ),
+  );
+  try {
+    await coordinator.recover();
+  } finally {
+    await database.close();
+  }
+}
+
+final class _CompletedCheckpointPause
+    implements OperationCompletedCheckpointPort {
+  const _CompletedCheckpointPause({
+    required this.delegate,
+    required this.layout,
+    required this.phase,
+  });
+  final OperationCompletedCheckpointPort delegate;
+  final WorkspaceLayout layout;
+  final String phase;
+  void pause(String window) {
+    if (phase != window) return;
+    File(
+      path.join(layout.rootPath, 'completed-checkpoint-$window.marker'),
+    ).writeAsStringSync('reached', flush: true);
+    while (true) {
+      sleep(const Duration(milliseconds: 100));
+    }
+  }
+
+  @override
+  Future<void> terminalCheckpoint(OperationPlan plan) async {
+    pause('beforeTerminal');
+    await delegate.terminalCheckpoint(plan);
+    pause('afterTerminal');
+  }
+
+  @override
+  Future<void> cleanCheckpoint(OperationPlan plan) async {
+    pause('afterCleanup');
+    await delegate.cleanCheckpoint(plan);
+    pause('afterClean');
   }
 }
 
@@ -535,6 +627,10 @@ Future<ControlPlaneStartupResult> recoverDestructiveSqliteCrash(
       controlPlane: controlPlane,
       recovery: recovery,
       referenceMaintenance: const _NoopReferenceMaintenance(),
+      checkpoints: WorkspaceOperationRecoveryBackupMaintenance(
+        backups: backups,
+        database: database,
+      ),
     );
     await WorkspaceJournalRecoveryAdapter(
       controlPlane: controlPlane,
@@ -1160,4 +1256,201 @@ final class _CrashControlPlane implements OperationControlPlanePort {
     PreparedOperationEnvelope envelope,
     OperationPlan plan,
   ) => _delegate.sealPreparedPlan(envelope, plan);
+}
+
+/// Real SQLite/owned filesystem fixture for pre-BCP external Draft edits.
+Future<OperationExecutionOutcome> exerciseGuardedRemovalRace({
+  required String workspaceRoot,
+  required String window,
+  required String editKind,
+}) async {
+  final layout = WorkspaceLayout(workspaceRoot);
+  final filesystem = PlatformDurableWorkspaceFilesystem();
+  final database = WorkspaceDatabase.forFile(File(layout.databasePath));
+  await database.workspaceMetadata.select().getSingle();
+  await _seedControlPlane(database);
+  await _seedFilesystem(layout);
+  final id = ManagedSkillId(destructiveCrashSkillId);
+  final draft = layout.draftPath(id);
+  await Directory(draft).create(recursive: true);
+  await File(path.join(draft, 'SKILL.md')).writeAsString('clean');
+  final fingerprint =
+      (await FilesystemDraftSnapshotAdapter(filesystem: filesystem).fingerprint(
+        DraftCaptureRequest(
+          liveDraftPath: draft,
+          stagingDestinationPath: path.join(
+            layout.stagingRoot,
+            'guard-fingerprint',
+          ),
+          capturePosixExecutableIntent: !Platform.isWindows,
+        ),
+      )).valueOrNull!;
+  final outside = Directory(path.join(workspaceRoot, 'outside-user-draft'))
+    ..createSync();
+  File(
+    path.join(outside.path, 'note'),
+  ).writeAsStringSync('outside must survive');
+  var edited = false;
+  void edit() {
+    if (edited) return;
+    edited = true;
+    if (editKind == 'inPlace') {
+      File(path.join(draft, 'SKILL.md')).writeAsStringSync('latest user draft');
+      return;
+    }
+    final type = FileSystemEntity.typeSync(draft, followLinks: false);
+    if (type == FileSystemEntityType.directory) {
+      Directory(draft).deleteSync(recursive: true);
+    }
+    if (type == FileSystemEntityType.file) File(draft).deleteSync();
+    if (type == FileSystemEntityType.link) Link(draft).deleteSync();
+    switch (editKind) {
+      case 'file':
+        File(draft).writeAsStringSync('latest user file');
+      case 'link':
+        Link(draft).createSync(outside.path);
+      default:
+        Directory(draft).createSync(recursive: true);
+        File(
+          path.join(draft, 'SKILL.md'),
+        ).writeAsStringSync('latest user draft');
+    }
+  }
+
+  final backups = _backups(
+    database: database,
+    durability: PlatformControlPlaneBackupDurability(filesystem),
+    layout: layout,
+  );
+  await backups.initializeSteadyEligibility();
+  await backups.createBackup();
+  final op = OperationId(destructiveCrashOperationId);
+  final registry = OperationRecoverySpecRegistry()
+    ..stageDestructiveEntries(op, [
+      for (final target in [
+        layout.revisionStorePath(id),
+        layout.revisionBundlePath(id),
+        layout.repositoryCopyPath('reviewer'),
+      ])
+        OperationRecoveryEntrySpec(
+          entryId:
+              'guard-resource-${target == layout.revisionStorePath(id)
+                  ? 'store'
+                  : target == layout.revisionBundlePath(id)
+                  ? 'bundle'
+                  : 'repository'}',
+          targetPath: target,
+          intendedSourcePath: null,
+          intendedKind: null,
+          makeReadOnly: false,
+          requirePlainDirectory: false,
+        ),
+      OperationRecoveryEntrySpec(
+        entryId: 'guard-last-draft',
+        targetPath: draft,
+        intendedSourcePath: null,
+        intendedKind: null,
+        makeReadOnly: false,
+        requirePlainDirectory: false,
+        expectedBeforeFingerprint: fingerprint,
+      ),
+    ]);
+  final recoveryIntent = RemovalRecoveryIntent(
+    skills: [
+      DestructiveSkillRecoveryIntent(
+        managedSkillId: id,
+        slotKey: 'reviewer',
+        sourceLineages: [
+          RecoverySourceLineageIntent(
+            sourceLineage: SourceLineageReference(destructiveCrashLineageId),
+          ),
+        ],
+        activationIds: [],
+        hasDraft: true,
+        hasUpdateCandidateSession: false,
+      ),
+    ],
+  );
+  final plan =
+      OperationPlanAssembler(
+        subjectIdentities: const _FixedSubjectIdentity(),
+        recoveryPlans: OperationRecoveryPlanFactory(registry: registry),
+      ).destructive(
+        operationId: op,
+        expectedRepositoryRevision: RepositoryRevision(0),
+        kind: WorkspaceOperationKind.remove,
+        businessChanges: WorkspaceBusinessChangeSet(
+          mutations: [DeleteManagedSkill(id)],
+          incrementsDestructionEpoch: true,
+        ),
+        recoveryIntent: recoveryIntent,
+        revisionSelectionChanges: [
+          RevisionSelectionChangePlan(
+            managedSkillId: id,
+            previousUpstream: _revisionAddress,
+            previousEffective: _revisionAddress,
+            intendedUpstream: null,
+            intendedEffective: null,
+          ),
+        ],
+        subjects: [
+          OperationSubjectIntent(
+            managedSkillId: id,
+            displayName: 'Reviewer',
+            sourceLineage: SourceLineageReference(destructiveCrashLineageId),
+            beforeObjectId: RevisionObjectId(_objectId),
+            beforeContentHash: _contentHash,
+          ),
+        ],
+      );
+  final maintenance = WorkspaceOperationRecoveryBackupMaintenance(
+    backups: backups,
+    database: database,
+  );
+  final canonicalDraft = await filesystem.resolveMutationPath(draft);
+  final recovery = FilesystemOperationRecovery(
+    layout: layout,
+    filesystem: filesystem,
+    registry: registry,
+    backupMaintenance: maintenance,
+    destructiveMaintenance: _destructiveMaintenance(layout, filesystem),
+    onMutationBarrier: (barrier, destination) {
+      if ((window == 'beforeDraftApply' &&
+                  barrier == DurablePathMutationBarrier.beforeMutation ||
+              window == 'afterDraftDisplaced' &&
+                  barrier ==
+                      DurablePathMutationBarrier.afterDestinationDisplaced) &&
+          path.equals(destination, canonicalDraft)) {
+        edit();
+      }
+    },
+  );
+  final operations = OperationCoordinator(
+    writerLock: _writerLock(layout, filesystem),
+    controlPlane: DriftOperationControlPlane(database: database),
+    recovery: recovery,
+    referenceMaintenance: const _NoopReferenceMaintenance(),
+    checkpoints: maintenance,
+  );
+  try {
+    final outcome = await operations.execute(
+      operationId: op,
+      expectedRepositoryRevision: RepositoryRevision(0),
+      buildPlan: (_, _) {
+        if (window == 'beforeCapture') {
+          edit(); // The writer is already held here.
+        }
+        return plan;
+      },
+      onBusinessCommitted: () {
+        if (window == 'afterCommit') edit();
+      },
+    );
+    if (!edited) {
+      throw StateError('The deterministic edit window was not reached.');
+    }
+    return outcome;
+  } finally {
+    await database.close();
+  }
 }

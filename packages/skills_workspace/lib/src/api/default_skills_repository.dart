@@ -9,6 +9,10 @@ import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
 import 'finalization_recovery_command.dart';
 import 'requests.dart';
+import 'revision_transfer.dart';
+import 'revision_transfer_remote.dart';
+import 'skill_extra_data_patch.dart';
+import 'personal_tag_mutation.dart';
 import 'result.dart';
 import 'skills_operation_controller.dart';
 import 'skills_repository.dart';
@@ -211,6 +215,118 @@ final class DefaultSkillsRepository implements SkillsRepository {
   ) => _dispatch(
     kind: WorkspaceOperationKind.readEffectiveFile,
     request: request,
+  );
+
+  @override
+  SkillsOperation<AuthoritativeWorkspaceCapture> captureAuthoritativeState(
+    CaptureAuthoritativeStateRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.captureAuthoritativeState,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<RevisionTransferReport> pushCommittedRevision(
+    PushCommittedRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.pushCommittedRevision,
+    request: request,
+  );
+  @override
+  SkillsOperation<CommittedRevisionBatch> fetchIncomingRevision(
+    FetchIncomingRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.fetchIncomingRevision,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<CommittedRevisionBatch> prepareIncomingRevision(
+    PrepareIncomingRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.prepareIncomingRevision,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<CommittedRevisionBatch> exportCommittedRevision(
+    ExportCommittedRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.exportCommittedRevision,
+    request: request,
+  );
+  @override
+  SkillsOperation<PersonalTagCommandBinding> reservePersonalTagMutation(
+    ReservePersonalTagMutationRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.reservePersonalTagMutation,
+    request: request,
+  );
+  @override
+  SkillsOperation<PersonalTagMutationOutcome> applyPersonalTagMutation(
+    ApplyPersonalTagMutationRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.applyPersonalTagMutation,
+    request: request,
+    operationId: request.binding.operationId,
+  );
+  @override
+  SkillsOperation<PersonalTagMutationOutcome> inspectPersonalTagMutationOutcome(
+    InspectPersonalTagMutationOutcomeRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.inspectPersonalTagMutationOutcome,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<IncomingRevisionCommandBinding> reserveSkillExtraDataPatch(
+    ReserveSkillExtraDataPatchRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.reserveSkillExtraDataPatch,
+    request: request,
+  );
+  @override
+  SkillsOperation<IncomingRevisionApplyResult> applySkillExtraDataPatch(
+    ApplySkillExtraDataPatchRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.applySkillExtraDataPatch,
+    request: request,
+    operationId: request.binding.operationId,
+  );
+
+  @override
+  SkillsOperation<IncomingRevisionOutcome> inspectIncomingRevisionOutcome(
+    InspectIncomingRevisionOutcomeRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.inspectIncomingRevisionOutcome,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<IncomingRevisionApplyResult> replaceIncomingRevision(
+    ReplaceIncomingRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.replaceIncomingRevision,
+    request: request,
+    operationId: request.incoming.localCommand?.operationId,
+  );
+
+  @override
+  SkillsOperation<IncomingRevisionApplyResult> installIncomingRevision(
+    InstallIncomingRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.installIncomingRevision,
+    request: request,
+    operationId: request.incoming.localCommand?.operationId,
+  );
+
+  @override
+  SkillsOperation<IncomingRevisionApplyResult> applyIncomingRevision(
+    ApplyIncomingRevisionRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.applyIncomingRevision,
+    request: request,
+    operationId: request.incoming.localCommand?.operationId,
   );
 
   @override
@@ -469,19 +585,36 @@ final class DefaultSkillsRepository implements SkillsRepository {
   SkillsOperation<T> _dispatch<T>({
     required WorkspaceOperationKind kind,
     required Object request,
+    OperationId? operationId,
   }) {
     _requireOpen();
-    final controller = _controller<T>(kind);
-    final admission = _runtime.admit(
-      operationId: controller.operation.operationId,
-      cancelBeforeCommit: controller.operation.cancel,
-    );
+    final controller = operationId == null
+        ? _controller<T>(kind)
+        : SkillsOperationController<T>(operationId: operationId, kind: kind);
+    final WorkspaceRequestAdmission? admission;
+    try {
+      admission = _runtime.admit(
+        operationId: controller.operation.operationId,
+        cancelBeforeCommit: controller.operation.cancel,
+      );
+    } on StateError {
+      if (operationId == null) rethrow;
+      unawaited(
+        controller.finish(
+          SkillsFailure<T>(
+            code: SkillsErrorCode.repositoryBusy,
+            context: const {'reason': 'operationAlreadyInFlight'},
+          ),
+        ),
+      );
+      return controller.operation;
+    }
     if (admission == null) {
       throw StateError('The SkillsRepository is closing or closed.');
     }
     unawaited(
       Future<void>.microtask(
-        () => _execute(controller, admission, kind, request),
+        () => _execute(controller, admission!, kind, request),
       ),
     );
     return controller.operation;

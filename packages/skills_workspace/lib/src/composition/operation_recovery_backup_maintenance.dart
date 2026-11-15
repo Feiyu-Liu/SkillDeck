@@ -1,11 +1,15 @@
 import '../application/backup/control_plane_backup_service.dart';
 import '../application/ports/control_plane_backup_ports.dart';
+import '../application/ports/operation_ports.dart';
+import '../application/operations/operation_models.dart';
 import '../platform/operations/filesystem_operation_recovery.dart';
 import '../platform/operations/operation_recovery_bundle.dart';
 
 /// Connects operation recovery phases to the Control Plane backup epoch.
 final class WorkspaceOperationRecoveryBackupMaintenance
-    implements OperationRecoveryBackupMaintenancePort {
+    implements
+        OperationRecoveryBackupMaintenancePort,
+        OperationCompletedCheckpointPort {
   const WorkspaceOperationRecoveryBackupMaintenance({
     required ControlPlaneBackupService backups,
     required ControlPlaneBackupDatabasePort database,
@@ -14,6 +18,37 @@ final class WorkspaceOperationRecoveryBackupMaintenance
 
   final ControlPlaneBackupService _backups;
   final ControlPlaneBackupDatabasePort _database;
+
+  Future<bool> _committed(OperationPlan plan) async {
+    final terminal = await _database.completedOperationRevision(
+      plan.operationId.value,
+    );
+    if (terminal == plan.expectedRepositoryRevision.value) return false;
+    if (terminal != plan.committedRepositoryRevision.value) {
+      throw StateError('Checkpoint terminal revision mismatch.');
+    }
+    return true;
+  }
+
+  @override
+  Future<void> terminalCheckpoint(OperationPlan plan) async {
+    if (await _committed(plan)) {
+      await _backups.checkpointCompletedOperation(
+        operationId: plan.operationId.value,
+      );
+    }
+  }
+
+  @override
+  Future<void> cleanCheckpoint(OperationPlan plan) async {
+    if (plan.businessChanges.incrementsDestructionEpoch &&
+        await _committed(plan)) {
+      await _backups.checkpointCompletedOperation(
+        operationId: plan.operationId.value,
+        clean: true,
+      );
+    }
+  }
 
   @override
   Future<void> rotate(OperationRecoveryContext context) async {

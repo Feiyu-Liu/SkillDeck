@@ -2,6 +2,7 @@ export '../domain/activation_selection.dart';
 
 import '../domain/activation_selection.dart';
 import '../domain/identifiers.dart';
+import 'revision_transfer.dart' show WorkspaceIdentity;
 import '../domain/lock_wait_policy.dart';
 import '../domain/public_models.dart';
 import '../domain/source_descriptor.dart';
@@ -231,12 +232,23 @@ final class RemoveRequest {
     required Set<ManagedSkillId> managedSkillIds,
     required this.intent,
     this.lockWaitPolicy,
-  }) : managedSkillIds = Set.unmodifiable(managedSkillIds) {
+    this.expectedIdentity,
+    this.requireCleanDraft = false,
+    Map<ManagedSkillId, String> expectedLocalLineageFingerprints = const {},
+  }) : expectedLocalLineageFingerprints = Map.unmodifiable(
+         expectedLocalLineageFingerprints,
+       ),
+       managedSkillIds = Set.unmodifiable(managedSkillIds) {
     _requireIdSet(this.managedSkillIds, 'managedSkillIds');
   }
 
   final Set<ManagedSkillId> managedSkillIds;
   final DestructiveIntent intent;
+  final WorkspaceIdentity? expectedIdentity;
+
+  /// Conditional unattended Removal: preserve dirty Drafts and active Sessions.
+  final bool requireCleanDraft;
+  final Map<ManagedSkillId, String> expectedLocalLineageFingerprints;
   final LockWaitPolicy? lockWaitPolicy;
 }
 
@@ -424,8 +436,8 @@ final class InspectDiffRequest {
   });
 
   final ManagedSkillId managedSkillId;
-  final OperationSubjectReference? from;
-  final OperationSubjectReference to;
+  final PublishedRevisionReference? from;
+  final PublishedRevisionReference to;
 }
 
 final class RestorePublishRequest {
@@ -435,7 +447,7 @@ final class RestorePublishRequest {
   });
 
   final ManagedSkillId managedSkillId;
-  final OperationSubjectReference selectedRevision;
+  final PublishedRevisionReference selectedRevision;
 }
 
 final class InspectSkillDriftRequest {

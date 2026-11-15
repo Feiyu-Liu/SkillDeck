@@ -142,17 +142,17 @@ void main() {
   });
 
   test(
-    'cleanup failure keeps success and exposes a recovery warning',
+    'cleanup failure retains the completed Journal for finalization retry',
     () async {
       operations.failures.failures.add('recovery.cleanup');
       reader.value = _snapshot(revision: 1);
 
       final result = await _restore(dispatcher);
 
-      expect(result, isA<SkillsSuccess<MutationReport>>());
+      expect(result, isA<SkillsCommittedFinalizationPending<MutationReport>>());
       expect(
         result.warnings.single.code,
-        SkillsWarningCode.recoveryCleanupDeferred,
+        SkillsWarningCode.finalizationDeferred,
       );
     },
   );
@@ -441,7 +441,7 @@ final class _HistoryContent implements WorkspaceHistoryContentPort {
   @override
   Future<HistoricalRevisionSelection?> resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   }) async {
     onResolve?.call();
     return HistoricalRevisionSelection(

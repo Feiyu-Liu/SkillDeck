@@ -1,4 +1,7 @@
+import 'package:skills_workspace/src/domain/cancellation.dart';
 import 'dart:io';
+
+import '../../support/revision_engine/unsupported_revision_object_graph.dart';
 
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
@@ -297,7 +300,9 @@ Future<void> _writeBundle(
 String _bundlePath(WorkspaceLayout layout) =>
     layout.revisionBundlePath(ManagedSkillId(_skill));
 
-final class _MarkerRevisionEngine implements RevisionEnginePort {
+final class _MarkerRevisionEngine
+    with UnsupportedRevisionObjectGraph
+    implements RevisionEnginePort {
   final List<String> restoredPaths = <String>[];
   final List<String> verifiedPaths = <String>[];
   final List<RevisionObjectId> readCommits = <RevisionObjectId>[];
@@ -341,6 +346,8 @@ final class _MarkerRevisionEngine implements RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) async {
     restoredPaths.add(stagedRepositoryPath);
     await makeHealthy(stagedRepositoryPath);
@@ -408,5 +415,6 @@ final class _MarkerRevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) => throw UnimplementedError();
 }

@@ -145,6 +145,16 @@ final class DriftWorkspaceRevisionReferenceReconciliation
       );
     }
 
+    final importedEvents = await _database
+        .select(_database.revisionPublishedEvents)
+        .get();
+    for (final event in importedEvents) {
+      add(
+        lineage: event.sourceLineageId,
+        object: RevisionObjectId(event.objectId),
+        name: 'refs/skills-workspace/imported/${event.eventFingerprint}',
+      );
+    }
     await _addPublishedHistory(add);
     await _addRecoverablePlans(add);
 

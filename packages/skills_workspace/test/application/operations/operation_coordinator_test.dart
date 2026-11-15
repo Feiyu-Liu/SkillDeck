@@ -32,7 +32,7 @@ void main() {
       expect(completed.committedRepositoryRevision, RepositoryRevision(1));
       expect(completed.cleanupPending, isFalse);
       expect(harness.controlPlane.journals, isEmpty);
-      expect(harness.referenceMaintenance.calls, 3);
+      expect(harness.referenceMaintenance.calls, 2);
       expect(
         harness.referenceMaintenance.observedSelectedSkillIds,
         everyElement(<ManagedSkillId>{
@@ -73,7 +73,9 @@ void main() {
         'recovery.finalize:finalize-2',
         'control.step-complete:finalize-2',
         'control.complete',
+        'checkpoint.terminal',
         'recovery.cleanup',
+        'checkpoint.clean',
         'control.delete-journal',
         'lock.release',
       ]);
@@ -572,10 +574,12 @@ void main() {
     );
 
     test(
-      'reports cleanup pending without changing committed success',
+      'reports a checkpoint or cleanup failure as committed finalization pending',
       () async {
         for (final event in <String>[
+          'checkpoint.terminal',
           'recovery.cleanup',
+          'checkpoint.clean',
           'control.delete-journal',
         ]) {
           final harness = OperationHarness();
@@ -589,13 +593,11 @@ void main() {
 
           expect(
             outcome,
-            isA<OperationCompleted>()
-                .having((value) => value.cleanupPending, event, isTrue)
-                .having(
-                  (value) => value.committedRepositoryRevision,
-                  'committedRepositoryRevision',
-                  RepositoryRevision(1),
-                ),
+            isA<OperationCommittedFinalizationPending>().having(
+              (value) => value.committedRepositoryRevision,
+              'committedRepositoryRevision',
+              RepositoryRevision(1),
+            ),
           );
           expect(
             harness.controlPlane.journals.single.phase,
@@ -701,7 +703,9 @@ void main() {
           'recovery.finalize:finalize-2',
           'control.step-complete:finalize-2',
           'control.complete',
+          'checkpoint.terminal',
           'recovery.cleanup',
+          'checkpoint.clean',
           'control.delete-journal',
           'lock.release',
         ]);
@@ -861,7 +865,9 @@ void main() {
           'control.load-recoverable',
           'recovery.rollback',
           'control.rollback-complete',
+          'checkpoint.terminal',
           'recovery.cleanup',
+          'checkpoint.clean',
           'control.delete-journal',
           'lock.release',
         ]);
@@ -894,7 +900,9 @@ void main() {
           'control.finalizing',
           'recovery.roll-forward',
           'control.complete',
+          'checkpoint.terminal',
           'recovery.cleanup',
+          'checkpoint.clean',
           'control.delete-journal',
           'lock.release',
         ]);

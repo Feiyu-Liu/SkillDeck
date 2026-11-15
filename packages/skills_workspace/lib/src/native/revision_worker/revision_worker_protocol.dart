@@ -7,7 +7,7 @@ import '../../application/runtime/revision_engine_port.dart';
 import '../../domain/draft_snapshot.dart';
 import '../../domain/revision_content.dart';
 
-const int revisionWorkerProtocolVersion = 6;
+const int revisionWorkerProtocolVersion = 7;
 
 typedef RevisionWorkerTaskExecutor =
     Future<Object?> Function(RevisionWorkerCommand command);
@@ -200,6 +200,32 @@ final class RevisionWorkerVerifyCommitCommand extends RevisionWorkerCommand {
   final int kindIndex;
 }
 
+final class RevisionWorkerInspectCommitCommand extends RevisionWorkerCommand {
+  const RevisionWorkerInspectCommitCommand({
+    required this.repositoryPath,
+    required this.commitOid,
+    required this.limits,
+  });
+  final String repositoryPath;
+  final String commitOid;
+  final RevisionCommitInspectionLimits limits;
+}
+
+final class RevisionWorkerImportObjectsCommand extends RevisionWorkerCommand {
+  const RevisionWorkerImportObjectsCommand({
+    required this.repositoryPath,
+    required this.stagedRepositoryPath,
+    required this.retainedRootOids,
+    required this.limits,
+    required this.cancelFlagAddress,
+  });
+  final String repositoryPath;
+  final String stagedRepositoryPath;
+  final List<String> retainedRootOids;
+  final RevisionObjectImportLimits limits;
+  final int cancelFlagAddress;
+}
+
 final class RevisionWorkerIsAncestorCommand extends RevisionWorkerCommand {
   const RevisionWorkerIsAncestorCommand({
     required this.repositoryPath,
@@ -244,11 +270,26 @@ final class RevisionWorkerCreateRecoveryPackCommand
     required this.repositoryPath,
     required this.bundleStagingPath,
     required this.retainedRootOids,
+    this.limits,
   });
 
   final String repositoryPath;
   final String bundleStagingPath;
   final List<String> retainedRootOids;
+  final RevisionObjectImportLimits? limits;
+}
+
+final class RevisionWorkerCreatePackIndexCommand extends RevisionWorkerCommand {
+  const RevisionWorkerCreatePackIndexCommand({
+    required this.packPath,
+    this.cancelFlagAddress = 0,
+    required this.stagingDirectory,
+    required this.limits,
+  });
+  final String packPath;
+  final int cancelFlagAddress;
+  final String stagingDirectory;
+  final RevisionObjectImportLimits limits;
 }
 
 final class RevisionWorkerRestoreRecoveryPackCommand
@@ -256,14 +297,18 @@ final class RevisionWorkerRestoreRecoveryPackCommand
   const RevisionWorkerRestoreRecoveryPackCommand({
     required this.stagedRepositoryPath,
     required this.packPath,
+    this.cancelFlagAddress = 0,
     required this.indexPath,
     required this.retainedRootOids,
+    this.limits,
   });
 
   final String stagedRepositoryPath;
   final String packPath;
+  final int cancelFlagAddress;
   final String indexPath;
   final List<String> retainedRootOids;
+  final RevisionObjectImportLimits? limits;
 }
 
 final class RevisionWorkerBuildBundleArtifactsCommand

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import '../../support/revision_engine/unsupported_revision_object_graph.dart';
+
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/src/application/runtime/revision_engine_port.dart';
 import 'package:skills_workspace/src/application/revision_store/managed_skill_revision_access_gate.dart';
@@ -619,7 +621,9 @@ Future<void> _insertSelection(
   });
 }
 
-final class _TreeRevisionEngine implements RevisionEnginePort {
+final class _TreeRevisionEngine
+    with UnsupportedRevisionObjectGraph
+    implements RevisionEnginePort {
   _TreeRevisionEngine(this.tree);
 
   final NormalizedSkillTree tree;
@@ -693,6 +697,7 @@ final class _TreeRevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
   }) => throw UnimplementedError();
 
   @override
@@ -701,6 +706,8 @@ final class _TreeRevisionEngine implements RevisionEnginePort {
     required String packPath,
     required String indexPath,
     required List<RevisionObjectId> retainedRoots,
+    RevisionObjectImportLimits? limits,
+    CancellationToken? cancellationToken,
   }) => throw UnimplementedError();
 
   @override

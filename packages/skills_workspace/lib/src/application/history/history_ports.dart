@@ -7,7 +7,7 @@ import 'history_models.dart';
 abstract interface class WorkspaceHistoryContentPort {
   Future<HistoricalRevisionSelection?> resolvePublishedRevision({
     required ManagedSkillId managedSkillId,
-    required OperationSubjectReference reference,
+    required PublishedRevisionReference reference,
   });
 
   Future<HistoryResult<SkillDiff>> compare({

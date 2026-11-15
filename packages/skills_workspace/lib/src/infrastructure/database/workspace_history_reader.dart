@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:crypto/crypto.dart';
 
 import '../../application/ports/history_ports.dart';
 import '../../domain/identifiers.dart';
@@ -83,81 +84,110 @@ final class WorkspaceHistoryReader implements WorkspaceHistoryPort {
     required ManagedSkillId managedSkillId,
     String? cursor,
     required int limit,
-  }) {
+  }) async {
     _requireLimit(limit);
-    final decodedCursor = cursor == null
-        ? null
-        : _HistoryCursor.decode(cursor, expectedKind: _CursorKind.published);
-    return _database.transaction(() async {
-      final query = _database.select(_database.operationSubjects).join([
-        innerJoin(
-          _database.operationRecords,
-          _database.operationRecords.operationId.equalsExp(
-            _database.operationSubjects.operationId,
-          ),
-        ),
-      ]);
-      query.where(
-        _database.operationSubjects.managedSkillId.equals(
-              managedSkillId.value,
-            ) &
-            _database.operationSubjects.afterObjectId.isNotNull() &
-            _database.operationSubjects.afterContentHash.isNotNull() &
-            _database.operationRecords.status.equals('succeeded'),
-      );
-      if (decodedCursor != null) {
-        query.where(
-          _database.operationRecords.completedAtMicros.isSmallerThanValue(
-                decodedCursor.orderedAtMicros,
-              ) |
-              (_database.operationRecords.completedAtMicros.equals(
-                    decodedCursor.orderedAtMicros,
-                  ) &
-                  _database.operationRecords.operationId.isSmallerThanValue(
-                    decodedCursor.operationId,
-                  )),
-        );
+    int? beforeMicros;
+    String? beforeKey;
+    if (cursor != null) {
+      try {
+        final map =
+            jsonDecode(utf8.decode(base64Url.decode(cursor)))
+                as Map<String, Object?>;
+        if (map['kind'] != 'published' || map['orderedAtMicros'] is! int) {
+          throw const FormatException();
+        }
+        beforeMicros = map['orderedAtMicros'] as int;
+        if (map['schemaVersion'] == 1) {
+          beforeKey = 'l:${OperationId(map['operationId'] as String).value}';
+        } else if (map['schemaVersion'] == 2 && map['referenceKey'] is String) {
+          beforeKey = map['referenceKey'] as String;
+          if (!(RegExp(r'^l:[0-9a-f-]{36}$').hasMatch(beforeKey) ||
+              RegExp(r'^i:[0-9a-f]{64}$').hasMatch(beforeKey))) {
+            throw const FormatException();
+          }
+        } else {
+          throw const FormatException();
+        }
+      } on Object {
+        throw ArgumentError('Invalid published history cursor.');
       }
-      query
-        ..orderBy([
-          OrderingTerm.desc(_database.operationRecords.completedAtMicros),
-          OrderingTerm.desc(_database.operationRecords.operationId),
-        ])
-        ..limit(limit + 1);
-      final rows = await query.get();
-      final hasMore = rows.length > limit;
-      final pageRows = hasMore ? rows.take(limit).toList() : rows;
-      final entries = pageRows
-          .map((row) {
-            final subject = row.readTable(_database.operationSubjects);
-            final record = row.readTable(_database.operationRecords);
-            return domain.PublishedRevisionSummary(
-              reference: OperationSubjectReference(
-                operationId: OperationId(record.operationId),
-                subjectId: subject.subjectId,
+    }
+    final rows = await _database
+        .customSelect(
+          '''
+      SELECT * FROM (
+        SELECT 'l:' || r.operation_id AS reference_key, r.operation_id AS operation_id,
+          s.subject_id AS subject_id, s.source_lineage_id AS lineage,
+          r.kind AS kind, r.completed_at_micros AS published_at, s.after_content_hash AS content_hash
+        FROM operation_subjects s JOIN operation_records r ON r.operation_id = s.operation_id
+        WHERE s.managed_skill_id = ? AND s.after_object_id IS NOT NULL AND s.after_content_hash IS NOT NULL AND r.status = 'succeeded'
+        UNION ALL
+        SELECT 'i:' || e.event_fingerprint, NULL, e.event_fingerprint, e.source_lineage_id,
+          e.kind, e.published_at_micros, e.content_hash
+        FROM revision_published_events e JOIN source_lineages l ON l.id = e.source_lineage_id
+        WHERE l.managed_skill_id = ?
+      ) WHERE (? IS NULL OR published_at < ? OR (published_at = ? AND reference_key < ?))
+      ORDER BY published_at DESC, reference_key DESC LIMIT ?
+    ''',
+          variables: [
+            Variable.withString(managedSkillId.value),
+            Variable.withString(managedSkillId.value),
+            Variable<int>(beforeMicros),
+            Variable<int>(beforeMicros),
+            Variable<int>(beforeMicros),
+            Variable<String>(beforeKey),
+            Variable.withInt(limit + 1),
+          ],
+          readsFrom: {
+            _database.operationSubjects,
+            _database.operationRecords,
+            _database.revisionPublishedEvents,
+            _database.sourceLineages,
+          },
+        )
+        .get();
+    final page = rows.take(limit).toList();
+    return domain.PublishedHistoryPage(
+      revisions: [
+        for (final row in page)
+          domain.PublishedRevisionSummary(
+            reference: row.readNullable<String>('operation_id') != null
+                ? OperationSubjectReference(
+                    operationId: OperationId(row.read<String>('operation_id')),
+                    subjectId: row.read<String>('subject_id'),
+                  )
+                : ImportedPublishedRevisionReference(
+                    eventFingerprint: row.read<String>('subject_id'),
+                    localLineageFingerprint: sha256
+                        .convert(
+                          utf8.encode(
+                            'local-lineage:${row.read<String>('lineage')}',
+                          ),
+                        )
+                        .toString(),
+                  ),
+            managedSkillId: managedSkillId,
+            kind: _operationKind(row.read<String>('kind')),
+            origin: row.readNullable<String>('operation_id') == null
+                ? domain.PublishedRevisionOrigin.imported
+                : domain.PublishedRevisionOrigin.local,
+            publishedAt: _utc(row.read<int>('published_at')),
+            contentHash: row.read<String>('content_hash'),
+          ),
+      ],
+      nextCursor: rows.length > limit
+          ? base64Url.encode(
+              utf8.encode(
+                jsonEncode({
+                  'schemaVersion': 2,
+                  'kind': 'published',
+                  'orderedAtMicros': page.last.read<int>('published_at'),
+                  'referenceKey': page.last.read<String>('reference_key'),
+                }),
               ),
-              managedSkillId: ManagedSkillId(subject.managedSkillId),
-              kind: _operationKind(record.kind),
-              publishedAt: _utc(record.completedAtMicros),
-              contentHash: subject.afterContentHash!,
-            );
-          })
-          .toList(growable: false);
-      return domain.PublishedHistoryPage(
-        revisions: entries,
-        nextCursor: hasMore
-            ? _HistoryCursor(
-                kind: _CursorKind.published,
-                orderedAtMicros: pageRows.last
-                    .readTable(_database.operationRecords)
-                    .completedAtMicros,
-                operationId: pageRows.last
-                    .readTable(_database.operationRecords)
-                    .operationId,
-              ).encode()
-            : null,
-      );
-    });
+            )
+          : null,
+    );
   }
 
   Future<List<db.OperationRecord>> _operationRecords({
@@ -261,7 +291,7 @@ void _requireLimit(int value) {
 DateTime _utc(int micros) =>
     DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
 
-enum _CursorKind { operations, published }
+enum _CursorKind { operations }
 
 final class _HistoryCursor {
   const _HistoryCursor({
