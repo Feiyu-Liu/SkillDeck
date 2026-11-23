@@ -10,9 +10,11 @@ Workspace only through the public seams listed under
 Workspace SQLite, Revision Stores, Operation Journals, or private paths.
 
 > **Status:** draft vocabulary agreed with the maintainer on 2026-11-23. It
-> becomes accepted together with the proposed ADR-0105 revision. Only Personal
-> Sync (Phase 1) is buildable now. Distribution terms are defined so that
-> Phase 1 does not preclude them, not so that they are built early.
+> becomes accepted together with the proposed ADR-0105 revision. The Revision
+> Pack terms replace Git hosting, subject to a prototype that has not yet
+> reported. Only Personal Sync (Phase 1) is buildable now. Distribution terms
+> are defined so that Phase 1 does not preclude them, not so that they are built
+> early.
 
 ## Language
 
@@ -29,21 +31,16 @@ Each Device can be revoked independently.
 _Avoid_: Machine, Workspace, Agent
 
 **Cloud Session**:
-The verified, server-backed bearer session of one Device. It is stored only in
-platform secure storage and sent only to the HTTPS API.
-_Avoid_: Git credential, API key, access token
+The verified, server-backed bearer session of one Device, and the only
+credential a Device holds for the service. It is stored only in platform secure
+storage and sent only to the HTTPS API.
+_Avoid_: Git credential, API key, access token, signed URL
 
 **Device Authorization**:
 The sign-in by which a Device obtains its Cloud Session (RFC 8628). The App
 shows a user code and opens the system browser. The person signs in on the web
 and approves that Device, and the App then receives the session.
 _Avoid_: Login form, loopback redirect, OAuth callback
-
-**Git Access Token**:
-A short-lived credential that the API mints for one operation against one
-repository, with read or write scope. It reaches the Workspace engine only
-through a per-operation credential callback and is never persisted.
-_Avoid_: Cloud Session, Git password, deploy key
 
 **Principal**:
 An owner of cloud content: a Cloud Account or a Team.
@@ -88,26 +85,46 @@ _Avoid_: Version, revision number
 
 **Lineage Head**:
 The server-authoritative selection for one Cloud Lineage Generation: its
-Effective commit, Upstream commit, Portable Source, and Declared Skill Name.
-Within a Generation, the Effective commit only moves to its own descendants.
+Effective commit, Upstream commit, Head Pack, Portable Source, and Declared
+Skill Name. Within a Generation, the Effective commit only moves to its own
+descendants.
 _Avoid_: Git branch, ref, latest version
 
-**Lineage Repository**:
-The private server Git repository that holds exactly one Cloud Lineage
-Generation's objects. No other account, Team, or the public can read it.
-_Avoid_: Channel Repository, Revision Store, backup
+**Revision Pack**:
+A standard Git pack file that carries revision objects between a Device and the
+service. A Device writes and indexes it locally. The service stores it in object
+storage, accessible only through the HTTPS API. The service runs no Git server.
+_Avoid_: Revision Recovery Bundle, Git push, archive, repository
+
+**Head Pack**:
+The Revision Pack that backs one Lineage Head. It holds the complete closure of
+the head's Effective and Upstream commits, so one Head Pack alone materializes
+the head. Every Upload sends a new one.
+_Avoid_: Incremental pack, delta, backup
+
+**Commit Graph**:
+The service's record of each verified commit and its parents within one Cloud
+Lineage Generation. Rows come only from verified Revision Packs, and Head
+Advance checks ancestry against them.
+_Avoid_: Git refs, Published Revision History, Revision Store
+
+**Pack Verification**:
+The service-side check that indexes a Revision Pack, recomputes every object ID,
+and confirms that the closure of the named commits is complete. A pack backs a
+Lineage Head or a Release only after it passes.
+_Avoid_: Virus scan, content review, checksum only
 
 **Head Advance**:
 The guarded API transaction that moves a Lineage Head from an expected Effective
-commit to a descendant. The Device must already have pushed the descendant's
-objects. Head Advance is the server-side Business Commit Point, and a stale
+commit to a descendant. It names the verified Head Pack that contains the new
+head. Head Advance is the server-side Business Commit Point, and a stale
 expectation is rejected without effect.
 _Avoid_: Git push, force push, upload
 
 **Upload**:
-The Device-side work of pushing missing revision objects to the Lineage
-Repository and then requesting a Head Advance.
-_Avoid_: Publish, Release, sync
+The Device-side work of exporting a Head Pack, sending it to the HTTPS API, and
+then requesting a Head Advance.
+_Avoid_: Publish, Release, sync, push
 
 **Reconciliation**:
 The repeatable comparison of a Device's committed local state with the server's
@@ -190,8 +207,8 @@ _Avoid_: Stop Syncing, Removal, unsync
 
 **Stop Syncing**:
 The explicit removal of a Cloud Lineage from the Cloud Library. Every Device
-keeps its local Skill as Device Only, and the server retires the Lineage
-Repository after its grace period.
+keeps its local Skill as Device Only, and the server deletes the Lineage's
+Revision Packs and Commit Graph after its grace period.
 _Avoid_: Removal, Device Exclusion, Revocation
 
 **Synced Removal**:
@@ -223,10 +240,12 @@ A stream of Releases of one Skill. It is owned by one Principal and readable by
 its Grants.
 _Avoid_: Cloud Lineage, repository, Listing, package
 
-**Channel Repository**:
-The server Git repository that holds only one Channel's Release commits. It
-never holds Effective, Upstream, Draft, or Local Customization history.
-_Avoid_: Lineage Repository, mirror, fork
+**Release Pack**:
+The Revision Pack of one Release: its Release commit and that commit's closure,
+which reaches only earlier Releases of the same Channel. Every object in it is
+reachable from the Release commit. It never holds Effective, Upstream, Draft,
+or Local Customization history.
+_Avoid_: Head Pack, mirror, fork, archive
 
 **Release**:
 An immutable, versioned commit in a Channel, created by a deliberate Release
@@ -299,10 +318,11 @@ _Avoid_: Rating, issue, flag
   never collects a password, OTP, or third-party credential, opens no loopback
   listener, and registers no custom URL scheme. While waiting for approval it
   polls only the authorization endpoint, at the interval the service sets.
-- A Cloud Session is sent only to the HTTPS API. Git hosting sees only Git
-  Access Tokens.
-- A Git Access Token authorizes one repository, one direction, and one
-  operation. Tokens never enter Source Descriptors, SQLite, Revision Store
+- A Cloud Session is sent only to the HTTPS API. Revision Packs upload and
+  download only through that API, authorized by the session plus ownership or a
+  current Grant at request time. There are no content tokens or signed storage
+  URLs.
+- A Cloud Session never enters Source Descriptors, SQLite, Revision Store
   configuration, Operation Records, URLs, or logs.
 - A Team has at least one Owner. Access to a Team's Channels follows Membership
   at request time.
@@ -313,15 +333,18 @@ _Avoid_: Rating, issue, flag
   Managed Skill ID per Device.
 - Linking an existing local Skill to a Cloud Lineage happens automatically only
   on an exact Portable Source, Slot Key, and content match.
-- Each Cloud Lineage Generation has its own Lineage Repository. A new Generation
-  creates a new repository, and the former repository is deleted after its
-  grace period.
-- The service database is authoritative for Lineage Heads, and repositories are
-  authoritative for bytes and ancestry. Uploads push objects to retention refs
-  named by commit ID before the Head Advance. Objects that no committed record
-  references are collectable.
-- Head Advance accepts only a descendant within one Generation. A Generation
-  change is a separate explicit transaction that represents Source Replacement.
+- Each Cloud Lineage Generation has its own Revision Packs and Commit Graph,
+  readable only by the owning account. A new Generation starts empty, and the
+  former Generation's packs and Commit Graph are deleted after its grace period.
+- The service database is authoritative for Lineage Heads and the Commit Graph,
+  and Revision Packs are authoritative for bytes. An Upload sends a Head Pack
+  before the Head Advance. Sending the same pack again is safe, because packs
+  are addressed by digest.
+- A Revision Pack is kept while a Lineage Head references it, plus a short grace
+  for transfers in flight. Every other pack is deleted.
+- Head Advance accepts only a descendant within one Generation, and only with a
+  verified Head Pack that contains the new head. A Generation change is a
+  separate explicit transaction that represents Source Replacement.
 - Reconciliation compares each local Effective Revision L with its Lineage Head
   R:
   - L equals R: nothing to do;
@@ -360,8 +383,11 @@ _Avoid_: Rating, issue, flag
 - The Origin Device keeps its original Device-Bound Source. Other Devices record
   a Synced Origin Source. No absolute path leaves the Origin Device.
 - A Device reconciles on each Change Ping and again on launch, on returning to
-  the foreground, and on reconnecting. It fetches Git objects only for Lineage
-  Heads whose Account Change Feed entry changed. Git is never polled.
+  the foreground, and on reconnecting. It downloads a Head Pack only for
+  Lineage Heads whose Account Change Feed entry changed. Pack storage is never
+  polled.
+- Pack Verification means every Lineage Head on the server can be downloaded
+  completely, so a damaged cloud copy is not an Attention Reason.
 - A Device that returns after its tombstone retention has lapsed must reset:
   each linked Skill missing from the Cloud Library becomes Needs Attention
   instead of being re-uploaded automatically.
@@ -395,13 +421,15 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   Managed Skill ID.
 - Before creating a Release, the publisher sees the chosen revision, its file
   manifest, and the Channel's current Grants.
-- Only the service writes to a Channel Repository, and no Device holds a write
-  token for one. A publisher's Device pushes a candidate Release commit to
-  staging. The service accepts it only when its tree matches the Release
-  Manifest and its parent is the Channel's previous Release, if any, then writes
-  it into the Channel Repository. Release commits are never rewritten.
+- The publisher's Device builds the candidate Release commit and uploads its
+  Release Pack. The service accepts the pack only when it passes Pack
+  Verification, its tree matches the Release Manifest, its parent is the
+  Channel's previous Release (if any), and every object is reachable from the
+  Release commit. This works the same whether or not the Skill is synced.
+- Accepted Release Packs are never rewritten. Only the service decides what
+  enters a Channel.
 - Notes, Personal Tags, Drafts, and private revision history never enter a
-  Channel Repository.
+  Release Pack.
 - A recipient installs a Release through the ordinary source-agnostic install
   flow with a Cloud Release Source. The flow reviews purpose, publisher,
   Channel, and Version Label first. Existing Skill Slot occupants follow the
@@ -426,14 +454,17 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   integrity, not publisher authenticity, so SkillDeck installs public Releases
   through a Cloud Release Source, where signatures, Withdrawal, and updates
   apply.
-- A Skill installed from a Channel can itself be synced. Its Lineage Repository
-  holds the recipient's own copy, which Revocation does not delete.
+- A Skill installed from a Channel can itself be synced. Its Head Packs hold the
+  recipient's own copy, which Revocation does not delete.
 
 ### Boundary with Skill Workspace
 
 - `skills_cloud` uses only these Workspace seams:
-  - pushing a managed Skill's revisions to a supplied remote;
-  - fetching remote revisions into non-authoritative staging;
+  - exporting a Revision Pack of a managed Skill's named revisions to a file
+    that `skills_cloud` supplies;
+  - importing a Revision Pack file into non-authoritative staging, which
+    verifies every object and the completeness of the named revisions, and
+    reports imported, malformed, or incomplete;
   - applying staged remote state in one Workspace transaction (the Sync apply
     contract);
   - a committed-change feed;
@@ -442,7 +473,9 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   It reports no change, fast-forwarded, merged, conflicted, Draft resolution
   required, or Skill Slot occupied.
 - Skill Workspace knows nothing of Cloud Accounts, Cloud Lineages, Channels,
-  Grants, Field Versions, Sync Status, or tokens.
+  Grants, Field Versions, Sync Status, or credentials. It performs no cloud
+  network I/O and never sees a cloud URL. `skills_cloud` moves every Revision
+  Pack over HTTPS itself.
 - `skills_cloud` keeps its own credential-free store of the Cloud Lineage to
   Managed Skill ID mapping, Device Exclusions, the Account Change Feed cursor,
   Field Versions with their last agreed values, and unresolved Note Conflicts.
@@ -457,9 +490,15 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
 
 > **Dev:** "When I share that Skill with a colleague, do they get my history
 > and Notes?"
-> **Domain expert:** "No. Sharing creates a Release in your Channel. The Channel
-> Repository holds only Release commits, so your history, Notes, and Drafts
-> stay in your Lineage Repository."
+> **Domain expert:** "No. Sharing creates a Release in your Channel. Its Release
+> Pack holds only Release commits, and the service rejects any object that the
+> Release commit can't reach. Your history, Notes, and Drafts stay in your own
+> Head Packs."
+
+> **Dev:** "So the service hosts Git repositories?"
+> **Domain expert:** "No. It stores Revision Packs and a Commit Graph. Devices
+> build and index the packs locally, and the database decides which commit is
+> the head."
 
 > **Dev:** "What happens to their copy if I revoke the Share?"
 > **Domain expert:** "They keep it. Its Cloud Release Source becomes Source
@@ -471,6 +510,12 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   an Effective Revision. Sending revisions to the service is an **Upload**, and
   making a version available to other people is a **Release**. Never say
   "publish to the cloud".
+- **Revision Pack** is not a **Revision Recovery Bundle**. Both use Git packs. A
+  Revision Recovery Bundle is device-local recovery evidence in the Skill
+  Workspace. A Revision Pack is cloud transfer content, and it never stands in
+  for a Device's recovery material.
+- **Retention Ref** keeps its Skill Workspace meaning, a local derived ref.
+  The service has no refs.
 - **Personal Sync is not Backup.** It replicates deletions and mistakes.
   Recovery relies on local Published Revision History, Restore Publish, and the
   tombstone window.

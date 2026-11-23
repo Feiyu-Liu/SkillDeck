@@ -61,10 +61,12 @@ only when it has real, modeled terms of its own.
   Destructive requests become **Approval Requests** that the user confirms in the
   App.
 - **SkillDeck Cloud → Skill Workspace:** Cloud uses only the reviewed Workspace
-  seams: push revisions, fetch into staging, the Sync apply contract, the
-  committed-change feed, and Cloud provenance Source Descriptors. Remote state
-  changes a device only through a local Workspace transaction. The Workspace
-  knows nothing of accounts, Cloud Lineages, Channels, Grants, or tokens.
+  seams: Revision Pack export, Revision Pack import into staging, the Sync
+  apply contract, the committed-change feed, and Cloud provenance Source
+  Descriptors. Pack export and import are local file operations, and Cloud moves
+  packs over HTTPS itself. Remote state changes a device only through a local
+  Workspace transaction. The Workspace knows nothing of accounts, Cloud
+  Lineages, Channels, Grants, or credentials, and does no cloud network I/O.
   Cloud Lineage to Managed Skill ID mappings live only in Cloud.
 - **App composition → SkillDeck Cloud:** the App composes Cloud. Cloud reaches
   the Workspace through the same `SkillsWorkspaceRepository` decorator chain as
