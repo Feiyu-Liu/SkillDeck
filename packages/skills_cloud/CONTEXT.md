@@ -194,11 +194,11 @@ changed. It carries entity identities and versions, not payloads, and keeps
 only the latest entry per entity.
 _Avoid_: Event log, operation history, inbox
 
-**Change Ping**:
-A payload-free notice, sent over a Device's realtime connection, that the
-Account Change Feed advanced. A Change Ping only triggers Reconciliation and is
-never applied as state.
-_Avoid_: Push notification, Git poll, sync event
+**Feed Check**:
+One read of the Account Change Feed from a Device's cursor. A check that finds
+nothing new returns an empty result. A Feed Check only triggers Reconciliation
+for the entries it returns and is never applied as state.
+_Avoid_: Push notification, realtime update, Git poll, sync event
 
 **Device Exclusion**:
 A device-local choice not to materialize one Cloud Lineage on that Device. It
@@ -382,10 +382,15 @@ _Avoid_: Rating, issue, flag
   one-time activation step.
 - The Origin Device keeps its original Device-Bound Source. Other Devices record
   a Synced Origin Source. No absolute path leaves the Origin Device.
-- A Device reconciles on each Change Ping and again on launch, on returning to
-  the foreground, and on reconnecting. It downloads a Head Pack only for
-  Lineage Heads whose Account Change Feed entry changed. Pack storage is never
-  polled.
+- A Device runs a Feed Check on launch, on returning to the foreground, on
+  reconnecting, on waking from sleep, and every 2 minutes while the App runs.
+  The service can lengthen that interval, and failures back off. A Device that
+  someone is looking at therefore reconciles at once. An unattended Device
+  waits at most one interval.
+- Personal Sync has no realtime channel. It is not live editing, and
+  Reconciliation is the same whatever triggers it.
+- A Device downloads a Head Pack only for Lineage Heads whose Account Change
+  Feed entry changed. Pack storage is never polled.
 - Pack Verification means every Lineage Head on the server can be downloaded
   completely, so a damaged cloud copy is not an Attention Reason.
 - A Device that returns after its tombstone retention has lapsed must reset:
