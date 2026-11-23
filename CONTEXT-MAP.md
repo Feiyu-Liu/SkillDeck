@@ -36,14 +36,15 @@ only when it has real, modeled terms of its own.
   and keeps credential values exclusively in platform secure storage.
   Translation and rendering share source-anchored Markdown block identities so
   live Drafts can replace completed blocks in place without mutating source.
-- [SkillDeck Cloud](./packages/skills_cloud/CONTEXT.md) — **draft**, pending the
-  proposed ADR-0105 revision. It owns Cloud Accounts, Devices, Teams, Cloud
+- [SkillDeck Cloud](./packages/skills_cloud/CONTEXT.md) — accepted with the
+  ADR-0105 revision of 2026-11-23. It owns Cloud Accounts, Devices, Teams, Cloud
   Sessions, Personal Sync, and Distribution. Personal Sync replicates one
   account's Cloud Library between its Devices through state Reconciliation
   against server Lineage Heads. Distribution delivers immutable Releases
   through Channels whose Grants name the audience: one person (Individual
   Sharing), a Team, or the public (Marketplace). Only Personal Sync, Phase 1, is
-  buildable. The package `packages/skills_cloud/` holds only its context until
+  buildable, on macOS first; Windows builds keep Cloud off until a Windows HTTP
+  client qualifies. The package `packages/skills_cloud/` holds only its context until
   implementation starts.
 
 ## Relationships
@@ -81,12 +82,12 @@ only when it has real, modeled terms of its own.
   for Skill Workspace source/discovery behavior, not a context in this repository.
 - **SkillDeck Cloud** (`packages/skills_cloud/`) is
   accepted and scheduled (PRD §6 M6, ADR-0105, ADR-0107). It replaces the earlier
-  planned Skill Marketplace context. Its vocabulary is a **draft** until the
-  proposed ADR-0105 revision (2026-11-23) is accepted. That revision models
+  planned Skill Marketplace context. The ADR-0105 revision of 2026-11-23 models
   Individual Sharing, Team Distribution, and the Marketplace as one Distribution
   model, and orders the phases Personal Sync, Individual Sharing, Team
   Distribution, Marketplace.
 
   It lives **outside** Skill Workspace, consuming it through the seams in ADR-0105
-  decision 9. Skill content travels over Git through the networked Internal Revision
-  Engine (ADR-0106).
+  decision 9 as revised. Skill content travels as Revision Packs over the Cloud
+  HTTPS API. The embedded `libgit2` writes and indexes packs locally and is not a
+  cloud network client.

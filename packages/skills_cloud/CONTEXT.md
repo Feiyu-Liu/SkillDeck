@@ -9,10 +9,12 @@ Workspace only through the public seams listed under
 [Boundary with Skill Workspace](#boundary-with-skill-workspace). It never opens
 Workspace SQLite, Revision Stores, Operation Journals, or private paths.
 
-> **Status:** draft vocabulary agreed with the maintainer on 2026-11-23. It
-> becomes accepted together with the proposed ADR-0105 revision. The Revision
+> **Status:** accepted on 2026-11-23 with the ADR-0105 revision. The Revision
 > Pack terms replace Git hosting, subject to a prototype that has not yet
-> reported. Only Personal Sync (Phase 1) is buildable now. Distribution terms
+> reported. If verifying packs in the service proves too costly, a fallback
+> adds a damaged-cloud-copy Attention Reason. Only Personal Sync (Phase 1) is
+> buildable now, on macOS first: Windows builds keep Cloud off until a Windows
+> HTTP client qualifies. Distribution terms
 > are defined so that Phase 1 does not preclude them, not so that they are built
 > early.
 
@@ -533,9 +535,9 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
 - **Cloud Lineage** and **Source Lineage** differ. A Source Lineage is device
   local and ends at Source Replacement. A Cloud Lineage spans Devices and
   survives Source Replacement by advancing its Lineage Generation.
-- **Personal Tag** is defined as device-local in the Skill Workspace context.
-  With Personal Sync enabled, tags belong to the Synced Tag Vocabulary. The
-  Skill Workspace definition changes when the ADR-0105 revision is accepted.
+- **Personal Tag** is device-local in the Skill Workspace context until
+  Personal Sync is enabled. From then on, tags belong to the Synced Tag
+  Vocabulary.
 - **Conflict** has several meanings: an Update Conflict (Skill Workspace), a
   conflicting Sync Merge (presented as an Update Candidate Session), a Note
   Conflict, and an occupied Skill Slot. Name the specific one.

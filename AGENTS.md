@@ -41,16 +41,23 @@ This is a multi-context monorepo rooted at `CONTEXT-MAP.md`; Skill Workspace use
 
 ### SkillDeck Cloud tripwires
 
-SkillDeck Cloud (Personal Sync, Teams, and the Marketplace) is accepted and built in phases (M6; ADR-0105, ADR-0106, ADR-0107). Watch for these in review; each one, if merged, forces a later refactor or breaks a boundary:
+SkillDeck Cloud (Personal Sync, Individual Sharing, Team Distribution, and the Marketplace) is accepted and built in phases (M6; ADR-0105 and its 2026-11-23 revision, ADR-0106, ADR-0107). Watch for these in review; each one, if merged, forces a later refactor or breaks a boundary:
 
 - Git-specific assumptions leaking into the app's install/activate UI or the engine's non-source layers (the install flow must stay source-agnostic).
 - Losing source provenance — flattening a `SourceDescriptor` to a bare path.
 - Entangling the well-known byte fetch/verify/extract with well-known index parsing.
 - Branching update detection on source type instead of content hash (ADR-0030).
 - Credentials or auth tokens entering the engine, SQLite control plane, revision Store, or operation records (ADR-0013 delegates auth outward).
-- Cloud concerns (accounts, sessions, catalog, ratings, signing, sync conflict policy) added to `skills_workspace` or `skills_translation` instead of `skills_cloud`. The engine gains only the seams in ADR-0105 decision 9.
+- Cloud concerns (accounts, sessions, catalog, ratings, signing, sync conflict policy) added to `skills_workspace` or `skills_translation` instead of `skills_cloud`. The engine gains only the seams in ADR-0105 decision 9 as revised (R11).
 - Cloud tokens persisted anywhere outside platform secure storage, or placed in URLs, Revision Store configuration, SQLite, Operation Records, or logs (ADR-0106, ADR-0107).
 - Remote state changing an Effective Revision or Activations without a local Workspace transaction (ADR-0105 decision 6).
-- Polling Git for change discovery or update checks (ADR-0107).
+- Polling Git or pack storage for change discovery or update checks. Devices learn of cloud changes only from Feed Checks of the Account Change Feed (ADR-0107; ADR-0105 revision, R8).
+- Client-side exactly-once bookkeeping (intent outboxes, receipt windows, caller-outcome proofs) instead of state Reconciliation (R3).
+- A pending Sync Status with neither a typed Attention Reason nor a condition that clears when connectivity returns (R10).
+- Private history or Skill Extra Data entering Channel storage, or a Release Pack holding objects unreachable from its Release commit (R2).
+- A Head Advance backed by an unverified pack (R15).
+- Cloud network I/O, cloud URLs, or credentials inside `skills_workspace` (R9, R11).
+- Cloud identifiers, Field Versions, or Sync Status in the `skills_workspace` public API (R11).
+- Cloud enabled in a Windows build before a Windows HTTP client qualifies (R17).
 
 Build cloud code only for the active phase (ADR-0105 decision 12); do not pre-build later phases.

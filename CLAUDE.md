@@ -231,12 +231,16 @@ pass. The App depends on `skilldeck_cli` for the shared protocol types
   the App. Slot Key is not managed identity.
 - Translation remains outside Skill Workspace and never mutates Skill content.
 - Keep Drift rows, SQLite handles, Git object IDs, Store generations, FFI
-  bindings, and private paths out of public API.
+  bindings, and private paths out of public API. The one exception is the
+  Cloud seams' opaque revision identifier, whose string form is a commit ID
+  and which callers never parse (ADR-0105 revision, R16).
 
-SkillDeck Cloud (Personal Sync, Teams, and the Marketplace) is accepted and
-built in phases (M6; ADR-0105, ADR-0106, ADR-0107). It runs on Cloudflare:
-Artifacts for Git, Workers for the API, D1, Durable Objects, and Better Auth.
-Its client context is `skills_cloud`.
+SkillDeck Cloud (Personal Sync, Individual Sharing, Team Distribution, and the
+Marketplace) is accepted and built in phases (M6; ADR-0105 and its 2026-11-23
+revision, ADR-0106, ADR-0107). It runs on Cloudflare: R2 for Revision Packs,
+Workers for the API, D1, and Better Auth. Its client context is
+`skills_cloud`. Phase 1 (Personal Sync) ships on macOS first; Windows builds
+keep Cloud off until a Windows HTTP client qualifies.
 
 Keep these rules:
 - keep install source-agnostic;
@@ -245,6 +249,9 @@ Keep these rules:
 - keep cloud tokens out of the engine, SQLite, the revision Store, operation
   records, URLs, and logs;
 - apply remote state only through local Workspace transactions;
+- move Skill content as Revision Packs over the Cloud HTTPS API;
+  `skills_workspace` only exports and imports pack files and does no cloud
+  network I/O;
 - build only the active phase.
 
 Public HTTPS Git Sources fetch through the networked embedded `libgit2`

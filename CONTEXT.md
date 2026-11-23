@@ -37,7 +37,7 @@ User-owned Favorite and Note data associated with one Managed Skill ID without m
 _Avoid_: Skill metadata, annotation
 
 **Personal Tag**:
-A reusable, device-local label with a stable identity and user-controlled display name, used for private Skill organization and filtering.
+A reusable label with a stable identity and user-controlled display name, used for private Skill organization and filtering. It is device-local unless Personal Sync is enabled; then it belongs to the account's Synced Tag Vocabulary (SkillDeck Cloud).
 _Avoid_: Marketplace Tag, Catalog Category, Skill metadata
 
 **Skill Tag Assignment**:
@@ -144,6 +144,10 @@ _Avoid_: Update Conflict, stale Git ref, automatic fallback
 The persistent, integrity-verified recovery artifact that covers one Source Lineage's Published Revision History without becoming revision authority or an off-device backup.
 _Avoid_: Revision Store, Operation recovery bundle, export archive
 
+**Revision Pack**:
+A standard Git pack file holding the complete closure of named published revisions of one managed Skill, written to or read from a file the caller supplies. Export reads the Revision Store; import indexes the pack into non-authoritative staging and never writes a live Revision Store. Skill Workspace never moves a Revision Pack over the network.
+_Avoid_: Revision Recovery Bundle, Git push, export archive
+
 **Control Plane Backup**:
 A transactionally consistent, integrity-verified, same-device SQLite snapshot used only to recover relational authority from database corruption.
 _Avoid_: Revision Recovery Bundle, off-device backup, Git-derived reconstruction
@@ -167,6 +171,14 @@ _Avoid_: Bare path, credential bundle, Marketplace catalog entry
 **Source Lineage**:
 The opaque internal lifetime of one Source Descriptor and its Revision Store beneath a Managed Skill ID. Ordinary Updates stay in a lineage; Source Replacement creates a new lineage and retires the former one.
 _Avoid_: Managed Skill identity, Slot Key, Git branch, public revision identity
+
+**Synced Origin Source**:
+The credential-free Source Descriptor variant that a Device records for a Skill it received through Personal Sync when the Skill's Source is a Local or Adopted Snapshot Source on another Device. It names the source type and Origin Device but no path. The Skill receives new revisions only through Personal Sync, and this Device never checks the original Source for updates.
+_Avoid_: Local Source, Adopted Snapshot Source
+
+**Cloud Release Source**:
+The credential-free Source Descriptor variant that identifies one SkillDeck Cloud Channel by service origin and Channel ID. Its Upstream Revisions are Releases, and it updates through the ordinary Update flow. It belongs to Distribution (Phase 2) and is not built yet.
+_Avoid_: Git Source, Marketplace catalog entry, Share
 
 **Source Reference**:
 An opaque Git ref string that is resolved again whenever its source is checked or fetched.
@@ -391,6 +403,10 @@ _Avoid_: First file write, Git commit creation, operation completion
 - Reusable **Personal Tags** survive Removal, but a completed Removal retains no per-Skill tombstone, summary, Source provenance, revision address, or eligible App-managed Control Plane Backup containing the removed Skill
 - Every **Destructive Intent** carries the expected **Repository Revision** that the caller presented for confirmation
 - A **Stale Destructive Intent** changes no Repository or Activation state and requires refresh plus new confirmation
+- **Revision Pack** export and import are local file operations; Skill Workspace performs no cloud network I/O and never holds cloud credentials, URLs, or identifiers
+- A **Revision Pack** import verifies every object and the completeness of the named revisions, reports exactly one of imported, malformed, or incomplete, and treats objects the Revision Store already holds as a no-op
+- Remote state from SkillDeck Cloud changes an **Effective Revision**, Skill Extra Data, a **Skill Tag Assignment**, tag vocabulary, or a Skill's existence only through one Workspace transaction guarded by the expected local **Effective Revision**
+- The stored **Source Descriptor** encoding is versioned, so variants such as **Synced Origin Source** and **Cloud Release Source** are added without losing existing provenance
 
 ## Example dialogue
 
@@ -442,3 +458,5 @@ _Avoid_: First file write, Git commit creation, operation completion
 - An undetected **Agent** may be explicitly targeted when its **Activation Location** is valid; unsupported or unresolvable locations remain blocked.
 - Discovery never searches the device for projects; only registered **Project Roots** participate in project-scoped management.
 - Skill Workspace reports coexisting global and project **Activations** but does not infer an Agent's loading precedence between them.
+- A **Revision Pack** is cloud transfer content and a **Revision Recovery Bundle** is same-device recovery evidence. Both are built from the closure of retained revisions, but neither stands in for the other.
+- A **Personal Tag** is device-local until Personal Sync is enabled. From then on, tag names and Skill Tag Assignments follow the Synced Tag Vocabulary rules of the SkillDeck Cloud context.
