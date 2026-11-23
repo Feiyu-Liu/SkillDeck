@@ -36,6 +36,16 @@ only when it has real, modeled terms of its own.
   and keeps credential values exclusively in platform secure storage.
   Translation and rendering share source-anchored Markdown block identities so
   live Drafts can replace completed blocks in place without mutating source.
+- [SkillDeck Cloud](./packages/skills_cloud/CONTEXT.md) — **draft**, pending the
+  proposed ADR-0105 revision. It owns Cloud Accounts, Devices, Teams, Cloud
+  Sessions, Personal Sync, and Distribution. Personal Sync replicates one
+  account's Cloud Library between its Devices through state Reconciliation
+  against server Lineage Heads. Distribution delivers immutable Releases
+  through Channels whose Grants name the audience: one person (Individual
+  Sharing), a Team, or the public (Marketplace). Only Personal Sync, Phase 1, is
+  buildable. The package `packages/skills_cloud/` holds only its context until
+  implementation starts.
+
 ## Relationships
 
 - **Skill Workspace → Translation:** Translation consumes one selected Markdown
@@ -50,6 +60,16 @@ only when it has real, modeled terms of its own.
   for the one front end, not a second one, and carries no caller identity.
   Destructive requests become **Approval Requests** that the user confirms in the
   App.
+- **SkillDeck Cloud → Skill Workspace:** Cloud uses only the reviewed Workspace
+  seams: push revisions, fetch into staging, the Sync apply contract, the
+  committed-change feed, and Cloud provenance Source Descriptors. Remote state
+  changes a device only through a local Workspace transaction. The Workspace
+  knows nothing of accounts, Cloud Lineages, Channels, Grants, or tokens.
+  Cloud Lineage to Managed Skill ID mappings live only in Cloud.
+- **App composition → SkillDeck Cloud:** the App composes Cloud. Cloud reaches
+  the Workspace through the same `SkillsWorkspaceRepository` decorator chain as
+  the GUI, and the App keeps Cloud Sessions in platform secure storage. Cloud stays optional. Without an account
+  or with the service unreachable, every local operation keeps working.
 
 ## Notes
 
@@ -57,13 +77,13 @@ only when it has real, modeled terms of its own.
   and LLM-facing and is therefore a separate context with a separate disposable cache.
 - The upstream TypeScript/npm `skills` CLI is a read-only compatibility reference
   for Skill Workspace source/discovery behavior, not a context in this repository.
-- **Planned:** a fourth context, **SkillDeck Cloud** (`packages/skills_cloud/`), is
+- **SkillDeck Cloud** (`packages/skills_cloud/`) is
   accepted and scheduled (PRD §6 M6, ADR-0105, ADR-0107). It replaces the earlier
-  planned Skill Marketplace context. It covers Personal Sync and Distribution: Team
-  packages and the public Marketplace.
-
-  It is **not listed under Contexts yet** because its terms are still being modeled
-  in `.scratch/skilldeck-cloud/`. Add it here when they are defined.
+  planned Skill Marketplace context. Its vocabulary is a **draft** until the
+  proposed ADR-0105 revision (2026-11-23) is accepted. That revision models
+  Individual Sharing, Team Distribution, and the Marketplace as one Distribution
+  model, and orders the phases Personal Sync, Individual Sharing, Team
+  Distribution, Marketplace.
 
   It lives **outside** Skill Workspace, consuming it through the seams in ADR-0105
   decision 9. Skill content travels over Git through the networked Internal Revision
