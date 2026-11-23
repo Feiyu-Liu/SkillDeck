@@ -33,6 +33,12 @@ The verified, server-backed bearer session of one Device. It is stored only in
 platform secure storage and sent only to the HTTPS API.
 _Avoid_: Git credential, API key, access token
 
+**Device Authorization**:
+The sign-in by which a Device obtains its Cloud Session (RFC 8628). The App
+shows a user code and opens the system browser. The person signs in on the web
+and approves that Device, and the App then receives the session.
+_Avoid_: Login form, loopback redirect, OAuth callback
+
 **Git Access Token**:
 A short-lived credential that the API mints for one operation against one
 repository, with read or write scope. It reaches the Workspace engine only
@@ -271,6 +277,13 @@ The public catalog presentation of a Channel that has the Public Grant: purpose,
 publisher, Version Labels, and Ratings.
 _Avoid_: Channel, Release, search result
 
+**Public Index**:
+The Agent Skills discovery index (`/.well-known/agent-skills/index.json`,
+schema 0.2.0) that the service publishes for Channels with the Public Grant. It
+lists each Channel's latest available Release as an archive with its digest, so
+any Agent Skills client can install it.
+_Avoid_: Listing, catalog, `marketplace.json`
+
 **Report**:
 A user's complaint about a Listing or a Release, which a Moderator reviews and
 which can lead to Withdrawal.
@@ -282,6 +295,10 @@ _Avoid_: Rating, issue, flag
 
 - A Cloud Account has zero or more Devices. A Device holds at most one Cloud
   Session per service origin.
+- A Device obtains its Cloud Session only through Device Authorization. The App
+  never collects a password, OTP, or third-party credential, opens no loopback
+  listener, and registers no custom URL scheme. While waiting for approval it
+  polls only the authorization endpoint, at the interval the service sets.
 - A Cloud Session is sent only to the HTTPS API. Git hosting sees only Git
   Access Tokens.
 - A Git Access Token authorizes one repository, one direction, and one
@@ -378,10 +395,11 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   Managed Skill ID.
 - Before creating a Release, the publisher sees the chosen revision, its file
   manifest, and the Channel's current Grants.
-- A Release commit is pushed to a Channel Repository staging ref. The API
-  accepts it only when its tree matches the Release Manifest and its parent is
-  the Channel's previous Release, if any. Release refs are protected and never
-  rewritten.
+- Only the service writes to a Channel Repository, and no Device holds a write
+  token for one. A publisher's Device pushes a candidate Release commit to
+  staging. The service accepts it only when its tree matches the Release
+  Manifest and its parent is the Channel's previous Release, if any, then writes
+  it into the Channel Repository. Release commits are never rewritten.
 - Notes, Personal Tags, Drafts, and private revision history never enter a
   Channel Repository.
 - A recipient installs a Release through the ordinary source-agnostic install
@@ -400,9 +418,14 @@ for the Device: sign-in required, Device revoked, and storage limit reached.
   becomes the latest available Release.
 - Every Team Release, Withdrawal, Grant change, and Membership change is
   attributed to its actor in the Team's audit history.
-- Only Channels with the Public Grant enter search, Listings, Ratings, Reports,
-  and moderation. A Public Grant requires signed Release Manifests. Private
-  synced content never enters search, moderation, or a Listing.
+- Only Channels with the Public Grant enter the Public Index, search, Listings,
+  Ratings, Reports, and moderation. A Public Grant requires signed Release
+  Manifests. Private synced content never enters any of them.
+- The Public Index has one entry per public Channel, for its latest available
+  Release, and a Withdrawn Release leaves it at once. An index digest proves
+  integrity, not publisher authenticity, so SkillDeck installs public Releases
+  through a Cloud Release Source, where signatures, Withdrawal, and updates
+  apply.
 - A Skill installed from a Channel can itself be synced. Its Lineage Repository
   holds the recipient's own copy, which Revocation does not delete.
 
