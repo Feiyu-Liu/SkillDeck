@@ -411,6 +411,15 @@ final class InspectCommittedChangesRequest {
   final RepositoryRevision since;
 }
 
+/// Reads the current published revision selections for the requested Skills.
+final class InspectRevisionSelectionsRequest {
+  InspectRevisionSelectionsRequest({
+    required Set<ManagedSkillId> managedSkillIds,
+  }) : managedSkillIds = Set.unmodifiable(managedSkillIds);
+
+  final Set<ManagedSkillId> managedSkillIds;
+}
+
 final class PublishedHistoryRequest {
   const PublishedHistoryRequest({
     required this.managedSkillId,

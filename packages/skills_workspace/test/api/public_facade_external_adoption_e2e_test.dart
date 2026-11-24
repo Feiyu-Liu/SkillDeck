@@ -41,6 +41,17 @@ void main() {
       );
       expect(heads.upstream, isNull);
       expect(heads.effective.value, hasLength(40));
+      final selections = await _expectSuccess(
+        repository.inspectRevisionSelections(
+          InspectRevisionSelectionsRequest(
+            managedSkillIds: adoption.affectedSkillIds,
+          ),
+        ),
+      );
+      final selection =
+          selections.selections[adoption.affectedSkillIds.single]!;
+      expect(selection.effective, heads.effective);
+      expect(selection.upstream, isNull);
       expect(await File(destination).openRead(0, 4).first, 'PACK'.codeUnits);
     },
   );

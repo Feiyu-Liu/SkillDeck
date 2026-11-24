@@ -91,6 +91,7 @@ enum WorkspaceOperationKind {
   importRevisionPack,
   applyRemoteState,
   inspectCommittedChanges,
+  inspectRevisionSelections,
 }
 
 enum OperationProgressPhase {
@@ -1203,6 +1204,25 @@ final class CommittedChangesAvailable extends CommittedChanges {
 
 final class CommittedChangesResetRequired extends CommittedChanges {
   const CommittedChangesResetRequired(super.current);
+}
+
+/// A consistent read of the selected revisions for the requested Skills.
+final class RevisionSelections {
+  RevisionSelections({
+    required this.current,
+    required Map<ManagedSkillId, RevisionSelection> selections,
+  }) : selections = Map.unmodifiable(selections);
+
+  final RepositoryRevision current;
+  final Map<ManagedSkillId, RevisionSelection> selections;
+}
+
+/// The current published revisions for a Skill's active Source Lineage.
+final class RevisionSelection {
+  const RevisionSelection({required this.effective, required this.upstream});
+
+  final RevisionId effective;
+  final RevisionId? upstream;
 }
 
 sealed class ActivationAttempt {

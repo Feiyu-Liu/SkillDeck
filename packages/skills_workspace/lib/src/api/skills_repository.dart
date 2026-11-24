@@ -166,6 +166,13 @@ abstract interface class SkillsRepository {
   SkillsOperation<CommittedChanges> inspectCommittedChanges(
     InspectCommittedChangesRequest request,
   );
+
+  /// Reads the current published revisions and cursor in one SQLite snapshot.
+  /// Missing and removed Skills are omitted.
+  SkillsOperation<RevisionSelections> inspectRevisionSelections(
+    InspectRevisionSelectionsRequest request,
+  );
+
   SkillsOperation<SkillDiff> inspectDiff(InspectDiffRequest request);
   SkillsOperation<MutationReport> restorePublish(RestorePublishRequest request);
 

@@ -86,12 +86,33 @@ Each item is a test through the public API with the existing facade fixtures.
 
 ### Progress
 
-- [ ] …
+- [x] Add the public read operation and wire it into the repository.
+- [x] Read the cursor and active revision selections in one SQLite transaction.
+- [x] Verify selection semantics through the public facade and the Synced Origin
+  rule in the Drift reader fixture.
+- [x] Record the Workspace gates.
 
 ### Decision Log
 
+- Keep the request set and result map immutable. The database reads up to 500
+  IDs per query inside the same transaction. Callers pass the entire set.
+- Share the active-lineage join and Upstream rule with Revision Pack export.
+  The new read succeeds even with the Revision Store temporarily moved aside.
+
 ### Surprises
+
+- One existing filesystem crash-recovery test hit ENOSPC in the coverage run.
+  It passed in the ordinary full suite and in an isolated coverage retry. The
+  final coverage report includes both coverage runs.
 
 ### Follow-ups
 
+- Windows and Linux validation remains pending.
+
 ### Outcome
+
+On macOS arm64 with Dart 3.14.0, lockfile resolution with
+`--enforce-lockfile --no-example`, format checking, and strict analysis passed.
+All 37 focused tests, 1,628 Workspace tests, and 2 native integration tests
+passed. One network test was skipped by default. Filtered line coverage was
+89.09% (20,717 of 23,253), above the 85% gate.

@@ -94,6 +94,13 @@ void main() {
         );
 
         expect(repository.snapshot.revision.value, before.value + 1);
+        final selections = await driftSuccess(
+          repository.inspectRevisionSelections(
+            InspectRevisionSelectionsRequest(managedSkillIds: {skillId}),
+          ),
+        );
+        expect(selections.selections[skillId]!.effective, remote.revision);
+        expect(selections.selections[skillId]!.upstream, remote.revision);
         await fixture.expectEffectiveNotes('remote revision\n');
         await fixture.expectMaterializedNotes(
           'remote revision\n',

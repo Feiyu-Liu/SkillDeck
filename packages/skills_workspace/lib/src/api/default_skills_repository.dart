@@ -434,6 +434,14 @@ final class DefaultSkillsRepository implements SkillsRepository {
   );
 
   @override
+  SkillsOperation<RevisionSelections> inspectRevisionSelections(
+    InspectRevisionSelectionsRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.inspectRevisionSelections,
+    request: request,
+  );
+
+  @override
   SkillsOperation<PublishedHistoryPage> inspectPublishedHistory(
     PublishedHistoryRequest request,
   ) => _dispatch(

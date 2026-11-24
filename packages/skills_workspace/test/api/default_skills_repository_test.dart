@@ -498,6 +498,12 @@ void main() {
           InspectCommittedChangesRequest(since: RepositoryRevision(0)),
         ),
       );
+      await route(
+        WorkspaceOperationKind.inspectRevisionSelections,
+        repository.inspectRevisionSelections(
+          InspectRevisionSelectionsRequest(managedSkillIds: {skillId}),
+        ),
+      );
 
       expect(
         dispatcher.calls.map((call) => call.$1),

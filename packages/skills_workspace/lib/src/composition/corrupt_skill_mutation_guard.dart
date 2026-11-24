@@ -155,6 +155,7 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.inspectOperationHistory ||
   WorkspaceOperationKind.inspectPublishedHistory ||
   WorkspaceOperationKind.inspectCommittedChanges ||
+  WorkspaceOperationKind.inspectRevisionSelections ||
   WorkspaceOperationKind.inspectDiff ||
   WorkspaceOperationKind.inspectSkillDrift ||
   WorkspaceOperationKind.exportSkillDriftArtifact ||

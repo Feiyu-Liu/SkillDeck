@@ -32,6 +32,27 @@ SkillsCommandHandler buildCommittedChangesCommand(
       },
     );
 
+SkillsCommandHandler buildRevisionSelectionsCommand(
+  Future<RevisionSelections> Function(Set<ManagedSkillId>) inspect,
+) =>
+    TypedSkillsCommandHandler<
+      InspectRevisionSelectionsRequest,
+      RevisionSelections
+    >(
+      kind: WorkspaceOperationKind.inspectRevisionSelections,
+      handle: (request, context) async {
+        context.reportProgress(OperationProgressPhase.inspecting);
+        if (context.cancellationToken.isCancelled) {
+          return SkillsFailure(code: SkillsErrorCode.operationCancelled);
+        }
+        final selections = await inspect(request.managedSkillIds);
+        if (context.cancellationToken.isCancelled) {
+          return SkillsFailure(code: SkillsErrorCode.operationCancelled);
+        }
+        return SkillsSuccess(value: selections);
+      },
+    );
+
 /// Builds the read-only public command slice. None of these handlers creates a
 /// Journal, changes the Repository Revision, or marks a Business Commit Point.
 List<SkillsCommandHandler> buildReadCommandHandlers({

@@ -15,6 +15,12 @@ void main() {
   late ManagedSkillId skill;
   late RevisionId local;
 
+  Future<RevisionSelection> inspectSelection() async => (await driftSuccess(
+    repository.inspectRevisionSelections(
+      InspectRevisionSelectionsRequest(managedSkillIds: {skill}),
+    ),
+  )).selections[skill]!;
+
   setUp(() async {
     fixture = await DriftFacadeFixture.create(twoActivations: true);
     repository = fixture.repository;
@@ -31,6 +37,8 @@ void main() {
   });
 
   test('publishes a clean two-parent merge using the real ancestor', () async {
+    expect((await inspectSelection()).effective, local);
+    expect(local, isNot(donor.base.effective));
     final remoteUpstream = await donor.incoming(
       files: {'remote.md': 'first\n'},
     );
@@ -54,6 +62,9 @@ void main() {
     final heads = await _export(repository, fixture, 'merged');
     expect(heads.effective, (applied as RemoteApplyMerged).newEffective);
     expect(heads.upstream, remoteUpstream.revision);
+    final selection = await inspectSelection();
+    expect(selection.effective, applied.newEffective);
+    expect(selection.upstream, remoteUpstream.revision);
     await _expectParents(fixture, heads.effective, [local, remote.revision]);
     await fixture.expectEffectiveNotes('Local notes\n');
     await fixture.expectMaterializedNotes(
@@ -202,6 +213,7 @@ void main() {
         await driftSuccess(repository.applyRemoteState(request)),
         isA<RemoteApplyConflicted>(),
       );
+      expect((await inspectSelection()).effective, local);
       await fixture.expectEffectiveNotes('Local notes\n');
       expect(
         (await _export(repository, fixture, 'conflicted')).effective,

@@ -24,7 +24,7 @@ final class ManagedSkillId {
   String toString() => 'ManagedSkillId($value)';
 }
 
-/// Opaque identifier for a published revision at the Revision Pack boundary.
+/// Opaque identifier for a published Workspace revision.
 final class RevisionId {
   /// Decodes the canonical string form of a revision identifier.
   RevisionId(this.value) {

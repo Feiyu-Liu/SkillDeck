@@ -477,6 +477,9 @@ SkillsRepository createSkillsRepository(
     inspectCommittedChanges: buildCommittedChangesCommand(
       DriftCommittedChangeFeed(database).inspect,
     ),
+    inspectRevisionSelections: buildRevisionSelectionsCommand(
+      pointers.inspectRevisionSelections,
+    ),
     history: history,
     catalogs: catalogs,
     ownershipAuditor: ownershipAuditor,

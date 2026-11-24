@@ -76,6 +76,11 @@ void main() {
           heads?.upstream?.value,
           sourceType == SyncedOriginSourceType.adoptedSnapshot ? null : _object,
         );
+        final skillId = ManagedSkillId(_skill);
+        final selections = await reader.inspectRevisionSelections({skillId});
+        final selection = selections.selections[skillId]!;
+        expect(selection.effective.value, heads!.effective.value);
+        expect(selection.upstream?.value, heads.upstream?.value);
       },
     );
   }
