@@ -173,10 +173,23 @@ Generation changes, which represent Source Replacement, are not covered by this
 contract (confirmed 2026-11-24). They are left for a later card once M4 has fixed how `skills_cloud`
 detects them.
 
-## Open questions
+## Seam 4: current revisions (T12)
 
-- **Reading the current revisions (M5 review item 3):** the only public way to
-  learn a Skill's current Effective and Upstream `RevisionId` is
-  `exportRevisionPack`. Decide when writing T08 and T09, or in M4, whether to
-  add them to the committed-change feed, add a small read, or have
-  `skills_cloud` cache them from apply and export results.
+Decided by the maintainer, 2026-11-24 (M5 review item 3, option C).
+
+- `inspectRevisionSelections(managedSkillIds)` is a read operation. It returns
+  the RepositoryRevision it read at and, for each requested Skill that exists,
+  its current Effective and Upstream `RevisionId`.
+  - A Skill that does not exist, including a removed one, is left out of the
+    result. It is not an error.
+  - Upstream is absent exactly when `exportRevisionPack` would omit it: an
+    Adopted Snapshot Source, or a Synced Origin of one.
+- Everything is read in one SQLite transaction. The revision is comparable with
+  the committed-change feed's `current`.
+- `skills_cloud` uses it:
+  - after the feed reports a `content` change;
+  - after `resetRequired`, for every linked Skill;
+  - for Skills that existed before schema v5 and have no feed row;
+  - to refresh its guard after a `staleSnapshot`.
+- It reads SQLite only and never the revision Store, so it is cheap enough to
+  call on every Reconciliation.
