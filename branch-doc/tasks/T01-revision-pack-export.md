@@ -112,6 +112,7 @@ Names are provisional. Follow package naming, but keep the shape.
 ### Follow-ups
 
 - A forced process exit during the destination copy can leave a partial file. Normal failure and cancellation clean it up.
+- Review items 1 (shared pack builder now walks ancestry for Recovery Bundles too; maintainer decision pending) and 4 (staging in the system temp directory): see `../reviews/2026-11-24-m1-m2-review.md`.
 
 ### Outcome
 

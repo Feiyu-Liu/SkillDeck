@@ -27,3 +27,4 @@ New development documents for this work go in this folder.
 | `tasks/T02-revision-pack-import.md` | Seam 2: Revision Pack import into staging | Implemented and verified locally |
 | `tasks/T03-synced-origin-source.md` | Seam 5: Synced Origin Source descriptor, schema v4 | Implemented and verified locally |
 | `tasks/T04-skills-cloud-package-and-feed-check.md` | New `skills_cloud` package and Feed Check scheduling (R8) | Implemented and verified locally |
+| `reviews/2026-11-24-m1-m2-review.md` | Review of T01–T04: six items, item 1 awaiting a maintainer decision | Open |

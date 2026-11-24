@@ -106,6 +106,7 @@ Names are provisional.
 ### Follow-ups
 
 - M5 owns applying staged objects and any cleanup associated with that apply.
+- Review item 2 (staged packs survive Skill removal; crashed imports leave `.pack-*` directories): see `../reviews/2026-11-24-m1-m2-review.md`.
 
 ### Outcome
 

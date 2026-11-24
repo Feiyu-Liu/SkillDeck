@@ -100,6 +100,7 @@ Names are provisional.
 ### Follow-ups
 
 - M5 creates the descriptor when applying state received through Personal Sync.
+- Review item 3 (label validation rejects legitimate names; a card defect): see `../reviews/2026-11-24-m1-m2-review.md`.
 
 ### Outcome
 
