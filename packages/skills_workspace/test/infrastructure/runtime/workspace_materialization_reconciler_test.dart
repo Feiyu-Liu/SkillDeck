@@ -620,6 +620,9 @@ Future<void> _insertSelection(
 }
 
 final class _TreeRevisionEngine implements RevisionEnginePort {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   _TreeRevisionEngine(this.tree);
 
   final NormalizedSkillTree tree;

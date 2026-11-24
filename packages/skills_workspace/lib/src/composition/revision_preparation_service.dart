@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../api/requests.dart';
+import '../api/result.dart';
 import '../application/drift/drift_models.dart';
 import '../application/drafts/draft_models.dart';
 import '../application/drafts/draft_ports.dart';
@@ -18,14 +20,20 @@ import '../application/update/update_models.dart';
 import '../domain/cancellation.dart';
 import '../domain/draft_snapshot.dart';
 import '../domain/identifiers.dart';
+import '../domain/public_models.dart';
+import '../domain/slot_key.dart';
 import '../infrastructure/source/frontmatter_parser.dart';
 import '../infrastructure/source/source_models.dart';
 import '../infrastructure/content/normalized_skill_tree.dart';
 import '../infrastructure/workspace_layout.dart';
 import '../native/revision_engine/revision_recovery_bundle.dart';
+import '../native/revision_worker/revision_worker_runtime.dart';
 import '../platform/filesystem/durable_workspace_filesystem.dart';
 import '../platform/operations/operation_recovery_bundle.dart';
 import 'revision_recovery_bundle_publisher.dart';
+import 'remote_revision_store.dart';
+
+part 'remote_content_preparation.dart';
 
 /// Shared Revision preparation adapter for Install, Draft, Update and Restore.
 ///
@@ -693,9 +701,16 @@ final class WorkspaceRevisionPreparationService
       }
       final snapshot = capture.valueOrNull!;
       final tree = snapshot.normalizedTree;
+      final mergeParent = await _revisions.readMergeParent(
+        store,
+        intent.candidateObjectId,
+      );
       final request = RevisionCommitRequest(
         tree: await _revisions.writeTree(store, tree),
-        parents: [intent.previousEffective, intent.incomingUpstream],
+        parents: [
+          intent.previousEffective,
+          mergeParent ?? intent.incomingUpstream,
+        ],
         kind: RevisionCommitKind.effectiveUpdate,
       );
       final commit = await _revisions.createCommit(store, request);
@@ -721,6 +736,7 @@ final class WorkspaceRevisionPreparationService
           effectiveObjectId: commit,
           publishedTreeObjectId: request.tree,
           effectiveRequest: request,
+          mergeParent: mergeParent,
           publishedTree: tree,
           declaredName: snapshot.declaredName,
           description: _description(tree),

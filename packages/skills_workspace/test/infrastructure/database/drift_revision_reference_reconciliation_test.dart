@@ -444,6 +444,9 @@ final class _ReplaceCall {
 }
 
 final class _RevisionEngine implements RevisionEnginePort {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<_ReplaceCall> calls = <_ReplaceCall>[];
 
   @override

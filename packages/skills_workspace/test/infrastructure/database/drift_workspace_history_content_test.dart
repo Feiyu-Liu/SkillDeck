@@ -203,6 +203,9 @@ void main() {
 }
 
 final class _RevisionEngine implements RevisionEnginePort {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   var diffCalls = 0;
   var readCalls = 0;
   List<RevisionChange> changes = const <RevisionChange>[

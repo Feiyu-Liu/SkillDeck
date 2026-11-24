@@ -67,8 +67,10 @@ final class RepositoryCommandComposition {
     required this.effectiveContent,
     required this.revisionPackExport,
     required this.revisionPackImport,
+    required this.remoteApply,
     required this.externalSkills,
     required this.historyPort,
+    required this.inspectCommittedChanges,
     required this.history,
     required this.catalogs,
     required this.ownershipAuditor,
@@ -113,8 +115,10 @@ final class RepositoryCommandComposition {
   final CurrentEffectiveRevisionContentPort effectiveContent;
   final SkillsCommandHandler revisionPackExport;
   final SkillsCommandHandler revisionPackImport;
+  final SkillsCommandHandler remoteApply;
   final ExternalSkillScannerFactory externalSkills;
   final WorkspaceHistoryPort historyPort;
+  final SkillsCommandHandler inspectCommittedChanges;
   final WorkspaceHistoryService history;
   final AgentCatalogController catalogs;
   final AgentRootOwnershipAuditor ownershipAuditor;
@@ -162,6 +166,8 @@ final class RepositoryCommandComposition {
     final handlers = <SkillsCommandHandler>[
       revisionPackExport,
       revisionPackImport,
+      inspectCommittedChanges,
+      remoteApply,
       ...buildDriftCommandHandlers(
         snapshots: snapshots,
         materializations: materializations,

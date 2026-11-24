@@ -224,18 +224,42 @@ final class RevisionWorkerDiffCommand extends RevisionWorkerCommand {
   final String newCommitOid;
 }
 
+final class RevisionWorkerMergeBaseCommand extends RevisionWorkerCommand {
+  const RevisionWorkerMergeBaseCommand(
+    this.repositoryPath,
+    this.leftOid,
+    this.rightOid,
+  );
+
+  final String repositoryPath;
+  final String leftOid;
+  final String rightOid;
+}
+
+final class RevisionWorkerReadMergeParentCommand extends RevisionWorkerCommand {
+  const RevisionWorkerReadMergeParentCommand(
+    this.repositoryPath,
+    this.commitOid,
+  );
+
+  final String repositoryPath;
+  final String commitOid;
+}
+
 final class RevisionWorkerMergeCommand extends RevisionWorkerCommand {
   const RevisionWorkerMergeCommand({
     required this.repositoryPath,
     required this.previousUpstreamOid,
     required this.currentEffectiveOid,
     required this.incomingUpstreamOid,
+    this.sync = false,
   });
 
   final String repositoryPath;
   final String previousUpstreamOid;
   final String currentEffectiveOid;
   final String incomingUpstreamOid;
+  final bool sync;
 }
 
 final class RevisionWorkerCreateRecoveryPackCommand

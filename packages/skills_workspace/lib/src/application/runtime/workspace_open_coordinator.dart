@@ -220,6 +220,15 @@ final class WorkspaceOpenCoordinator {
       if (failure != null) return await _finishFailedOpen(failure);
 
       try {
+        await _tracePhase(
+          WorkspacePerformancePhase.revisionPackCleanup,
+          _revisionMaintenance.sweepTemporaryRevisionPacks,
+        );
+      } on Object {
+        // Temporary pack cleanup can be retried on the next startup.
+      }
+
+      try {
         await _tracePhase<void>(
           WorkspacePerformancePhase.revisionReferenceReconciliation,
           () => _reconciler.reconcileRevisionReferences(

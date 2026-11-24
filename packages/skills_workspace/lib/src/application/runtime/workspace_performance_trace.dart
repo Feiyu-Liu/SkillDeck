@@ -11,6 +11,7 @@ enum WorkspacePerformancePhase {
   revisionWorkerStartup,
   revisionMaintenance,
   journalRecovery,
+  revisionPackCleanup,
   revisionReferenceReconciliation,
   snapshotRead,
   snapshotPublication,

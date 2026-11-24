@@ -56,9 +56,14 @@ final class RevisionStoreUpdateCandidateContent
           selected?.sourceLineage != sourceLineage) {
         return null;
       }
-      final tree = await _revisionEngine.readTree(
-        _storePath(managedSkillId),
+      final store = _storePath(managedSkillId);
+      final mergeParent = await _revisionEngine.readMergeParent(
+        store,
         candidateObjectId,
+      );
+      final tree = await _revisionEngine.readTree(
+        store,
+        mergeParent ?? candidateObjectId,
       );
       if (cancellationToken.isCancelled) return null;
       final frontmatter = _frontmatter(tree);

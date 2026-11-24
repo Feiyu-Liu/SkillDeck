@@ -583,6 +583,7 @@ final class PreparedUpdateCandidatePublish {
     required this.effectiveObjectId,
     required this.publishedTreeObjectId,
     required this.effectiveRequest,
+    this.mergeParent,
     required this.publishedTree,
     required this.declaredName,
     required this.description,
@@ -602,6 +603,7 @@ final class PreparedUpdateCandidatePublish {
   final RevisionObjectId effectiveObjectId;
   final RevisionObjectId publishedTreeObjectId;
   final RevisionCommitRequest effectiveRequest;
+  final RevisionObjectId? mergeParent;
   final NormalizedSkillTree publishedTree;
   final String declaredName;
   final String description;

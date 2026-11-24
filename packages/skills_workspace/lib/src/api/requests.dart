@@ -404,6 +404,13 @@ final class OperationHistoryRequest {
   final int limit;
 }
 
+/// Reads the Workspace changes committed after a caller's cursor.
+final class InspectCommittedChangesRequest {
+  const InspectCommittedChangesRequest({required this.since});
+
+  final RepositoryRevision since;
+}
+
 final class PublishedHistoryRequest {
   const PublishedHistoryRequest({
     required this.managedSkillId,
@@ -465,6 +472,27 @@ final class ExportRevisionPackRequest {
 
   final ManagedSkillId managedSkillId;
   final String destinationPath;
+}
+
+/// Details for applying a remote selection.
+sealed class ApplyRemoteStateRequest {
+  const ApplyRemoteStateRequest();
+}
+
+final class RemoteSkillContent extends ApplyRemoteStateRequest {
+  const RemoteSkillContent({
+    required this.managedSkillId,
+    required this.expectedEffective,
+    required this.effective,
+    required this.upstream,
+    this.packPath,
+  });
+
+  final ManagedSkillId managedSkillId;
+  final RevisionId expectedEffective;
+  final RevisionId effective;
+  final RevisionId upstream;
+  final String? packPath;
 }
 
 /// Stages the requested revisions from a caller-supplied pack file.

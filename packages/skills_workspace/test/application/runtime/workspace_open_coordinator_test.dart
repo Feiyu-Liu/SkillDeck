@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:logging/logging.dart';
 
@@ -40,6 +41,7 @@ void main() {
         'worker.start',
         'revision.enumerate',
         'journal.recover',
+        'revision.sweepPacks',
         'reconcile.references',
         'snapshot.read',
         'snapshot.publish',
@@ -74,6 +76,7 @@ void main() {
       );
       expect(harness.calls, isNot(contains('snapshot.publish')));
       expect(harness.calls, isNot(contains('gate.open')));
+      expect(harness.calls, isNot(contains('revision.sweepPacks')));
       harness.journal.block!.complete();
       final outcome = await opening as WorkspaceOpened;
       expect(outcome.snapshot.integrity.skills, hasLength(85));
@@ -85,6 +88,23 @@ void main() {
       await harness.coordinator.close();
     },
   );
+
+  test('opens when startup cannot sweep temporary packs', () async {
+    final harness = _Harness();
+    harness.revisionMaintenance.failPackSweep = true;
+    addTearDown(harness.coordinator.close);
+
+    expect(await harness.coordinator.open(), isA<WorkspaceOpened>());
+    expect(harness.coordinator.state, WorkspaceRuntimeState.open);
+    expect(
+      harness.calls,
+      containsAllInOrder([
+        'journal.recover',
+        'revision.sweepPacks',
+        'gate.open',
+      ]),
+    );
+  });
 
   test(
     'startup logs every phase and a failed phase without raw errors',
@@ -106,6 +126,7 @@ void main() {
         'revisionWorkerStartup',
         'revisionMaintenance',
         'journalRecovery',
+        'revisionPackCleanup',
         'revisionReferenceReconciliation',
         'snapshotRead',
         'snapshotPublication',
@@ -580,6 +601,13 @@ final class _FakeRevisionMaintenance
   final List<String> calls;
   final Map<ManagedSkillId, WorkspaceRevisionMaintenanceDisposition> results;
   bool failValidation = false;
+  bool failPackSweep = false;
+
+  @override
+  Future<void> sweepTemporaryRevisionPacks() async {
+    calls.add('revision.sweepPacks');
+    if (failPackSweep) throw FileSystemException('Cannot list temporary packs');
+  }
 
   @override
   Future<List<WorkspaceSelectedRevision>> selectedRevisions() async {

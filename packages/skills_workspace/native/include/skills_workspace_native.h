@@ -66,7 +66,8 @@ typedef enum skills_workspace_revision_commit_kind {
   SKILLS_WORKSPACE_REVISION_COMMIT_EFFECTIVE_UPDATE = 2,
   SKILLS_WORKSPACE_REVISION_COMMIT_LOCAL_PUBLISH = 3,
   SKILLS_WORKSPACE_REVISION_COMMIT_RESTORE_PUBLISH = 4,
-  SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE = 5
+  SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE = 5,
+  SKILLS_WORKSPACE_REVISION_COMMIT_SYNC_CANDIDATE = 6
 } skills_workspace_revision_commit_kind;
 
 // Initializes the local-only Revision Engine and disables external Git config
@@ -130,6 +131,16 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_commit_is_ancestor(
     const char *repository_path, const char *ancestor_oid_hex,
     const char *descendant_oid_hex, int32_t *is_ancestor);
 
+// An empty output represents two commits with no common ancestor.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_merge_base(
+    const char *repository_path, const char *left_oid_hex,
+    const char *right_oid_hex, char *base_oid_hex, intptr_t output_capacity);
+
+// An empty output represents a commit that does not have two parents.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_read_merge_parent(
+    const char *repository_path, const char *commit_oid_hex,
+    char *parent_oid_hex, intptr_t output_capacity);
+
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_commit_verify_root(
     const char *repository_path, const char *commit_oid_hex,
     const char *entry_name, const uint8_t *expected_bytes,
@@ -149,6 +160,13 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_merge(
     const char *repository_path, const char *previous_upstream_oid_hex,
     const char *current_effective_oid_hex,
     const char *incoming_upstream_oid_hex, char *tree_oid_hex,
+    intptr_t tree_oid_hex_capacity, uint8_t *conflict_output,
+    intptr_t conflict_output_capacity, intptr_t *required_conflict_capacity,
+    intptr_t *conflict_count);
+
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_merge_sync(
+    const char *repository_path, const char *base_oid_hex,
+    const char *local_oid_hex, const char *remote_oid_hex, char *tree_oid_hex,
     intptr_t tree_oid_hex_capacity, uint8_t *conflict_output,
     intptr_t conflict_output_capacity, intptr_t *required_conflict_capacity,
     intptr_t *conflict_count);

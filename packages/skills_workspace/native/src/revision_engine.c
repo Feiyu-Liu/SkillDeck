@@ -221,6 +221,8 @@ static const char *commit_message(int32_t kind) {
       return "skills-workspace:restore-publish";
     case SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE:
       return "skills-workspace:update-candidate";
+    case SKILLS_WORKSPACE_REVISION_COMMIT_SYNC_CANDIDATE:
+      return "skills-workspace:sync-candidate";
     default:
       return NULL;
   }
@@ -236,6 +238,7 @@ static int commit_parent_count_is_valid(int32_t kind, intptr_t parent_count) {
     case SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE:
       return parent_count == 1;
     case SKILLS_WORKSPACE_REVISION_COMMIT_EFFECTIVE_UPDATE:
+    case SKILLS_WORKSPACE_REVISION_COMMIT_SYNC_CANDIDATE:
       return parent_count == 2;
     default:
       return 0;
@@ -728,6 +731,81 @@ int32_t skills_workspace_revision_commit_is_ancestor(
   return result;
 }
 
+int32_t skills_workspace_revision_merge_base(
+    const char *repository_path, const char *left_oid_hex,
+    const char *right_oid_hex, char *base_oid_hex, intptr_t output_capacity) {
+  git_repository *repository = NULL;
+  git_commit *left = NULL;
+  git_commit *right = NULL;
+  git_oid left_oid;
+  git_oid right_oid;
+  git_oid base;
+  int error;
+  int32_t result = require_initialized();
+
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    return result;
+  }
+  if (base_oid_hex == NULL ||
+      output_capacity <= SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE ||
+      !parse_oid(&left_oid, left_oid_hex) ||
+      !parse_oid(&right_oid, right_oid_hex)) {
+    return SKILLS_WORKSPACE_REVISION_INVALID_ARGUMENT;
+  }
+  base_oid_hex[0] = '\0';
+  result = open_bare_repository(&repository, repository_path);
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    return result;
+  }
+  if (git_commit_lookup(&left, repository, &left_oid) < 0 ||
+      git_commit_lookup(&right, repository, &right_oid) < 0) {
+    result = SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+  } else {
+    error = git_merge_base(&base, repository, &left_oid, &right_oid);
+    if (error == 0) {
+      result = write_oid(base_oid_hex, output_capacity, &base);
+    } else if (error != GIT_ENOTFOUND) {
+      result = SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+    }
+  }
+  git_commit_free(right);
+  git_commit_free(left);
+  git_repository_free(repository);
+  return result;
+}
+
+int32_t skills_workspace_revision_read_merge_parent(
+    const char *repository_path, const char *commit_oid_hex,
+    char *parent_oid_hex, intptr_t output_capacity) {
+  git_repository *repository = NULL;
+  git_commit *commit = NULL;
+  git_oid oid;
+  int32_t result = require_initialized();
+
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    return result;
+  }
+  if (parent_oid_hex == NULL ||
+      output_capacity <= SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE ||
+      !parse_oid(&oid, commit_oid_hex)) {
+    return SKILLS_WORKSPACE_REVISION_INVALID_ARGUMENT;
+  }
+  parent_oid_hex[0] = '\0';
+  result = open_bare_repository(&repository, repository_path);
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    return result;
+  }
+  if (git_commit_lookup(&commit, repository, &oid) < 0) {
+    result = SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+  } else if (git_commit_parentcount(commit) == 2) {
+    result = write_oid(parent_oid_hex, output_capacity,
+                       git_commit_parent_id(commit, 1));
+  }
+  git_commit_free(commit);
+  git_repository_free(repository);
+  return result;
+}
+
 int32_t skills_workspace_revision_commit_verify_root(
     const char *repository_path, const char *commit_oid_hex,
     const char *entry_name, const uint8_t *expected_bytes,
@@ -943,13 +1021,13 @@ static int append_resolved_conflict_entry(
   return 0;
 }
 
-int32_t skills_workspace_revision_merge(
+static int32_t revision_merge(
     const char *repository_path, const char *previous_upstream_oid_hex,
     const char *current_effective_oid_hex,
     const char *incoming_upstream_oid_hex, char *tree_oid_hex,
     intptr_t tree_oid_hex_capacity, uint8_t *conflict_output,
     intptr_t conflict_output_capacity, intptr_t *required_conflict_capacity,
-    intptr_t *conflict_count) {
+    intptr_t *conflict_count, int require_upstream) {
   git_repository *repository = NULL;
   git_commit *ancestor_commit = NULL;
   git_commit *current_commit = NULL;
@@ -1004,7 +1082,8 @@ int32_t skills_workspace_revision_merge(
   if (result != SKILLS_WORKSPACE_REVISION_OK) {
     goto cleanup_merge;
   }
-  if ((!git_oid_equal(git_commit_id(current_commit),
+  if (require_upstream &&
+      ((!git_oid_equal(git_commit_id(current_commit),
                       git_commit_id(ancestor_commit)) &&
        git_graph_descendant_of(repository, git_commit_id(current_commit),
                                git_commit_id(ancestor_commit)) != 1) ||
@@ -1013,7 +1092,7 @@ int32_t skills_workspace_revision_merge(
                      git_commit_id(ancestor_commit)) ||
       git_commit_message(incoming_commit) == NULL ||
       strcmp(git_commit_message(incoming_commit),
-             commit_message(SKILLS_WORKSPACE_REVISION_COMMIT_UPSTREAM)) != 0) {
+             commit_message(SKILLS_WORKSPACE_REVISION_COMMIT_UPSTREAM)) != 0)) {
     result = SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE;
     goto cleanup_merge;
   }
@@ -1111,6 +1190,32 @@ cleanup_merge:
   git_commit_free(ancestor_commit);
   git_repository_free(repository);
   return result;
+}
+
+int32_t skills_workspace_revision_merge(
+    const char *repository_path, const char *previous_upstream_oid_hex,
+    const char *current_effective_oid_hex,
+    const char *incoming_upstream_oid_hex, char *tree_oid_hex,
+    intptr_t tree_oid_hex_capacity, uint8_t *conflict_output,
+    intptr_t conflict_output_capacity, intptr_t *required_conflict_capacity,
+    intptr_t *conflict_count) {
+  return revision_merge(
+      repository_path, previous_upstream_oid_hex, current_effective_oid_hex,
+      incoming_upstream_oid_hex, tree_oid_hex, tree_oid_hex_capacity,
+      conflict_output, conflict_output_capacity, required_conflict_capacity,
+      conflict_count, 1);
+}
+
+int32_t skills_workspace_revision_merge_sync(
+    const char *repository_path, const char *base_oid_hex,
+    const char *local_oid_hex, const char *remote_oid_hex, char *tree_oid_hex,
+    intptr_t tree_oid_hex_capacity, uint8_t *conflict_output,
+    intptr_t conflict_output_capacity, intptr_t *required_conflict_capacity,
+    intptr_t *conflict_count) {
+  return revision_merge(
+      repository_path, base_oid_hex, local_oid_hex, remote_oid_hex, tree_oid_hex,
+      tree_oid_hex_capacity, conflict_output, conflict_output_capacity,
+      required_conflict_capacity, conflict_count, 0);
 }
 
 static char *join_path(const char *parent, const char *child) {

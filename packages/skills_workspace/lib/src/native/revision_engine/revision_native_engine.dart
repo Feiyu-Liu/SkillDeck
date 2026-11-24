@@ -408,30 +408,104 @@ final class RevisionNativeEngine {
         .toList(growable: false);
   }
 
+  RevisionObjectId? mergeBase(
+    String repositoryPath,
+    RevisionObjectId left,
+    RevisionObjectId right,
+  ) {
+    _ensureOpen();
+    return using((arena) {
+      final output = arena<ffi.Char>(_oidCapacity);
+      _checkStatus(
+        bindings.skills_workspace_revision_merge_base(
+          repositoryPath.toNativeUtf8(allocator: arena).cast(),
+          left.value.toNativeUtf8(allocator: arena).cast(),
+          right.value.toNativeUtf8(allocator: arena).cast(),
+          output,
+          _oidCapacity,
+        ),
+        operation: 'mergeBase',
+      );
+      final value = output.cast<Utf8>().toDartString();
+      return value.isEmpty ? null : RevisionObjectId(value);
+    });
+  }
+
+  RevisionObjectId? readMergeParent(
+    String repositoryPath,
+    RevisionObjectId commit,
+  ) {
+    _ensureOpen();
+    return using((arena) {
+      final output = arena<ffi.Char>(_oidCapacity);
+      _checkStatus(
+        bindings.skills_workspace_revision_read_merge_parent(
+          repositoryPath.toNativeUtf8(allocator: arena).cast(),
+          commit.value.toNativeUtf8(allocator: arena).cast(),
+          output,
+          _oidCapacity,
+        ),
+        operation: 'readMergeParent',
+      );
+      final value = output.cast<Utf8>().toDartString();
+      return value.isEmpty ? null : RevisionObjectId(value);
+    });
+  }
+
   RevisionMergeResult merge({
     required String repositoryPath,
     required RevisionObjectId previousUpstream,
     required RevisionObjectId currentEffective,
     required RevisionObjectId incomingUpstream,
+  }) => _merge(
+    repositoryPath: repositoryPath,
+    base: previousUpstream,
+    local: currentEffective,
+    remote: incomingUpstream,
+    sync: false,
+  );
+
+  RevisionMergeResult mergeSync({
+    required String repositoryPath,
+    required RevisionObjectId base,
+    required RevisionObjectId local,
+    required RevisionObjectId remote,
+  }) => _merge(
+    repositoryPath: repositoryPath,
+    base: base,
+    local: local,
+    remote: remote,
+    sync: true,
+  );
+
+  RevisionMergeResult _merge({
+    required String repositoryPath,
+    required RevisionObjectId base,
+    required RevisionObjectId local,
+    required RevisionObjectId remote,
+    required bool sync,
   }) {
     _ensureOpen();
+    final merge = sync
+        ? bindings.skills_workspace_revision_merge_sync
+        : bindings.skills_workspace_revision_merge;
     return using((arena) {
       final repository = repositoryPath
           .toNativeUtf8(allocator: arena)
           .cast<ffi.Char>();
-      final previous = previousUpstream.value
+      final previous = base.value
           .toNativeUtf8(allocator: arena)
           .cast<ffi.Char>();
-      final current = currentEffective.value
+      final current = local.value
           .toNativeUtf8(allocator: arena)
           .cast<ffi.Char>();
-      final incoming = incomingUpstream.value
+      final incoming = remote.value
           .toNativeUtf8(allocator: arena)
           .cast<ffi.Char>();
       final treeOutput = arena<ffi.Char>(_oidCapacity);
       final required = arena<ffi.IntPtr>();
       final count = arena<ffi.IntPtr>();
-      final initialStatus = bindings.skills_workspace_revision_merge(
+      final initialStatus = merge(
         repository,
         previous,
         current,
@@ -461,7 +535,7 @@ final class RevisionNativeEngine {
       }
       final conflicts = arena<ffi.Uint8>(required.value);
       _checkStatus(
-        bindings.skills_workspace_revision_merge(
+        merge(
           repository,
           previous,
           current,

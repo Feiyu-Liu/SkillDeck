@@ -5,6 +5,8 @@ import 'package:skills_workspace/src/application/operations/operation_models.dar
 import 'package:skills_workspace/src/application/operations/workspace_business_changes.dart';
 import 'package:skills_workspace/src/application/runtime/revision_engine_port.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
+import 'package:skills_workspace/src/domain/public_models.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_committed_change_feed.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
 import 'package:skills_workspace/src/infrastructure/database/operation_plan_codec.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
@@ -335,6 +337,57 @@ void main() {
       );
     },
   );
+
+  test('feed stamps roll back with a late commit failure', () async {
+    final plan = _fullProjectionPlan();
+    await controlPlane.persistPrepared(plan);
+    await controlPlane.markApplying(plan.operationId);
+    await database.customStatement("""
+      CREATE TRIGGER fail_business_commit
+      BEFORE UPDATE OF phase ON operation_journals
+      WHEN NEW.phase = 'committed'
+      BEGIN SELECT RAISE(ABORT, 'fixture'); END
+    """);
+
+    await expectLater(
+      controlPlane.commitBusinessState(plan),
+      throwsA(anything),
+    );
+
+    final feed = await DriftCommittedChangeFeed(
+      database,
+    ).inspect(RepositoryRevision(0));
+    expect(feed.current, RepositoryRevision(0));
+    expect(
+      feed,
+      isA<CommittedChangesAvailable>()
+          .having((value) => value.entries, 'entries', isEmpty)
+          .having(
+            (value) => value.vocabularyChanged,
+            'vocabularyChanged',
+            isFalse,
+          ),
+    );
+    expect(await database.committedChangeStamps.select().get(), isEmpty);
+    expect(await database.managedSkills.select().get(), isEmpty);
+  });
+
+  test('cursor beyond a restored control plane reports reset', () async {
+    final beforeCommit = File('${temporaryDirectory.path}/before.sqlite');
+    await database.vacuumInto(beforeCommit.path);
+    final plan = _installPlan();
+    await controlPlane.persistPrepared(plan);
+    await controlPlane.markApplying(plan.operationId);
+    await controlPlane.commitBusinessState(plan);
+    final cursor = await controlPlane.readRepositoryRevision();
+    expect(cursor, RepositoryRevision(1));
+
+    await database.close();
+    database = WorkspaceDatabase.forFile(beforeCommit);
+    final feed = await DriftCommittedChangeFeed(database).inspect(cursor);
+    expect(feed, isA<CommittedChangesResetRequired>());
+    expect(feed.current, RepositoryRevision(0));
+  });
 
   test('selection mismatch rolls back every BCP mutation', () async {
     await _seedSkillGraph(database, skillId: _skillA, lineageId: _lineageA);

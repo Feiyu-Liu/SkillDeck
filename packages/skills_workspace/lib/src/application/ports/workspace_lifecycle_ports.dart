@@ -59,6 +59,9 @@ abstract interface class WorkspaceRevisionMaintenancePort {
   Future<WorkspaceRevisionMaintenanceResult> validateOrRecover(
     WorkspaceSelectedRevision selectedRevision,
   );
+
+  /// Removes abandoned pack work directories after startup journal recovery.
+  Future<void> sweepTemporaryRevisionPacks();
 }
 
 /// Recovers the durable Journal while the caller owns the Writer Lock.

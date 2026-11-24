@@ -451,14 +451,53 @@ final class RevisionWorker
     required RevisionObjectId previousUpstream,
     required RevisionObjectId currentEffective,
     required RevisionObjectId incomingUpstream,
-  }) {
+  }) => _merge(
+    RevisionWorkerMergeCommand(
+      repositoryPath: repositoryPath,
+      previousUpstreamOid: previousUpstream.value,
+      currentEffectiveOid: currentEffective.value,
+      incomingUpstreamOid: incomingUpstream.value,
+    ),
+  );
+
+  @override
+  Future<RevisionObjectId?> mergeBase(
+    String repositoryPath,
+    RevisionObjectId left,
+    RevisionObjectId right,
+  ) => _send(
+    RevisionWorkerMergeBaseCommand(repositoryPath, left.value, right.value),
+    _decodeNullableObjectId,
+  );
+
+  @override
+  Future<RevisionObjectId?> readMergeParent(
+    String repositoryPath,
+    RevisionObjectId commit,
+  ) => _send(
+    RevisionWorkerReadMergeParentCommand(repositoryPath, commit.value),
+    _decodeNullableObjectId,
+  );
+
+  @override
+  Future<RevisionMergeResult> mergeSync({
+    required String repositoryPath,
+    required RevisionObjectId base,
+    required RevisionObjectId local,
+    required RevisionObjectId remote,
+  }) => _merge(
+    RevisionWorkerMergeCommand(
+      repositoryPath: repositoryPath,
+      previousUpstreamOid: base.value,
+      currentEffectiveOid: local.value,
+      incomingUpstreamOid: remote.value,
+      sync: true,
+    ),
+  );
+
+  Future<RevisionMergeResult> _merge(RevisionWorkerMergeCommand command) {
     return _send<RevisionMergeResult>(
-      RevisionWorkerMergeCommand(
-        repositoryPath: repositoryPath,
-        previousUpstreamOid: previousUpstream.value,
-        currentEffectiveOid: currentEffective.value,
-        incomingUpstreamOid: incomingUpstream.value,
-      ),
+      command,
       (payload) => switch (payload) {
         RevisionWorkerMergeCleanPayload(:final treeOid) => RevisionMergeClean(
           RevisionObjectId(treeOid),
@@ -846,6 +885,14 @@ void _decodeVoid(Object? payload) {
     );
   }
 }
+
+RevisionObjectId? _decodeNullableObjectId(Object? payload) => switch (payload) {
+  null => null,
+  final String value => RevisionObjectId(value),
+  _ => throw const RevisionWorkerException(
+    RevisionWorkerFailureCode.invalidResponse,
+  ),
+};
 
 SkillContentResult<NormalizedSkillTree> _decodeSkillContentResult(
   Object? payload,

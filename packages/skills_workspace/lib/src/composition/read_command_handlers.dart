@@ -11,7 +11,26 @@ import '../application/operations/operation_models.dart';
 import '../application/runtime/workspace_snapshot_publisher.dart';
 import '../application/source/source_acquisition_coordinator.dart';
 import '../application/source/source_acquisition_models.dart';
+import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
+
+SkillsCommandHandler buildCommittedChangesCommand(
+  Future<CommittedChanges> Function(RepositoryRevision) inspect,
+) =>
+    TypedSkillsCommandHandler<InspectCommittedChangesRequest, CommittedChanges>(
+      kind: WorkspaceOperationKind.inspectCommittedChanges,
+      handle: (request, context) async {
+        context.reportProgress(OperationProgressPhase.inspecting);
+        if (context.cancellationToken.isCancelled) {
+          return SkillsFailure(code: SkillsErrorCode.operationCancelled);
+        }
+        final changes = await inspect(request.since);
+        if (context.cancellationToken.isCancelled) {
+          return SkillsFailure(code: SkillsErrorCode.operationCancelled);
+        }
+        return SkillsSuccess(value: changes);
+      },
+    );
 
 /// Builds the read-only public command slice. None of these handlers creates a
 /// Journal, changes the Repository Revision, or marks a Business Commit Point.

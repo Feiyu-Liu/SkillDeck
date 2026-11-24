@@ -216,6 +216,34 @@ final class RevisionWorkerRuntime
   );
 
   @override
+  Future<RevisionObjectId?> mergeBase(
+    String repositoryPath,
+    RevisionObjectId left,
+    RevisionObjectId right,
+  ) => _delegate((worker) => worker.mergeBase(repositoryPath, left, right));
+
+  @override
+  Future<RevisionObjectId?> readMergeParent(
+    String repositoryPath,
+    RevisionObjectId commit,
+  ) => _delegate((worker) => worker.readMergeParent(repositoryPath, commit));
+
+  @override
+  Future<RevisionMergeResult> mergeSync({
+    required String repositoryPath,
+    required RevisionObjectId base,
+    required RevisionObjectId local,
+    required RevisionObjectId remote,
+  }) => _delegate(
+    (worker) => worker.mergeSync(
+      repositoryPath: repositoryPath,
+      base: base,
+      local: local,
+      remote: remote,
+    ),
+  );
+
+  @override
   Future<void> createRecoveryPack({
     required String repositoryPath,
     required String bundleStagingPath,

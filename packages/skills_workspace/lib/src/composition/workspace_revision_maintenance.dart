@@ -59,22 +59,29 @@ final class DriftWorkspaceRevisionMaintenance
   final RevisionRecoveryBundleCodec _bundleCodec;
 
   @override
-  Future<List<WorkspaceSelectedRevision>> selectedRevisions() async {
-    // Startup holds the Workspace owner lock and has yet to admit operations.
+  Future<void> sweepTemporaryRevisionPacks() async {
     final stores = Directory(_layout.revisionStoresRoot);
-    if (await stores.exists()) {
-      await for (final entry in stores.list(followLinks: false)) {
-        if (entry is Directory &&
-            path
-                .basename(entry.path)
-                .startsWith(WorkspaceLayout.revisionPackTemporaryPrefix)) {
-          await _filesystem.removeOwnedPath(
-            targetPath: entry.path,
-            ownerRoot: stores.path,
-          );
-        }
+    if (!await stores.exists()) return;
+    await for (final entry in stores.list(followLinks: false)) {
+      if (entry is! Directory ||
+          !path
+              .basename(entry.path)
+              .startsWith(WorkspaceLayout.revisionPackTemporaryPrefix)) {
+        continue;
+      }
+      try {
+        await _filesystem.removeOwnedPath(
+          targetPath: entry.path,
+          ownerRoot: stores.path,
+        );
+      } on FileSystemException {
+        // Retry this directory next startup and keep sweeping the others.
       }
     }
+  }
+
+  @override
+  Future<List<WorkspaceSelectedRevision>> selectedRevisions() async {
     final selections = _database.currentRevisionSelection;
     final lineages = _database.sourceLineages;
     final query = _database

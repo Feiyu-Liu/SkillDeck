@@ -75,7 +75,7 @@ void main() {
     reopened.close();
   });
 
-  test('committed schema v4 matches the current Drift declaration', () async {
+  test('committed schema v5 matches the current Drift declaration', () async {
     final verifier = SchemaVerifier(GeneratedHelper());
     final schema = await verifier.schemaAt(workspaceDatabaseSchemaVersion);
     final database = WorkspaceDatabase.forTesting(schema.newConnection());
@@ -196,10 +196,47 @@ void main() {
       await database.select(database.skillUpdateCheckRecords).get(),
       isEmpty,
     );
+    expect(await database.committedChangeStamps.select().get(), isEmpty);
 
     await database.close();
     schema.close();
   });
+
+  test(
+    'v4 migration preserves the cursor and data and starts the feed empty',
+    () async {
+      final verifier = SchemaVerifier(GeneratedHelper());
+      final schema = await verifier.schemaAt(4);
+      addTearDown(schema.close);
+      final raw = schema.rawDatabase;
+      raw
+        ..execute('INSERT INTO workspace_metadata VALUES (1, 7, 0, 0, 0)')
+        ..execute(
+          "INSERT INTO personal_tags VALUES "
+          "('123e4567-e89b-42d3-a456-426614174000', 'name', 'Name', NULL, 0, 0)",
+        );
+      final before = raw
+          .select('SELECT * FROM personal_tags')
+          .map(Map.of)
+          .toList();
+      final database = WorkspaceDatabase.forTesting(schema.newConnection());
+      addTearDown(database.close);
+
+      await verifier.migrateAndValidate(database, 5);
+
+      expect(await database.committedChangeStamps.select().get(), isEmpty);
+      expect(
+        (await database.workspaceMetadata.select().getSingle())
+            .repositoryRevision,
+        7,
+      );
+      expect(
+        raw.select('SELECT * FROM personal_tags').map(Map.of).toList(),
+        before,
+      );
+      expect(raw.select('PRAGMA foreign_key_check'), isEmpty);
+    },
+  );
 
   test(
     'a failed upgrade rolls back the entire migration transaction',

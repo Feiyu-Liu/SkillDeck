@@ -25,6 +25,9 @@ SKILLS_WORKSPACE_1.0 {
     skills_workspace_revision_commit_verify_root;
     skills_workspace_revision_diff;
     skills_workspace_revision_merge;
+    skills_workspace_revision_merge_base;
+    skills_workspace_revision_read_merge_parent;
+    skills_workspace_revision_merge_sync;
     skills_workspace_revision_recovery_pack_create;
     skills_workspace_revision_export_pack_create;
     skills_workspace_revision_recovery_pack_restore;

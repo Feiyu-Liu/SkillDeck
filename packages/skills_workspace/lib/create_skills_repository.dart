@@ -41,9 +41,11 @@ import 'src/composition/destructive_recovery_maintenance.dart';
 import 'src/composition/materialization_inspection_worker_pool.dart';
 import 'src/composition/operation_recovery_backup_maintenance.dart';
 import 'src/composition/operation_revision_reference_maintenance.dart';
+import 'src/composition/read_command_handlers.dart';
 import 'src/composition/repository_command_composition.dart';
 import 'src/composition/revision_pack_export_command.dart';
 import 'src/composition/revision_pack_import_command.dart';
+import 'src/composition/remote_content_command.dart';
 import 'src/composition/revision_operation_plans.dart';
 import 'src/composition/revision_preparation_service.dart';
 import 'src/composition/revision_worker_task_executor.dart';
@@ -61,6 +63,7 @@ import 'src/infrastructure/agents/file_system_agent_detection.dart';
 import 'src/infrastructure/agents/platform_agent_root_ownership_inspection.dart';
 import 'src/infrastructure/content/file_system_published_artifact_inspector.dart';
 import 'src/infrastructure/database/drift_activation_metadata_reader.dart';
+import 'src/infrastructure/database/drift_committed_change_feed.dart';
 import 'src/infrastructure/database/drift_destructive_planning_state.dart';
 import 'src/infrastructure/database/drift_draft_update_state.dart';
 import 'src/infrastructure/database/drift_operation_control_plane.dart';
@@ -459,8 +462,21 @@ SkillsRepository createSkillsRepository(
       layout: layout,
       stagePack: revisionRuntime.stageRevisionPack,
     ),
+    remoteApply: buildRemoteContentCommand(
+      snapshots: snapshots,
+      operations: operations,
+      states: draftUpdateState,
+      slotMigrations: slotMigrations,
+      preparation: revisionPreparation,
+      plans: revisionOperationPlans,
+      runtime: revisionRuntime,
+      access: revisionAccessGate,
+    ),
     externalSkills: externalSkills,
     historyPort: WorkspaceHistoryReader(database),
+    inspectCommittedChanges: buildCommittedChangesCommand(
+      DriftCommittedChangeFeed(database).inspect,
+    ),
     history: history,
     catalogs: catalogs,
     ownershipAuditor: ownershipAuditor,

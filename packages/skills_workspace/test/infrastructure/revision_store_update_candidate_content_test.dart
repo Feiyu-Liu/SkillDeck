@@ -109,6 +109,12 @@ description: Incoming description
   }
 
   @override
+  Future<RevisionObjectId?> readMergeParent(
+    String repositoryPath,
+    RevisionObjectId commit,
+  ) async => null;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

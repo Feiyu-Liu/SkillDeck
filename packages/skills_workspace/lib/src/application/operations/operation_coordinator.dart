@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../domain/cancellation.dart';
 import '../../domain/identifiers.dart';
 import '../../domain/lock_wait_policy.dart';
+import '../../domain/public_models.dart';
 import '../ports/operation_ports.dart';
 import 'operation_models.dart';
 
@@ -228,9 +229,13 @@ final class OperationCoordinator {
           );
         }
         await _controlPlane.sealPreparedPlan(envelope, plan);
-        await _referenceMaintenance.reconcileRevisionReferences(
-          selectedSkillIds: _referenceSkillIds(plan),
-        );
+        // A remote apply publishes Git objects during its journaled applying
+        // phase. Reconcile their retention refs after that phase has committed.
+        if (plan.record.kind != WorkspaceOperationKind.applyRemoteState.name) {
+          await _referenceMaintenance.reconcileRevisionReferences(
+            selectedSkillIds: _referenceSkillIds(plan),
+          );
+        }
       } on _CancellationBeforeCommit {
         return await _rollbackPreparedEnvelope(
           envelope,
@@ -368,6 +373,9 @@ final class OperationCoordinator {
     try {
       await _recovery.rollback(plan, observedPhase: observedPhase);
       await _controlPlane.completeRollback(plan, reason);
+      if (plan.record.kind == WorkspaceOperationKind.applyRemoteState.name) {
+        await _controlPlane.deleteCompletedJournal(plan.operationId);
+      }
       await _referenceMaintenance.reconcileRevisionReferences(
         selectedSkillIds: _referenceSkillIds(plan),
       );
@@ -396,9 +404,14 @@ final class OperationCoordinator {
         observedPhase: OperationJournalPhase.prepared,
       );
       await _controlPlane.completePreparedEnvelopeRollback(envelope, reason);
-      await _referenceMaintenance.reconcileRevisionReferences(
-        selectedSkillIds: _referenceSkillIds(envelope),
-      );
+      if (envelope.record.kind ==
+          WorkspaceOperationKind.applyRemoteState.name) {
+        await _controlPlane.deleteCompletedJournal(envelope.operationId);
+      } else {
+        await _referenceMaintenance.reconcileRevisionReferences(
+          selectedSkillIds: _referenceSkillIds(envelope),
+        );
+      }
       return OperationRolledBack(
         operationId: envelope.operationId,
         reason: reason,

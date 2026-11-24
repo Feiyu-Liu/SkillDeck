@@ -426,6 +426,14 @@ final class DefaultSkillsRepository implements SkillsRepository {
   );
 
   @override
+  SkillsOperation<CommittedChanges> inspectCommittedChanges(
+    InspectCommittedChangesRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.inspectCommittedChanges,
+    request: request,
+  );
+
+  @override
   SkillsOperation<PublishedHistoryPage> inspectPublishedHistory(
     PublishedHistoryRequest request,
   ) => _dispatch(
@@ -463,6 +471,14 @@ final class DefaultSkillsRepository implements SkillsRepository {
     ExportRevisionPackRequest request,
   ) => _dispatch(
     kind: WorkspaceOperationKind.exportRevisionPack,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<RemoteApplyResult> applyRemoteState(
+    ApplyRemoteStateRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.applyRemoteState,
     request: request,
   );
 

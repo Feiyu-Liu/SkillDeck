@@ -24,6 +24,8 @@ import '../domain/public_models.dart';
 import '../infrastructure/workspace_layout.dart';
 import '../platform/operations/operation_recovery_bundle.dart';
 
+import 'remote_revision_store.dart';
+
 /// Binds revision-backed mutations to one recoverable filesystem transaction.
 ///
 /// Candidate creation remains in [WorkspaceRevisionPreparationService]. This
@@ -337,6 +339,77 @@ final class WorkspaceRevisionOperationPlans
     _requireSealed(envelope, operation);
     recovery.register();
     return operation;
+  }
+
+  PreparedOperationEnvelope createRemoteContentEnvelope({
+    required OperationId operationId,
+    required RepositoryRevision expectedRepositoryRevision,
+    required ManagedSkillId managedSkillId,
+  }) => _revisionEnvelope(
+    operationId: operationId,
+    expectedRepositoryRevision: expectedRepositoryRevision,
+    kind: WorkspaceOperationKind.applyRemoteState,
+    managedSkillIds: [managedSkillId],
+  );
+
+  OperationPlan sealRemoteContentPlan({
+    required PreparedOperationEnvelope envelope,
+    required ManagedSkill skill,
+    required PreparedUpdatePlan preparedPlan,
+    required List<RemoteStoreAddition> objectAdditions,
+    required List<String> usedPackStaging,
+    OperationRecoveryPreCaptureVerifier? verifyDraft,
+  }) {
+    final operationId = envelope.operationId;
+    final id = skill.id;
+    final builder = _RecoveryPlanBuilder(
+      envelope: envelope,
+      registry: _recoverySpecs,
+    );
+    for (final addition in objectAdditions) {
+      builder.addRevisionObjects(addition);
+    }
+    _addExistingLineageBundle(builder, operationId, id);
+    _addUpdateMaterializations(
+      builder,
+      operationId,
+      preparedPlan.materializationIntents,
+      verifyDraft: verifyDraft,
+    );
+    for (final staging in usedPackStaging) {
+      builder.addAbsent(targetPath: staging);
+    }
+    final recovery = builder.finish();
+    final selection = preparedPlan.revisionSelectionChanges.firstOrNull;
+    final plan = _assembler.assemble(
+      operationId: operationId,
+      expectedRepositoryRevision: envelope.expectedRepositoryRevision,
+      kind: WorkspaceOperationKind.applyRemoteState,
+      businessChanges: preparedPlan.businessChanges,
+      recoverySteps: recovery.steps,
+      revisionSelectionChanges: preparedPlan.revisionSelectionChanges,
+      subjects: [
+        OperationSubjectIntent(
+          managedSkillId: id,
+          displayName: skill.displayName,
+          sourceLineage: preparedPlan.recoveryIntent.sourceLineage,
+          beforeObjectId: selection?.previousEffective?.objectId,
+          afterObjectId: selection?.intendedEffective?.objectId,
+          beforeContentHash: selection == null
+              ? null
+              : skill.currentRevision.contentHash,
+          afterContentHash: selection?.intendedEffective == null
+              ? null
+              : _revisionHash(
+                  preparedPlan.businessChanges,
+                  selection!.intendedEffective!.objectId,
+                ),
+        ),
+      ],
+    );
+    _requireSealed(envelope, plan);
+    recovery.register();
+    return plan;
   }
 
   @override
@@ -955,8 +1028,9 @@ final class WorkspaceRevisionOperationPlans
   void _addUpdateMaterializations(
     _RecoveryPlanBuilder builder,
     OperationId operationId,
-    List<UpdateMaterializationIntent> intents,
-  ) {
+    List<UpdateMaterializationIntent> intents, {
+    OperationRecoveryPreCaptureVerifier? verifyDraft,
+  }) {
     for (final intent in intents) {
       final source = _candidateMaterializationPath(
         operationId,
@@ -998,6 +1072,7 @@ final class WorkspaceRevisionOperationPlans
             targetPath: _layout.draftPath(intent.managedSkillId),
             intendedSourcePath: source,
             makeReadOnly: false,
+            verifyBeforeCapture: verifyDraft,
           );
       }
     }
@@ -1207,6 +1282,16 @@ final class _RecoveryPlanBuilder {
     requirePlainDirectory: requirePlainDirectory,
     verifyBeforeCapture: verifyBeforeCapture,
     requiresInertBeforeImage: requiresInertBeforeImage,
+  );
+
+  void addRevisionObjects(RemoteStoreAddition addition) => _addEntry(
+    targetPath: addition.target,
+    intendedSourcePath: addition.source,
+    intendedKind: addition.isDirectory
+        ? OperationRecoveryEntryKind.directory
+        : OperationRecoveryEntryKind.file,
+    makeReadOnly: false,
+    requirePlainDirectory: true,
   );
 
   void addSymbolicLink({

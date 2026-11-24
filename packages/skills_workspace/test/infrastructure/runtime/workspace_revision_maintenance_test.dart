@@ -11,7 +11,12 @@ import 'package:skills_workspace/src/composition/workspace_revision_maintenance.
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
 import 'package:skills_workspace/src/native/revision_engine/revision_recovery_bundle.dart';
 import 'package:skills_workspace/src/platform/filesystem/durable_workspace_filesystem.dart';
+import 'package:skills_workspace/src/platform/filesystem/filesystem_primitives.dart';
+import 'package:skills_workspace/src/platform/filesystem/posix_filesystem_primitives.dart';
+import 'package:skills_workspace/src/platform/filesystem/windows_filesystem_primitives.dart';
 import 'package:test/test.dart';
+
+import '../../support/filesystem/fault_injecting_filesystem_primitives.dart';
 
 const _skill = '123e4567-e89b-42d3-a456-426614174000';
 const _lineage = '123e4567-e89b-42d3-a456-426614174001';
@@ -60,32 +65,73 @@ void main() {
     expect(selected.currentEffective, RevisionObjectId(_effective));
   });
 
-  test('sweeps temporary packs and keeps Stores and staged packs', () async {
-    final stores = Directory(layout.revisionStoresRoot);
-    await stores.create();
-    final residue = await stores.createTemp(
-      WorkspaceLayout.revisionPackTemporaryPrefix,
-    );
-    final id = ManagedSkillId(_skill);
-    final store = Directory(layout.revisionStorePath(id));
-    final staged = Directory(layout.revisionPackStagingPath(id));
-    for (final directory in [residue, store, staged]) {
-      await directory.create();
-      await File(
-        path.join(directory.path, 'objects.pack'),
-      ).writeAsString('pack');
-    }
-
-    await maintenance.selectedRevisions();
-
-    expect(await residue.exists(), isFalse);
-    for (final directory in [store, staged]) {
-      expect(
-        await File(path.join(directory.path, 'objects.pack')).readAsString(),
-        'pack',
+  test(
+    'sweeps removable temporary packs and keeps Stores and staged packs',
+    () async {
+      final stores = Directory(layout.revisionStoresRoot);
+      await stores.create();
+      final residue = await stores.createTemp(
+        WorkspaceLayout.revisionPackTemporaryPrefix,
       );
-    }
-  });
+      final otherResidue = await stores.createTemp(
+        WorkspaceLayout.revisionPackTemporaryPrefix,
+      );
+      final id = ManagedSkillId(_skill);
+      final store = Directory(layout.revisionStorePath(id));
+      final staged = Directory(layout.revisionPackStagingPath(id));
+      for (final directory in [residue, otherResidue, store, staged]) {
+        await directory.create();
+        await File(
+          path.join(directory.path, 'objects.pack'),
+        ).writeAsString('pack');
+      }
+
+      expect(await maintenance.selectedRevisions(), hasLength(1));
+      expect(await residue.exists(), isTrue);
+      expect(await otherResidue.exists(), isTrue);
+
+      String? failedDirectory;
+      final faultingMaintenance = DriftWorkspaceRevisionMaintenance(
+        database: database,
+        layout: layout,
+        revisionEngine: revisionEngine,
+        filesystem: PlatformDurableWorkspaceFilesystem.withPrimitives(
+          primitives: FaultInjectingFilesystemPrimitives(
+            delegate: Platform.isWindows
+                ? const WindowsFilesystemPrimitives()
+                : const PosixFilesystemPrimitives(),
+            beforeOperation: (operation, target) {
+              if (operation == DurableFilesystemOperation.inspectPath &&
+                  failedDirectory == null &&
+                  (path.equals(target, residue.path) ||
+                      path.equals(target, otherResidue.path))) {
+                failedDirectory = target;
+                throw FileSystemException('Permission denied', target);
+              }
+            },
+          ),
+        ),
+      );
+      await faultingMaintenance.sweepTemporaryRevisionPacks();
+
+      expect(failedDirectory, isNotNull);
+      for (final directory in [residue, otherResidue]) {
+        expect(
+          await directory.exists(),
+          path.equals(directory.path, failedDirectory!),
+        );
+      }
+      for (final directory in [store, staged, Directory(failedDirectory!)]) {
+        expect(
+          await File(path.join(directory.path, 'objects.pack')).readAsString(),
+          'pack',
+        );
+      }
+
+      await faultingMaintenance.sweepTemporaryRevisionPacks();
+      expect(await Directory(failedDirectory!).exists(), isFalse);
+    },
+  );
 
   test('reports a readable selected Store as healthy', () async {
     final selected =
@@ -325,6 +371,9 @@ String _bundlePath(WorkspaceLayout layout) =>
     layout.revisionBundlePath(ManagedSkillId(_skill));
 
 final class _MarkerRevisionEngine implements RevisionEnginePort {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<String> restoredPaths = <String>[];
   final List<String> verifiedPaths = <String>[];
   final List<RevisionObjectId> readCommits = <RevisionObjectId>[];

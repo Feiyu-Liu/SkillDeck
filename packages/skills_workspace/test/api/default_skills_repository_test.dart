@@ -481,6 +481,24 @@ void main() {
         ),
       );
 
+      await route(
+        WorkspaceOperationKind.applyRemoteState,
+        repository.applyRemoteState(
+          RemoteSkillContent(
+            managedSkillId: skillId,
+            expectedEffective: RevisionId('a' * 40),
+            effective: RevisionId('b' * 40),
+            upstream: RevisionId('c' * 40),
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.inspectCommittedChanges,
+        repository.inspectCommittedChanges(
+          InspectCommittedChangesRequest(since: RepositoryRevision(0)),
+        ),
+      );
+
       expect(
         dispatcher.calls.map((call) => call.$1),
         WorkspaceOperationKind.values.where(

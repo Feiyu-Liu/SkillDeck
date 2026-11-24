@@ -11,7 +11,7 @@ Future<void> main() async {
         'schema',
         'dump',
         'lib/src/infrastructure/database/workspace_database.dart',
-        'drift_schemas/drift_schema_v4.json',
+        'drift_schemas/drift_schema_v5.json',
       ],
     ),
     (

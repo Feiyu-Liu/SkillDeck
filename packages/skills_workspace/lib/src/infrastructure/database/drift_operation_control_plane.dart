@@ -4,6 +4,8 @@ import '../../application/operations/operation_models.dart';
 import '../../application/operations/workspace_business_changes.dart';
 import '../../application/ports/operation_ports.dart';
 import '../../domain/identifiers.dart';
+import '../../domain/public_models.dart';
+import 'drift_committed_change_feed.dart';
 import 'operation_plan_codec.dart';
 import 'workspace_database.dart';
 
@@ -214,11 +216,15 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
           await _requirePreviousSelection(change);
         }
 
+        final changeFeed = DriftCommittedChangeFeed(_database);
+        final committedRevision = plan.committedRepositoryRevision;
         for (final mutation in plan.businessChanges.mutations) {
+          await changeFeed.recordMutation(mutation, committedRevision);
           await _applyBusinessMutation(mutation);
         }
         for (final change in plan.revisionSelectionChanges) {
           await _applyIntendedSelection(change);
+          await changeFeed.recordSelection(change, committedRevision);
         }
 
         final metadata = await _database
@@ -891,6 +897,11 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
     required OperationJournal journal,
     required String status,
   }) async {
+    if (status != 'succeeded' &&
+        definition.record.kind ==
+            WorkspaceOperationKind.applyRemoteState.name) {
+      return;
+    }
     final survivingSubjects = <OperationSubjectPlan>[];
     for (final subject in definition.record.subjects) {
       final skill =

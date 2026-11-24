@@ -9,7 +9,7 @@ import 'workspace_database_open_retry.dart';
 
 part 'workspace_database.g.dart';
 
-const int workspaceDatabaseSchemaVersion = 4;
+const int workspaceDatabaseSchemaVersion = 5;
 const int minimumSupportedWorkspaceDatabaseSchemaVersion = 2;
 const int currentSourcePayloadSchemaVersion = 1;
 
@@ -31,6 +31,18 @@ class WorkspaceMetadata extends Table {
     'CHECK (created_at_micros >= 0)',
     'CHECK (updated_at_micros >= created_at_micros)',
   ];
+}
+
+class CommittedChangeStamps extends Table {
+  TextColumn get subject => text()();
+  IntColumn get contentRevision => integer().withDefault(const Constant(0))();
+  IntColumn get metadataRevision => integer().withDefault(const Constant(0))();
+  IntColumn get removedRevision => integer().withDefault(const Constant(0))();
+  IntColumn get vocabularyRevision =>
+      integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => {subject};
 }
 
 class ManagedSkills extends Table {
@@ -586,6 +598,7 @@ class OperationSubjects extends Table {
 @DriftDatabase(
   tables: [
     WorkspaceMetadata,
+    CommittedChangeStamps,
     ManagedSkills,
     SourceLineages,
     SkillSources,
@@ -684,7 +697,7 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
             );
           },
           onUpgrade: (migrator, from, to) async {
-            if (from == 2 && (to == 3 || to == 4)) {
+            if (from == 2 && to >= 3 && to <= 5) {
               await migrator.createTable(skillUpdateCheckRecords);
               await migrator.createTable(skillUpdateCheckMetadata);
               await into(skillUpdateCheckMetadata).insert(
@@ -694,8 +707,12 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
               );
               if (to == 3) return;
             }
-            if ((from == 2 || from == 3) && to == 4) {
+            if ((from == 2 || from == 3) && (to == 4 || to == 5)) {
               await migrator.alterTable(TableMigration(skillSources));
+              if (to == 4) return;
+            }
+            if (from >= 2 && from <= 4 && to == 5) {
+              await migrator.createTable(committedChangeStamps);
               return;
             }
             throw StateError(

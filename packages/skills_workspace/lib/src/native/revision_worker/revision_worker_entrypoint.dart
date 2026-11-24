@@ -224,18 +224,49 @@ Future<Object?> _execute(
         oldCommit: RevisionObjectId(oldCommitOid),
         newCommit: RevisionObjectId(newCommitOid),
       );
+    case RevisionWorkerMergeBaseCommand(
+      :final repositoryPath,
+      :final leftOid,
+      :final rightOid,
+    ):
+      return engine
+          .mergeBase(
+            repositoryPath,
+            RevisionObjectId(leftOid),
+            RevisionObjectId(rightOid),
+          )
+          ?.value;
+    case RevisionWorkerReadMergeParentCommand(
+      :final repositoryPath,
+      :final commitOid,
+    ):
+      return engine
+          .readMergeParent(repositoryPath, RevisionObjectId(commitOid))
+          ?.value;
     case RevisionWorkerMergeCommand(
       :final repositoryPath,
       :final previousUpstreamOid,
       :final currentEffectiveOid,
       :final incomingUpstreamOid,
+      :final sync,
     ):
-      return switch (engine.merge(
-        repositoryPath: repositoryPath,
-        previousUpstream: RevisionObjectId(previousUpstreamOid),
-        currentEffective: RevisionObjectId(currentEffectiveOid),
-        incomingUpstream: RevisionObjectId(incomingUpstreamOid),
-      )) {
+      final base = RevisionObjectId(previousUpstreamOid);
+      final local = RevisionObjectId(currentEffectiveOid);
+      final remote = RevisionObjectId(incomingUpstreamOid);
+      final result = sync
+          ? engine.mergeSync(
+              repositoryPath: repositoryPath,
+              base: base,
+              local: local,
+              remote: remote,
+            )
+          : engine.merge(
+              repositoryPath: repositoryPath,
+              previousUpstream: base,
+              currentEffective: local,
+              incomingUpstream: remote,
+            );
+      return switch (result) {
         RevisionMergeClean(:final tree) => RevisionWorkerMergeCleanPayload(
           tree.value,
         ),

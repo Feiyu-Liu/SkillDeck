@@ -300,6 +300,51 @@ external int skills_workspace_revision_merge(
   ffi.Pointer<ffi.IntPtr> conflict_count,
 );
 
+/// An empty output represents two commits with no common ancestor.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.IntPtr,
+  )
+>()
+external int skills_workspace_revision_merge_base(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> left_oid_hex,
+  ffi.Pointer<ffi.Char> right_oid_hex,
+  ffi.Pointer<ffi.Char> base_oid_hex,
+  int output_capacity,
+);
+
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.IntPtr>,
+    ffi.Pointer<ffi.IntPtr>,
+  )
+>()
+external int skills_workspace_revision_merge_sync(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> base_oid_hex,
+  ffi.Pointer<ffi.Char> local_oid_hex,
+  ffi.Pointer<ffi.Char> remote_oid_hex,
+  ffi.Pointer<ffi.Char> tree_oid_hex,
+  int tree_oid_hex_capacity,
+  ffi.Pointer<ffi.Uint8> conflict_output,
+  int conflict_output_capacity,
+  ffi.Pointer<ffi.IntPtr> required_conflict_capacity,
+  ffi.Pointer<ffi.IntPtr> conflict_count,
+);
+
 /// Indexes a Revision Pack under staging_objects_path/pack and verifies the
 /// named closure using the live Store as a read-only alternate. Returns the
 /// pack name on success, or an empty name when all objects are already live.
@@ -322,6 +367,22 @@ external int skills_workspace_revision_pack_import(
   int revision_count,
   ffi.Pointer<ffi.Char> pack_name,
   int pack_name_capacity,
+);
+
+/// An empty output represents a commit that does not have two parents.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.IntPtr,
+  )
+>()
+external int skills_workspace_revision_read_merge_parent(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> commit_oid_hex,
+  ffi.Pointer<ffi.Char> parent_oid_hex,
+  int output_capacity,
 );
 
 /// Creates the exact `objects.pack` and `objects.idx` payloads for a staged
@@ -575,7 +636,8 @@ enum skills_workspace_revision_commit_kind {
   SKILLS_WORKSPACE_REVISION_COMMIT_EFFECTIVE_UPDATE(2),
   SKILLS_WORKSPACE_REVISION_COMMIT_LOCAL_PUBLISH(3),
   SKILLS_WORKSPACE_REVISION_COMMIT_RESTORE_PUBLISH(4),
-  SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE(5);
+  SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE(5),
+  SKILLS_WORKSPACE_REVISION_COMMIT_SYNC_CANDIDATE(6);
 
   final int value;
   const skills_workspace_revision_commit_kind(this.value);
@@ -588,6 +650,7 @@ enum skills_workspace_revision_commit_kind {
         3 => SKILLS_WORKSPACE_REVISION_COMMIT_LOCAL_PUBLISH,
         4 => SKILLS_WORKSPACE_REVISION_COMMIT_RESTORE_PUBLISH,
         5 => SKILLS_WORKSPACE_REVISION_COMMIT_UPDATE_CANDIDATE,
+        6 => SKILLS_WORKSPACE_REVISION_COMMIT_SYNC_CANDIDATE,
         _ => throw ArgumentError(
           'Unknown value for skills_workspace_revision_commit_kind: $value',
         ),

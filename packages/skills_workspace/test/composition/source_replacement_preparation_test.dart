@@ -218,6 +218,9 @@ AcquiredSourceSkill _skill(SourceDescriptor source, {String slot = 'one'}) =>
     );
 
 final class _RevisionEngine implements RevisionEnginePort {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
   final List<String> calls = [];
   bool failCreateCommit = false;
   String? recoveryVerificationPath;

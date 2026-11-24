@@ -86,6 +86,7 @@ enum RevisionCommitKind {
   localPublish,
   restorePublish,
   updateCandidate,
+  syncCandidate,
 }
 
 /// Immutable commit topology requested from the Revision Engine.
@@ -104,7 +105,8 @@ final class RevisionCommitRequest {
       RevisionCommitKind.localPublish ||
       RevisionCommitKind.restorePublish ||
       RevisionCommitKind.updateCandidate => 1,
-      RevisionCommitKind.effectiveUpdate => 2,
+      RevisionCommitKind.effectiveUpdate ||
+      RevisionCommitKind.syncCandidate => 2,
     };
     if (parents.length != expectedParentCount) {
       throw ArgumentError.value(
@@ -245,6 +247,17 @@ abstract interface class RevisionEnginePort {
     required RevisionObjectId descendant,
   });
 
+  Future<RevisionObjectId?> mergeBase(
+    String repositoryPath,
+    RevisionObjectId left,
+    RevisionObjectId right,
+  );
+
+  Future<RevisionObjectId?> readMergeParent(
+    String repositoryPath,
+    RevisionObjectId commit,
+  );
+
   Future<List<RevisionChange>> diff({
     required String repositoryPath,
     required RevisionObjectId oldCommit,
@@ -256,6 +269,13 @@ abstract interface class RevisionEnginePort {
     required RevisionObjectId previousUpstream,
     required RevisionObjectId currentEffective,
     required RevisionObjectId incomingUpstream,
+  });
+
+  Future<RevisionMergeResult> mergeSync({
+    required String repositoryPath,
+    required RevisionObjectId base,
+    required RevisionObjectId local,
+    required RevisionObjectId remote,
   });
 
   /// Writes `objects.pack` and `objects.idx` into an existing empty staging

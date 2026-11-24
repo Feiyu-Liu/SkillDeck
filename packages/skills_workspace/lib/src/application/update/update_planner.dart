@@ -726,7 +726,7 @@ final class UpdatePlanAssembler {
           tree: prepared.publishedTreeObjectId,
           parents: <RevisionObjectId>[
             state.previousEffective,
-            state.incomingUpstream,
+            prepared.mergeParent ?? state.incomingUpstream,
           ],
         )) {
       return _invalidEvidence();
@@ -796,7 +796,10 @@ final class UpdatePlanAssembler {
         recoveryIntent: UpdateRevisionRecoveryIntent(
           managedSkillId: state.managedSkillId,
           sourceLineage: state.sourceLineage,
-          retainedRoots: <RevisionObjectId>[prepared.effectiveObjectId],
+          retainedRoots: <RevisionObjectId>{
+            prepared.effectiveObjectId,
+            state.incomingUpstream,
+          }.toList(),
           candidateRecoveryReference: prepared.candidateRecoveryReference,
           bundleRecoveryReference: prepared.bundleRecoveryReference,
           draftCleanup: PublishedDraftCleanupIntent(

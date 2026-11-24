@@ -516,6 +516,12 @@ final class FilesystemOperationRecovery
           allowContainedLinks: true,
           cancellation: cancellation,
         );
+        // Edits during capture must not become an authorized before image.
+        if (entry.verifyBeforeCapture case final verify?) {
+          if (!await verify(targetPath)) {
+            throw const ExternalOperationPreconditionChanged();
+          }
+        }
         if (entry.requiresInertBeforeImage) {
           final inert = switch (before.kind) {
             OperationRecoveryEntryKind.directory =>

@@ -161,6 +161,11 @@ abstract interface class SkillsRepository {
   SkillsOperation<PublishedHistoryPage> inspectPublishedHistory(
     PublishedHistoryRequest request,
   );
+
+  /// Reads committed Skill and tag vocabulary changes from [request]'s cursor.
+  SkillsOperation<CommittedChanges> inspectCommittedChanges(
+    InspectCommittedChangesRequest request,
+  );
   SkillsOperation<SkillDiff> inspectDiff(InspectDiffRequest request);
   SkillsOperation<MutationReport> restorePublish(RestorePublishRequest request);
 
@@ -182,6 +187,11 @@ abstract interface class SkillsRepository {
   /// Prepares a Revision Pack in non-authoritative staging.
   SkillsOperation<RevisionPackImport> importRevisionPack(
     ImportRevisionPackRequest request,
+  );
+
+  /// Applies an already-published remote selection to a managed Skill.
+  SkillsOperation<RemoteApplyResult> applyRemoteState(
+    ApplyRemoteStateRequest request,
   );
 
   /// Publishes reviewed external content or restores the managed revision.

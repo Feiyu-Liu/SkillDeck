@@ -106,6 +106,7 @@ final class _CorruptSkillMutationGuard implements SkillsCommandHandler {
 
 bool _requiresIntegrity(WorkspaceOperationKind kind) => switch (kind) {
   WorkspaceOperationKind.update ||
+  WorkspaceOperationKind.applyRemoteState ||
   WorkspaceOperationKind.replaceSource ||
   WorkspaceOperationKind.activate ||
   WorkspaceOperationKind.confirmActivationTakeover ||
@@ -153,6 +154,7 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.inspectUpdateCandidate ||
   WorkspaceOperationKind.inspectOperationHistory ||
   WorkspaceOperationKind.inspectPublishedHistory ||
+  WorkspaceOperationKind.inspectCommittedChanges ||
   WorkspaceOperationKind.inspectDiff ||
   WorkspaceOperationKind.inspectSkillDrift ||
   WorkspaceOperationKind.exportSkillDriftArtifact ||
@@ -160,6 +162,10 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.importRevisionPack ||
   WorkspaceOperationKind.resolveSkillDrift => const <ManagedSkillId>{},
 
+  WorkspaceOperationKind.applyRemoteState => switch (request
+      as ApplyRemoteStateRequest) {
+    RemoteSkillContent(:final managedSkillId) => {managedSkillId},
+  },
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,
   WorkspaceOperationKind.activate =>
     (request as ActivateRequest).managedSkillIds,

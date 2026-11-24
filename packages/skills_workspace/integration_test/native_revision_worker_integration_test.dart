@@ -10,6 +10,123 @@ import 'package:skills_workspace/src/native/revision_worker/revision_worker.dart
 import 'package:test/test.dart';
 
 void main() {
+  test('real Revision worker merges from the best common ancestor', () async {
+    final temporary = await Directory.systemTemp.createTemp(
+      'skills-workspace-sync-merge-',
+    );
+    addTearDown(() => temporary.delete(recursive: true));
+    final store = path.join(temporary.path, 'store.git');
+    final worker = await RevisionWorker.start(
+      taskExecutor: executeComposedRevisionWorkerTask,
+    );
+    addTearDown(worker.close);
+    await worker.createStore(store);
+
+    Future<RevisionObjectId> commit(
+      Map<String, String> content, [
+      RevisionObjectId? parent,
+    ]) async {
+      final normalized = await worker.normalizeContent(
+        [
+          SkillContentEntry.file(
+            path: 'SKILL.md',
+            bytes: utf8.encode(
+              '---\nname: merge-skill\ndescription: Revision fixture\n---\n',
+            ),
+          ),
+          for (final file in content.entries)
+            SkillContentEntry.file(
+              path: file.key,
+              bytes: utf8.encode(file.value),
+            ),
+        ],
+        maximumFileCount: maximumNormalizedSkillFileCount,
+        maximumByteSize: maximumNormalizedSkillByteSize,
+        isCancelled: () => false,
+      );
+      final tree = await worker.writeTree(store, normalized.valueOrNull!);
+      return worker.createCommit(
+        store,
+        RevisionCommitRequest(
+          tree: tree,
+          parents: [?parent],
+          kind: parent == null
+              ? RevisionCommitKind.initial
+              : RevisionCommitKind.localPublish,
+        ),
+      );
+    }
+
+    final root = await commit({});
+    final base = await commit({'shared.md': 'second version\n'}, root);
+    final local = await commit({
+      'shared.md': 'local edit\n',
+      'local.md': 'local file\n',
+    }, base);
+    final remoteIntermediate = await commit({
+      'shared.md': 'second version\n',
+      'remote.md': 'remote intermediate\n',
+    }, base);
+    final remote = await commit({
+      'shared.md': 'second version\n',
+      'remote.md': 'remote edit\n',
+    }, remoteIntermediate);
+    final unrelated = await commit({'unrelated.md': 'unrelated\n'});
+    expect(await worker.mergeBase(store, local, remote), base);
+    expect(await worker.mergeBase(store, local, unrelated), isNull);
+    expect(
+      () => worker.mergeBase(store, local, RevisionObjectId('0' * 40)),
+      throwsA(isA<RevisionEngineException>()),
+    );
+    expect(
+      () => worker.merge(
+        repositoryPath: store,
+        previousUpstream: base,
+        currentEffective: local,
+        incomingUpstream: remote,
+      ),
+      throwsA(isA<RevisionEngineException>()),
+    );
+
+    final merged =
+        await worker.mergeSync(
+              repositoryPath: store,
+              base: base,
+              local: local,
+              remote: remote,
+            )
+            as RevisionMergeClean;
+    final result = await worker.readTree(store, merged.tree);
+    expect({
+      for (final file in result.files)
+        file.relativePath: utf8.decode(file.bytes),
+    }, containsPair('shared.md', 'local edit\n'));
+    expect(
+      result.files.map((file) => file.relativePath),
+      unorderedEquals(['SKILL.md', 'shared.md', 'local.md', 'remote.md']),
+    );
+
+    final conflicting = await commit({'shared.md': 'remote conflict\n'}, base);
+    final conflict =
+        await worker.mergeSync(
+              repositoryPath: store,
+              base: base,
+              local: local,
+              remote: conflicting,
+            )
+            as RevisionMergeConflicted;
+    expect(conflict.conflicts.single.currentPath, 'shared.md');
+    final candidateRequest = RevisionCommitRequest(
+      tree: conflict.tree,
+      parents: [local, conflicting],
+      kind: RevisionCommitKind.syncCandidate,
+    );
+    final candidate = await worker.createCommit(store, candidateRequest);
+    await worker.verifyCommit(store, candidate, candidateRequest);
+    expect(await worker.readMergeParent(store, candidate), conflicting);
+    expect(await worker.readMergeParent(store, local), isNull);
+  });
+
   test(
     'real Revision worker persists and verifies a complete Bundle',
     () async {

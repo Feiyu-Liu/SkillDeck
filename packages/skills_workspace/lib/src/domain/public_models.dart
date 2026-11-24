@@ -89,6 +89,8 @@ enum WorkspaceOperationKind {
   resolveSkillDrift,
   exportRevisionPack,
   importRevisionPack,
+  applyRemoteState,
+  inspectCommittedChanges,
 }
 
 enum OperationProgressPhase {
@@ -1124,6 +1126,84 @@ final class RevisionPackExport {
 
 /// The result of verifying a pack and its requested revisions.
 enum RevisionPackImport { imported, malformed, incomplete }
+
+sealed class RemoteApplyResult {
+  const RemoteApplyResult();
+}
+
+final class RemoteApplyNoChange extends RemoteApplyResult {
+  const RemoteApplyNoChange();
+}
+
+final class RemoteApplyFastForwarded extends RemoteApplyResult {
+  const RemoteApplyFastForwarded();
+}
+
+final class RemoteApplyMerged extends RemoteApplyResult {
+  const RemoteApplyMerged(this.newEffective);
+
+  final RevisionId newEffective;
+}
+
+final class RemoteApplyConflicted extends RemoteApplyResult {
+  const RemoteApplyConflicted();
+}
+
+final class RemoteApplyDraftResolutionRequired extends RemoteApplyResult {
+  const RemoteApplyDraftResolutionRequired();
+}
+
+/// The observable part of a Skill that changed in a Workspace commit.
+enum CommittedChangeKind { content, metadata, removed }
+
+final class CommittedSkillChange {
+  CommittedSkillChange({
+    required this.managedSkillId,
+    required this.revision,
+    required Iterable<CommittedChangeKind> kinds,
+  }) : kinds = Set.unmodifiable(kinds) {
+    if (this.kinds.isEmpty) {
+      throw ArgumentError(
+        'A committed Skill change requires at least one kind.',
+      );
+    }
+  }
+
+  final ManagedSkillId managedSkillId;
+  final RepositoryRevision revision;
+  final Set<CommittedChangeKind> kinds;
+}
+
+sealed class CommittedChanges {
+  const CommittedChanges(this.current);
+
+  factory CommittedChanges.changes({
+    required RepositoryRevision current,
+    required Iterable<CommittedSkillChange> entries,
+    required bool vocabularyChanged,
+  }) = CommittedChangesAvailable;
+
+  const factory CommittedChanges.resetRequired(RepositoryRevision current) =
+      CommittedChangesResetRequired;
+
+  final RepositoryRevision current;
+}
+
+final class CommittedChangesAvailable extends CommittedChanges {
+  CommittedChangesAvailable({
+    required RepositoryRevision current,
+    required Iterable<CommittedSkillChange> entries,
+    required this.vocabularyChanged,
+  }) : entries = List.unmodifiable(entries),
+       super(current);
+
+  final List<CommittedSkillChange> entries;
+  final bool vocabularyChanged;
+}
+
+final class CommittedChangesResetRequired extends CommittedChanges {
+  const CommittedChangesResetRequired(super.current);
+}
 
 sealed class ActivationAttempt {
   const ActivationAttempt();

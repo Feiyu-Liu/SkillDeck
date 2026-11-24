@@ -383,6 +383,392 @@ class WorkspaceMetadataCompanion
   }
 }
 
+class $CommittedChangeStampsTable extends CommittedChangeStamps
+    with TableInfo<$CommittedChangeStampsTable, CommittedChangeStamp> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CommittedChangeStampsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _subjectMeta = const VerificationMeta(
+    'subject',
+  );
+  @override
+  late final GeneratedColumn<String> subject = GeneratedColumn<String>(
+    'subject',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> contentRevision = GeneratedColumn<int>(
+    'content_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _metadataRevisionMeta = const VerificationMeta(
+    'metadataRevision',
+  );
+  @override
+  late final GeneratedColumn<int> metadataRevision = GeneratedColumn<int>(
+    'metadata_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _removedRevisionMeta = const VerificationMeta(
+    'removedRevision',
+  );
+  @override
+  late final GeneratedColumn<int> removedRevision = GeneratedColumn<int>(
+    'removed_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _vocabularyRevisionMeta =
+      const VerificationMeta('vocabularyRevision');
+  @override
+  late final GeneratedColumn<int> vocabularyRevision = GeneratedColumn<int>(
+    'vocabulary_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    subject,
+    contentRevision,
+    metadataRevision,
+    removedRevision,
+    vocabularyRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'committed_change_stamps';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CommittedChangeStamp> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('subject')) {
+      context.handle(
+        _subjectMeta,
+        subject.isAcceptableOrUnknown(data['subject']!, _subjectMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_subjectMeta);
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('metadata_revision')) {
+      context.handle(
+        _metadataRevisionMeta,
+        metadataRevision.isAcceptableOrUnknown(
+          data['metadata_revision']!,
+          _metadataRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('removed_revision')) {
+      context.handle(
+        _removedRevisionMeta,
+        removedRevision.isAcceptableOrUnknown(
+          data['removed_revision']!,
+          _removedRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vocabulary_revision')) {
+      context.handle(
+        _vocabularyRevisionMeta,
+        vocabularyRevision.isAcceptableOrUnknown(
+          data['vocabulary_revision']!,
+          _vocabularyRevisionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {subject};
+  @override
+  CommittedChangeStamp map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CommittedChangeStamp(
+      subject: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subject'],
+      )!,
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}content_revision'],
+      )!,
+      metadataRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}metadata_revision'],
+      )!,
+      removedRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}removed_revision'],
+      )!,
+      vocabularyRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vocabulary_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $CommittedChangeStampsTable createAlias(String alias) {
+    return $CommittedChangeStampsTable(attachedDatabase, alias);
+  }
+}
+
+class CommittedChangeStamp extends DataClass
+    implements Insertable<CommittedChangeStamp> {
+  final String subject;
+  final int contentRevision;
+  final int metadataRevision;
+  final int removedRevision;
+  final int vocabularyRevision;
+  const CommittedChangeStamp({
+    required this.subject,
+    required this.contentRevision,
+    required this.metadataRevision,
+    required this.removedRevision,
+    required this.vocabularyRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['subject'] = Variable<String>(subject);
+    map['content_revision'] = Variable<int>(contentRevision);
+    map['metadata_revision'] = Variable<int>(metadataRevision);
+    map['removed_revision'] = Variable<int>(removedRevision);
+    map['vocabulary_revision'] = Variable<int>(vocabularyRevision);
+    return map;
+  }
+
+  CommittedChangeStampsCompanion toCompanion(bool nullToAbsent) {
+    return CommittedChangeStampsCompanion(
+      subject: Value(subject),
+      contentRevision: Value(contentRevision),
+      metadataRevision: Value(metadataRevision),
+      removedRevision: Value(removedRevision),
+      vocabularyRevision: Value(vocabularyRevision),
+    );
+  }
+
+  factory CommittedChangeStamp.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CommittedChangeStamp(
+      subject: serializer.fromJson<String>(json['subject']),
+      contentRevision: serializer.fromJson<int>(json['contentRevision']),
+      metadataRevision: serializer.fromJson<int>(json['metadataRevision']),
+      removedRevision: serializer.fromJson<int>(json['removedRevision']),
+      vocabularyRevision: serializer.fromJson<int>(json['vocabularyRevision']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'subject': serializer.toJson<String>(subject),
+      'contentRevision': serializer.toJson<int>(contentRevision),
+      'metadataRevision': serializer.toJson<int>(metadataRevision),
+      'removedRevision': serializer.toJson<int>(removedRevision),
+      'vocabularyRevision': serializer.toJson<int>(vocabularyRevision),
+    };
+  }
+
+  CommittedChangeStamp copyWith({
+    String? subject,
+    int? contentRevision,
+    int? metadataRevision,
+    int? removedRevision,
+    int? vocabularyRevision,
+  }) => CommittedChangeStamp(
+    subject: subject ?? this.subject,
+    contentRevision: contentRevision ?? this.contentRevision,
+    metadataRevision: metadataRevision ?? this.metadataRevision,
+    removedRevision: removedRevision ?? this.removedRevision,
+    vocabularyRevision: vocabularyRevision ?? this.vocabularyRevision,
+  );
+  CommittedChangeStamp copyWithCompanion(CommittedChangeStampsCompanion data) {
+    return CommittedChangeStamp(
+      subject: data.subject.present ? data.subject.value : this.subject,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      metadataRevision: data.metadataRevision.present
+          ? data.metadataRevision.value
+          : this.metadataRevision,
+      removedRevision: data.removedRevision.present
+          ? data.removedRevision.value
+          : this.removedRevision,
+      vocabularyRevision: data.vocabularyRevision.present
+          ? data.vocabularyRevision.value
+          : this.vocabularyRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommittedChangeStamp(')
+          ..write('subject: $subject, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('metadataRevision: $metadataRevision, ')
+          ..write('removedRevision: $removedRevision, ')
+          ..write('vocabularyRevision: $vocabularyRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    subject,
+    contentRevision,
+    metadataRevision,
+    removedRevision,
+    vocabularyRevision,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CommittedChangeStamp &&
+          other.subject == this.subject &&
+          other.contentRevision == this.contentRevision &&
+          other.metadataRevision == this.metadataRevision &&
+          other.removedRevision == this.removedRevision &&
+          other.vocabularyRevision == this.vocabularyRevision);
+}
+
+class CommittedChangeStampsCompanion
+    extends UpdateCompanion<CommittedChangeStamp> {
+  final Value<String> subject;
+  final Value<int> contentRevision;
+  final Value<int> metadataRevision;
+  final Value<int> removedRevision;
+  final Value<int> vocabularyRevision;
+  final Value<int> rowid;
+  const CommittedChangeStampsCompanion({
+    this.subject = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.metadataRevision = const Value.absent(),
+    this.removedRevision = const Value.absent(),
+    this.vocabularyRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CommittedChangeStampsCompanion.insert({
+    required String subject,
+    this.contentRevision = const Value.absent(),
+    this.metadataRevision = const Value.absent(),
+    this.removedRevision = const Value.absent(),
+    this.vocabularyRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : subject = Value(subject);
+  static Insertable<CommittedChangeStamp> custom({
+    Expression<String>? subject,
+    Expression<int>? contentRevision,
+    Expression<int>? metadataRevision,
+    Expression<int>? removedRevision,
+    Expression<int>? vocabularyRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (subject != null) 'subject': subject,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (metadataRevision != null) 'metadata_revision': metadataRevision,
+      if (removedRevision != null) 'removed_revision': removedRevision,
+      if (vocabularyRevision != null) 'vocabulary_revision': vocabularyRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CommittedChangeStampsCompanion copyWith({
+    Value<String>? subject,
+    Value<int>? contentRevision,
+    Value<int>? metadataRevision,
+    Value<int>? removedRevision,
+    Value<int>? vocabularyRevision,
+    Value<int>? rowid,
+  }) {
+    return CommittedChangeStampsCompanion(
+      subject: subject ?? this.subject,
+      contentRevision: contentRevision ?? this.contentRevision,
+      metadataRevision: metadataRevision ?? this.metadataRevision,
+      removedRevision: removedRevision ?? this.removedRevision,
+      vocabularyRevision: vocabularyRevision ?? this.vocabularyRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (subject.present) {
+      map['subject'] = Variable<String>(subject.value);
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<int>(contentRevision.value);
+    }
+    if (metadataRevision.present) {
+      map['metadata_revision'] = Variable<int>(metadataRevision.value);
+    }
+    if (removedRevision.present) {
+      map['removed_revision'] = Variable<int>(removedRevision.value);
+    }
+    if (vocabularyRevision.present) {
+      map['vocabulary_revision'] = Variable<int>(vocabularyRevision.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommittedChangeStampsCompanion(')
+          ..write('subject: $subject, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('metadataRevision: $metadataRevision, ')
+          ..write('removedRevision: $removedRevision, ')
+          ..write('vocabularyRevision: $vocabularyRevision, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SourceLineagesTable extends SourceLineages
     with TableInfo<$SourceLineagesTable, SourceLineage> {
   @override
@@ -9358,6 +9744,8 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
   $WorkspaceDatabaseManager get managers => $WorkspaceDatabaseManager(this);
   late final $WorkspaceMetadataTable workspaceMetadata =
       $WorkspaceMetadataTable(this);
+  late final $CommittedChangeStampsTable committedChangeStamps =
+      $CommittedChangeStampsTable(this);
   late final $SourceLineagesTable sourceLineages = $SourceLineagesTable(this);
   late final $ManagedSkillsTable managedSkills = $ManagedSkillsTable(this);
   late final $SkillSourcesTable skillSources = $SkillSourcesTable(this);
@@ -9402,6 +9790,7 @@ abstract class _$WorkspaceDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     workspaceMetadata,
+    committedChangeStamps,
     sourceLineages,
     managedSkills,
     skillSources,
@@ -9759,6 +10148,233 @@ typedef $$WorkspaceMetadataTableProcessedTableManager =
         >,
       ),
       WorkspaceMetadataData,
+      PrefetchHooks Function()
+    >;
+typedef $$CommittedChangeStampsTableCreateCompanionBuilder =
+    CommittedChangeStampsCompanion Function({
+      required String subject,
+      Value<int> contentRevision,
+      Value<int> metadataRevision,
+      Value<int> removedRevision,
+      Value<int> vocabularyRevision,
+      Value<int> rowid,
+    });
+typedef $$CommittedChangeStampsTableUpdateCompanionBuilder =
+    CommittedChangeStampsCompanion Function({
+      Value<String> subject,
+      Value<int> contentRevision,
+      Value<int> metadataRevision,
+      Value<int> removedRevision,
+      Value<int> vocabularyRevision,
+      Value<int> rowid,
+    });
+
+class $$CommittedChangeStampsTableFilterComposer
+    extends Composer<_$WorkspaceDatabase, $CommittedChangeStampsTable> {
+  $$CommittedChangeStampsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get metadataRevision => $composableBuilder(
+    column: $table.metadataRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get removedRevision => $composableBuilder(
+    column: $table.removedRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vocabularyRevision => $composableBuilder(
+    column: $table.vocabularyRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CommittedChangeStampsTableOrderingComposer
+    extends Composer<_$WorkspaceDatabase, $CommittedChangeStampsTable> {
+  $$CommittedChangeStampsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get subject => $composableBuilder(
+    column: $table.subject,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get metadataRevision => $composableBuilder(
+    column: $table.metadataRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get removedRevision => $composableBuilder(
+    column: $table.removedRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vocabularyRevision => $composableBuilder(
+    column: $table.vocabularyRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CommittedChangeStampsTableAnnotationComposer
+    extends Composer<_$WorkspaceDatabase, $CommittedChangeStampsTable> {
+  $$CommittedChangeStampsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get subject =>
+      $composableBuilder(column: $table.subject, builder: (column) => column);
+
+  GeneratedColumn<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get metadataRevision => $composableBuilder(
+    column: $table.metadataRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get removedRevision => $composableBuilder(
+    column: $table.removedRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get vocabularyRevision => $composableBuilder(
+    column: $table.vocabularyRevision,
+    builder: (column) => column,
+  );
+}
+
+class $$CommittedChangeStampsTableTableManager
+    extends
+        RootTableManager<
+          _$WorkspaceDatabase,
+          $CommittedChangeStampsTable,
+          CommittedChangeStamp,
+          $$CommittedChangeStampsTableFilterComposer,
+          $$CommittedChangeStampsTableOrderingComposer,
+          $$CommittedChangeStampsTableAnnotationComposer,
+          $$CommittedChangeStampsTableCreateCompanionBuilder,
+          $$CommittedChangeStampsTableUpdateCompanionBuilder,
+          (
+            CommittedChangeStamp,
+            BaseReferences<
+              _$WorkspaceDatabase,
+              $CommittedChangeStampsTable,
+              CommittedChangeStamp
+            >,
+          ),
+          CommittedChangeStamp,
+          PrefetchHooks Function()
+        > {
+  $$CommittedChangeStampsTableTableManager(
+    _$WorkspaceDatabase db,
+    $CommittedChangeStampsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CommittedChangeStampsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$CommittedChangeStampsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$CommittedChangeStampsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> subject = const Value.absent(),
+                Value<int> contentRevision = const Value.absent(),
+                Value<int> metadataRevision = const Value.absent(),
+                Value<int> removedRevision = const Value.absent(),
+                Value<int> vocabularyRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommittedChangeStampsCompanion(
+                subject: subject,
+                contentRevision: contentRevision,
+                metadataRevision: metadataRevision,
+                removedRevision: removedRevision,
+                vocabularyRevision: vocabularyRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String subject,
+                Value<int> contentRevision = const Value.absent(),
+                Value<int> metadataRevision = const Value.absent(),
+                Value<int> removedRevision = const Value.absent(),
+                Value<int> vocabularyRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommittedChangeStampsCompanion.insert(
+                subject: subject,
+                contentRevision: contentRevision,
+                metadataRevision: metadataRevision,
+                removedRevision: removedRevision,
+                vocabularyRevision: vocabularyRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CommittedChangeStampsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$WorkspaceDatabase,
+      $CommittedChangeStampsTable,
+      CommittedChangeStamp,
+      $$CommittedChangeStampsTableFilterComposer,
+      $$CommittedChangeStampsTableOrderingComposer,
+      $$CommittedChangeStampsTableAnnotationComposer,
+      $$CommittedChangeStampsTableCreateCompanionBuilder,
+      $$CommittedChangeStampsTableUpdateCompanionBuilder,
+      (
+        CommittedChangeStamp,
+        BaseReferences<
+          _$WorkspaceDatabase,
+          $CommittedChangeStampsTable,
+          CommittedChangeStamp
+        >,
+      ),
+      CommittedChangeStamp,
       PrefetchHooks Function()
     >;
 typedef $$SourceLineagesTableCreateCompanionBuilder =
@@ -18046,6 +18662,8 @@ class $WorkspaceDatabaseManager {
   $WorkspaceDatabaseManager(this._db);
   $$WorkspaceMetadataTableTableManager get workspaceMetadata =>
       $$WorkspaceMetadataTableTableManager(_db, _db.workspaceMetadata);
+  $$CommittedChangeStampsTableTableManager get committedChangeStamps =>
+      $$CommittedChangeStampsTableTableManager(_db, _db.committedChangeStamps);
   $$SourceLineagesTableTableManager get sourceLineages =>
       $$SourceLineagesTableTableManager(_db, _db.sourceLineages);
   $$ManagedSkillsTableTableManager get managedSkills =>
