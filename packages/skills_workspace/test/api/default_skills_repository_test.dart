@@ -461,6 +461,25 @@ void main() {
           ),
         ),
       );
+      await route(
+        WorkspaceOperationKind.exportRevisionPack,
+        repository.exportRevisionPack(
+          ExportRevisionPackRequest(
+            managedSkillId: skillId,
+            destinationPath: '/exports/skill.pack',
+          ),
+        ),
+      );
+      await route(
+        WorkspaceOperationKind.importRevisionPack,
+        repository.importRevisionPack(
+          ImportRevisionPackRequest(
+            managedSkillId: skillId,
+            packPath: '/imports/skill.pack',
+            revisions: [RevisionId('a' * 40)],
+          ),
+        ),
+      );
 
       expect(
         dispatcher.calls.map((call) => call.$1),

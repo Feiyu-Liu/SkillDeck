@@ -9,7 +9,7 @@ import 'workspace_database_open_retry.dart';
 
 part 'workspace_database.g.dart';
 
-const int workspaceDatabaseSchemaVersion = 3;
+const int workspaceDatabaseSchemaVersion = 4;
 const int minimumSupportedWorkspaceDatabaseSchemaVersion = 2;
 const int currentSourcePayloadSchemaVersion = 1;
 
@@ -113,7 +113,8 @@ class SkillSources extends Table {
 
   @override
   List<String> get customConstraints => const [
-    "CHECK (kind IN ('local', 'git', 'wellKnown', 'adoptedSnapshot'))",
+    "CHECK (kind IN ('local', 'git', 'wellKnown', 'adoptedSnapshot', "
+        "'syncedOrigin'))",
     'CHECK (payload_schema_version = 1)',
     'CHECK (json_valid(payload_json))',
   ];
@@ -683,7 +684,7 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
             );
           },
           onUpgrade: (migrator, from, to) async {
-            if (from == 2 && to == 3) {
+            if (from == 2 && (to == 3 || to == 4)) {
               await migrator.createTable(skillUpdateCheckRecords);
               await migrator.createTable(skillUpdateCheckMetadata);
               await into(skillUpdateCheckMetadata).insert(
@@ -691,6 +692,10 @@ class WorkspaceDatabase extends _$WorkspaceDatabase
                   singleton: const Value(1),
                 ),
               );
+              if (to == 3) return;
+            }
+            if ((from == 2 || from == 3) && to == 4) {
+              await migrator.alterTable(TableMigration(skillSources));
               return;
             }
             throw StateError(

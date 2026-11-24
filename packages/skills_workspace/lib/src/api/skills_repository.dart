@@ -174,6 +174,16 @@ abstract interface class SkillsRepository {
     ExportSkillDriftArtifactRequest request,
   );
 
+  /// Writes one Revision Pack to a new file at the requested destination.
+  SkillsOperation<RevisionPackExport> exportRevisionPack(
+    ExportRevisionPackRequest request,
+  );
+
+  /// Prepares a Revision Pack in non-authoritative staging.
+  SkillsOperation<RevisionPackImport> importRevisionPack(
+    ImportRevisionPackRequest request,
+  );
+
   /// Publishes reviewed external content or restores the managed revision.
   SkillsOperation<MutationReport> resolveSkillDrift(
     ResolveSkillDriftRequest request,

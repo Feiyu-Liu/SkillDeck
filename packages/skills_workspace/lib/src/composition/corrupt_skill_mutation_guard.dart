@@ -156,6 +156,8 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.inspectDiff ||
   WorkspaceOperationKind.inspectSkillDrift ||
   WorkspaceOperationKind.exportSkillDriftArtifact ||
+  WorkspaceOperationKind.exportRevisionPack ||
+  WorkspaceOperationKind.importRevisionPack ||
   WorkspaceOperationKind.resolveSkillDrift => const <ManagedSkillId>{},
 
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,

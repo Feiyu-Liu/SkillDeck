@@ -163,22 +163,27 @@ void main() {
     }
   });
 
-  test('an adopted snapshot reports updates unsupported', () async {
-    final harness = await _buildHarness(
-      snapshot: _snapshot(
-        source: AdoptedSnapshotSourceDescriptor(
-          authoritativeLocation: '/adopted/example',
-          contentHash: 'a' * 64,
-        ),
-      ),
-    );
-    addTearDown(harness.snapshots.close);
+  for (final source in <SourceDescriptor>[
+    AdoptedSnapshotSourceDescriptor(
+      authoritativeLocation: '/adopted/example',
+      contentHash: 'a' * 64,
+    ),
+    SyncedOriginSourceDescriptor(
+      originSourceType: SyncedOriginSourceType.local,
+      originDeviceLabel: 'Origin Mac',
+      displayLabel: 'Team Skills',
+    ),
+  ]) {
+    test('${source.type.name} reports updates unsupported', () async {
+      final harness = await _buildHarness(snapshot: _snapshot(source: source));
+      addTearDown(harness.snapshots.close);
 
-    final result = await _execute(harness.dispatcher, CheckUpdatesRequest());
+      final result = await _execute(harness.dispatcher, CheckUpdatesRequest());
 
-    expect(result.valueOrNull?.single.status, UpdateStatus.updateUnsupported);
-    expect(harness.sources.calls, isEmpty);
-  });
+      expect(result.valueOrNull?.single.status, UpdateStatus.updateUnsupported);
+      expect(harness.sources.calls, isEmpty);
+    });
+  }
 
   test('unavailable revision state becomes source unavailable', () async {
     final harness = await _buildHarness(hasState: false);

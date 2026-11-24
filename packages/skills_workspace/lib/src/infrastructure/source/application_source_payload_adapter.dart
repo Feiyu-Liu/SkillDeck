@@ -24,6 +24,7 @@ final class ApplicationSourcePayloadAdapter
             'git' => WorkspaceSourceKind.git,
             'wellKnown' => WorkspaceSourceKind.wellKnown,
             'adoptedSnapshot' => WorkspaceSourceKind.adoptedSnapshot,
+            'syncedOrigin' => WorkspaceSourceKind.syncedOrigin,
             _ => throw const SourceDescriptorCodecException('unsupportedKind'),
           },
           payloadSchemaVersion: encoded.payloadSchemaVersion,

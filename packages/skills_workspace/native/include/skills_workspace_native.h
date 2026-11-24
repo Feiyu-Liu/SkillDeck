@@ -54,7 +54,10 @@ typedef enum skills_workspace_revision_status {
   SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE = 4,
   SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE = 5,
   SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL = 6,
-  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE = 7
+  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE = 7,
+  SKILLS_WORKSPACE_REVISION_PACK_MALFORMED = 8,
+  SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE = 9,
+  SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE = 10
 } skills_workspace_revision_status;
 
 typedef enum skills_workspace_revision_commit_kind {
@@ -162,6 +165,14 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_restore(
     const char *staged_repository_path, const char *pack_path,
     const char *index_path, const char *const *retained_root_oid_hex,
     intptr_t retained_root_count);
+
+// Indexes a Revision Pack under staging_objects_path/pack and verifies the
+// named closure using the live Store as a read-only alternate. Returns the
+// pack name on success, or an empty name when all objects are already live.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_pack_import(
+    const char *repository_path, const char *staging_objects_path,
+    const char *pack_path, const char *const *revision_oid_hex,
+    intptr_t revision_count, char *pack_name, intptr_t pack_name_capacity);
 
 // Replaces the package-owned derived retention references.  Names must use
 // the fixed `refs/skills-workspace/` namespace and targets must be commits.

@@ -40,7 +40,7 @@ void main() {
   });
 
   test(
-    'creates schema v3 with the required SQLite durability pragmas',
+    'creates the current schema with the required SQLite durability pragmas',
     () async {
       expect(await _pragma(database, 'journal_mode'), 'wal');
       expect(await _pragma(database, 'synchronous'), 2);

@@ -114,9 +114,14 @@ void main() {
   test(
     'non Git sources use fixed buckets and malformed locators reveal nothing',
     () {
-      for (final kind in WorkspaceSourceKind.values.where(
-        (e) => e != WorkspaceSourceKind.git,
-      )) {
+      const fallbackKeys = {
+        WorkspaceSourceKind.local: 'fallback:local',
+        WorkspaceSourceKind.wellKnown: 'fallback:web',
+        WorkspaceSourceKind.adoptedSnapshot: 'fallback:local',
+        WorkspaceSourceKind.syncedOrigin: 'fallback:unknown',
+      };
+      for (final MapEntry(key: kind, value: expectedKey)
+          in fallbackKeys.entries) {
         final identity = repositoryIdentity(
           SkillSourceProvenance(
             kind: kind,
@@ -124,12 +129,7 @@ void main() {
                 'https://secret:password@example.test/private?token=hidden',
           ),
         );
-        expect(
-          identity.key,
-          kind == WorkspaceSourceKind.wellKnown
-              ? 'fallback:web'
-              : 'fallback:local',
-        );
+        expect(identity.key, expectedKey);
         expect(identity.tooltip, isNull);
       }
       for (final value in [

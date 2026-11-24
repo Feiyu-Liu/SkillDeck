@@ -24,6 +24,30 @@ final class ManagedSkillId {
   String toString() => 'ManagedSkillId($value)';
 }
 
+/// Opaque identifier for a published revision at the Revision Pack boundary.
+final class RevisionId {
+  /// Decodes the canonical string form of a revision identifier.
+  RevisionId(this.value) {
+    if (value.length != 40 || !_revisionIdPattern.hasMatch(value)) {
+      throw ArgumentError('RevisionId must be a canonical commit ID.');
+    }
+  }
+
+  static final _revisionIdPattern = RegExp(r'^[0-9a-f]{40}$');
+
+  /// The stable string representation. Callers treat it as opaque.
+  final String value;
+
+  @override
+  bool operator ==(Object other) => other is RevisionId && value == other.value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => value;
+}
+
 /// Monotonic revision of the complete repository snapshot.
 final class RepositoryRevision implements Comparable<RepositoryRevision> {
   /// Creates a non-negative repository revision.

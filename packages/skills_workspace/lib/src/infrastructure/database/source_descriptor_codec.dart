@@ -62,6 +62,16 @@ final class SourceDescriptorCodec {
           'authoritativeLocation': authoritativeLocation,
           'contentHash': contentHash,
         },
+      SyncedOriginSourceDescriptor(
+        :final originSourceType,
+        :final originDeviceLabel,
+        :final displayLabel,
+      ) =>
+        {
+          'originSourceType': originSourceType.name,
+          'originDeviceLabel': originDeviceLabel,
+          'displayLabel': displayLabel,
+        },
     };
     return EncodedSourceDescriptor(
       kind: source.type.name,
@@ -116,6 +126,7 @@ final class SourceDescriptorCodec {
           ),
           contentHash: _requiredString(decoded, 'contentHash'),
         ),
+        'syncedOrigin' => _decodeSyncedOrigin(decoded),
         _ => throw const SourceDescriptorCodecException('unsupportedKind'),
       };
     } on SourceDescriptorCodecException {
@@ -124,6 +135,19 @@ final class SourceDescriptorCodec {
       throw const SourceDescriptorCodecException('invalidPayloadValue');
     }
   }
+}
+
+SyncedOriginSourceDescriptor _decodeSyncedOrigin(Map<String, Object?> payload) {
+  if (payload.length > 3) {
+    throw const SourceDescriptorCodecException('unexpectedField');
+  }
+  return SyncedOriginSourceDescriptor(
+    originSourceType: SyncedOriginSourceType.values.byName(
+      _requiredString(payload, 'originSourceType'),
+    ),
+    originDeviceLabel: _requiredString(payload, 'originDeviceLabel'),
+    displayLabel: _requiredString(payload, 'displayLabel'),
+  );
 }
 
 String _requiredString(Map<String, Object?> payload, String key) {

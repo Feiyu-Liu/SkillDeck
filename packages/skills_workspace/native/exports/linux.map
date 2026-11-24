@@ -27,6 +27,7 @@ SKILLS_WORKSPACE_1.0 {
     skills_workspace_revision_merge;
     skills_workspace_revision_recovery_pack_create;
     skills_workspace_revision_recovery_pack_restore;
+    skills_workspace_revision_pack_import;
     skills_workspace_revision_retention_refs_replace;
     skills_workspace_transport_fetch;
     skills_workspace_transport_tree_list;

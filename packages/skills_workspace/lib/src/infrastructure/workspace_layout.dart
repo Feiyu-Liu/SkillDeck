@@ -50,6 +50,11 @@ final class WorkspaceLayout implements OperationRecoveryLayoutPort {
   String revisionStorePath(ManagedSkillId managedSkillId) =>
       path.join(revisionStoresRoot, '${managedSkillId.value}.git');
 
+  String revisionPackStagingPath(ManagedSkillId managedSkillId) => path.join(
+    revisionStoresRoot,
+    '${_compactUuid(managedSkillId.value)}.packs',
+  );
+
   String revisionBundlePath(ManagedSkillId managedSkillId) =>
       path.join(revisionBundlesRoot, managedSkillId.value);
 

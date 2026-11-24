@@ -512,6 +512,26 @@ final class RevisionWorker
     );
   }
 
+  Future<RevisionPackStageResult> stageRevisionPack({
+    required String repositoryPath,
+    required String stagingObjectsPath,
+    required String packPath,
+    required List<RevisionObjectId> revisions,
+  }) => _send<RevisionPackStageResult>(
+    RevisionWorkerStageRevisionPackCommand(
+      repositoryPath: repositoryPath,
+      stagingObjectsPath: stagingObjectsPath,
+      packPath: packPath,
+      revisionOids: revisions.map((revision) => revision.value).toList(),
+    ),
+    (payload) {
+      if (payload is RevisionPackStageResult) return payload;
+      throw const RevisionWorkerException(
+        RevisionWorkerFailureCode.invalidResponse,
+      );
+    },
+  );
+
   @override
   Future<void> buildRevisionBundleArtifacts({
     required String repositoryPath,

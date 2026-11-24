@@ -82,6 +82,8 @@ SkillRepositoryIdentity repositoryIdentity(SkillSourceProvenance? source) {
       );
     case WorkspaceSourceKind.git:
       return _gitIdentity(source.locator) ?? _unknown;
+    case WorkspaceSourceKind.syncedOrigin:
+      return _unknown;
   }
 }
 

@@ -459,6 +459,22 @@ final class DefaultSkillsRepository implements SkillsRepository {
   );
 
   @override
+  SkillsOperation<RevisionPackExport> exportRevisionPack(
+    ExportRevisionPackRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.exportRevisionPack,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<RevisionPackImport> importRevisionPack(
+    ImportRevisionPackRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.importRevisionPack,
+    request: request,
+  );
+
+  @override
   SkillsOperation<MutationReport> resolveSkillDrift(
     ResolveSkillDriftRequest request,
   ) => _dispatch(

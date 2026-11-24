@@ -90,7 +90,7 @@ final class SourceAcquisitionCoordinator {
         options: options,
         cancellationToken: token,
       ),
-      AdoptedSnapshotSourceDescriptor() =>
+      AdoptedSnapshotSourceDescriptor() || SyncedOriginSourceDescriptor() =>
         Future<SourceAcquisitionResult<AcquiredSource>>.value(
           SourceAcquisitionFailure<AcquiredSource>(
             code: SourceAcquisitionFailureCode.updateUnsupported,

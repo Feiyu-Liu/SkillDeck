@@ -1267,6 +1267,7 @@ int32_t skills_workspace_revision_recovery_pack_create(
     const char *const *retained_root_oid_hex, intptr_t retained_root_count) {
   git_repository *repository = NULL;
   git_packbuilder *packbuilder = NULL;
+  git_revwalk *walk = NULL;
   const char *pack_name;
   char generated_pack_name[64];
   char generated_index_name[64];
@@ -1289,21 +1290,23 @@ int32_t skills_workspace_revision_recovery_pack_create(
   if (result != SKILLS_WORKSPACE_REVISION_OK) {
     return result;
   }
-  if (git_packbuilder_new(&packbuilder, repository) < 0) {
+  if (git_packbuilder_new(&packbuilder, repository) < 0 ||
+      git_revwalk_new(&walk, repository) < 0) {
     result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
     goto cleanup_pack_create;
   }
   for (root_index = 0; root_index < retained_root_count; root_index += 1) {
     git_oid root_oid;
-    git_commit *root_commit = NULL;
     if (!parse_oid(&root_oid, retained_root_oid_hex[root_index]) ||
-        git_commit_lookup(&root_commit, repository, &root_oid) < 0 ||
-        git_packbuilder_insert_recur(packbuilder, &root_oid, NULL) < 0) {
-      git_commit_free(root_commit);
+        git_revwalk_push(walk, &root_oid) < 0) {
       result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
       goto cleanup_pack_create;
     }
-    git_commit_free(root_commit);
+  }
+  // Inserting only the named commits would omit their parents.
+  if (git_packbuilder_insert_walk(packbuilder, walk) < 0) {
+    result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
+    goto cleanup_pack_create;
   }
   target_pack_path = join_path(bundle_staging_path, "objects.pack");
   target_index_path = join_path(bundle_staging_path, "objects.idx");
@@ -1340,6 +1343,7 @@ cleanup_pack_create:
   free(target_pack_path);
   free(generated_index_path);
   free(generated_pack_path);
+  git_revwalk_free(walk);
   git_packbuilder_free(packbuilder);
   git_repository_free(repository);
   return result;
@@ -1518,6 +1522,272 @@ cleanup_pack_restore:
   free(target_pack_path);
   free(pack_directory_path);
   free(objects_path);
+  return result;
+}
+
+typedef struct pack_object_verification {
+  git_odb *staged;
+  git_odb *live;
+  int has_new_objects;
+} pack_object_verification;
+
+static int verify_pack_object(const git_oid *oid, void *payload) {
+  pack_object_verification *context = payload;
+  git_odb_object *object = NULL;
+  int valid = 0;
+  int error = git_odb_read(&object, context->staged, oid);
+
+  if (error == 0) {
+    error = git_object_rawcontent_is_valid(
+        &valid, git_odb_object_data(object), git_odb_object_size(object),
+        git_odb_object_type(object));
+  }
+  git_odb_object_free(object);
+  if (error < 0 || !valid) {
+    return -1;
+  }
+  if (!context->has_new_objects) {
+    object = NULL;
+    if (git_odb_read(&object, context->live, oid) < 0) {
+      context->has_new_objects = 1;
+    }
+    git_odb_object_free(object);
+  }
+  return 0;
+}
+
+typedef struct pack_closure_entry {
+  git_oid oid;
+  git_object_t type;
+} pack_closure_entry;
+
+typedef struct pack_closure {
+  pack_closure_entry *seen;
+  size_t capacity;
+  size_t count;
+  skills_workspace_buffer pending;
+} pack_closure;
+
+static pack_closure_entry *pack_closure_slot(pack_closure_entry *entries,
+                                           size_t capacity,
+                                           const git_oid *oid) {
+  size_t index;
+  uint32_t hash;
+  memcpy(&hash, oid->id, sizeof(hash));
+  index = hash & (capacity - 1);
+  while (entries[index].type != 0 &&
+         !git_oid_equal(&entries[index].oid, oid)) {
+    index = (index + 1) & (capacity - 1);
+  }
+  return &entries[index];
+}
+
+static int queue_pack_closure_entry(pack_closure *closure, const git_oid *oid,
+                                    git_object_t type) {
+  pack_closure_entry *entry;
+  if (closure->count >= closure->capacity / 2) {
+    size_t capacity = closure->capacity == 0 ? 64 : closure->capacity * 2;
+    pack_closure_entry *entries;
+    size_t index;
+    if (capacity < closure->capacity ||
+        capacity > SIZE_MAX / sizeof(*entries) ||
+        (entries = calloc(capacity, sizeof(*entries))) == NULL) {
+      return SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+    }
+    for (index = 0; index < closure->capacity; index += 1) {
+      pack_closure_entry *old = &closure->seen[index];
+      if (old->type != 0) {
+        *pack_closure_slot(entries, capacity, &old->oid) = *old;
+      }
+    }
+    free(closure->seen);
+    closure->seen = entries;
+    closure->capacity = capacity;
+  }
+  entry = pack_closure_slot(closure->seen, closure->capacity, oid);
+  if (entry->type != 0) {
+    return entry->type == type ? SKILLS_WORKSPACE_REVISION_OK
+                               : SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+  }
+  entry->oid = *oid;
+  entry->type = type;
+  closure->count += 1;
+  return buffer_append(&closure->pending, entry, sizeof(*entry)) == 0
+             ? SKILLS_WORKSPACE_REVISION_OK
+             : SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+}
+
+// Traverse untrusted history and trees iteratively, visiting each object once.
+static int verify_pack_closure(git_repository *repository, git_odb *odb,
+                               const char *const *revision_hex,
+                               intptr_t revision_count) {
+  pack_closure closure = {0};
+  intptr_t index;
+  int result = SKILLS_WORKSPACE_REVISION_OK;
+
+  for (index = 0; index < revision_count && result == 0; index += 1) {
+    git_oid oid;
+    result = parse_oid(&oid, revision_hex[index])
+                 ? queue_pack_closure_entry(&closure, &oid, GIT_OBJECT_COMMIT)
+                 : SKILLS_WORKSPACE_REVISION_INVALID_ARGUMENT;
+  }
+  while (closure.pending.length > 0 && result == 0) {
+    pack_closure_entry entry;
+    git_odb_object *raw = NULL;
+    int error;
+    size_t child;
+    closure.pending.length -= sizeof(entry);
+    memcpy(&entry, closure.pending.bytes + closure.pending.length, sizeof(entry));
+    error = git_odb_read(&raw, odb, &entry.oid);
+    if (error < 0) {
+      result = error == GIT_ENOTFOUND ? SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE
+                                      : SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+    } else if (git_odb_object_type(raw) != entry.type) {
+      result = SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+    }
+    git_odb_object_free(raw);
+    if (result != SKILLS_WORKSPACE_REVISION_OK) {
+      break;
+    }
+    if (entry.type == GIT_OBJECT_COMMIT) {
+      git_commit *commit = NULL;
+      if (git_commit_lookup(&commit, repository, &entry.oid) < 0) {
+        result = SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+      } else {
+        result = queue_pack_closure_entry(&closure, git_commit_tree_id(commit),
+                                          GIT_OBJECT_TREE);
+        for (child = 0; child < git_commit_parentcount(commit) && result == 0;
+             child += 1) {
+          result = queue_pack_closure_entry(&closure,
+                                            git_commit_parent_id(commit, child),
+                                            GIT_OBJECT_COMMIT);
+        }
+      }
+      git_commit_free(commit);
+    } else if (entry.type == GIT_OBJECT_TREE) {
+      git_tree *tree = NULL;
+      if (git_tree_lookup(&tree, repository, &entry.oid) < 0) {
+        result = SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+      } else {
+        for (child = 0; child < git_tree_entrycount(tree) && result == 0;
+             child += 1) {
+          const git_tree_entry *item = git_tree_entry_byindex(tree, child);
+          if (git_tree_entry_filemode(item) != GIT_FILEMODE_COMMIT) {
+            result = queue_pack_closure_entry(&closure, git_tree_entry_id(item),
+                                              git_tree_entry_type(item));
+          }
+        }
+      }
+      git_tree_free(tree);
+    }
+  }
+  free(closure.pending.bytes);
+  free(closure.seen);
+  return result;
+}
+
+static int pack_index_failure(int error) {
+  const git_error *details = git_error_last();
+  if (error == GIT_ENOTFOUND) {
+    return SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE;
+  }
+  if (details != NULL &&
+      (details->klass == GIT_ERROR_NOMEMORY || details->klass == GIT_ERROR_OS ||
+       details->klass == GIT_ERROR_FILESYSTEM)) {
+    return SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+  }
+  return SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+}
+
+int32_t skills_workspace_revision_pack_import(
+    const char *repository_path, const char *staging_objects_path,
+    const char *pack_path, const char *const *revision_oid_hex,
+    intptr_t revision_count, char *pack_name, intptr_t pack_name_capacity) {
+  git_repository *live = NULL;
+  git_repository *staged = NULL;
+  pack_object_verification verification = {0};
+  git_indexer *indexer = NULL;
+  git_indexer_progress progress = {0};
+  FILE *input = NULL;
+  char *staging_pack_dir = NULL;
+  char *live_objects_path = NULL;
+  unsigned char buffer[64 * 1024];
+  size_t length;
+  int error;
+  int32_t result = require_initialized();
+
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    return result;
+  }
+  if (pack_path == NULL || staging_objects_path == NULL ||
+      revision_oid_hex == NULL || revision_count <= 0 || pack_name == NULL ||
+      pack_name_capacity <= SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE) {
+    return SKILLS_WORKSPACE_REVISION_INVALID_ARGUMENT;
+  }
+  pack_name[0] = '\0';
+  input = path_fopen(pack_path, "rb");
+  if (input == NULL) {
+    return SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE;
+  }
+  result = open_bare_repository(&live, repository_path);
+  if (result != SKILLS_WORKSPACE_REVISION_OK) {
+    goto done_pack_import;
+  }
+  staging_pack_dir = join_path(staging_objects_path, "pack");
+  live_objects_path = join_path(repository_path, "objects");
+  result = SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+  if (staging_pack_dir == NULL || live_objects_path == NULL ||
+      git_repository_odb(&verification.live, live) < 0 ||
+      git_indexer_new(&indexer, staging_pack_dir, 0, verification.live, NULL) < 0) {
+    goto done_pack_import;
+  }
+  while ((length = fread(buffer, 1, sizeof(buffer), input)) > 0) {
+    error = git_indexer_append(indexer, buffer, length, &progress);
+    if (error < 0) {
+      result = pack_index_failure(error);
+      goto done_pack_import;
+    }
+  }
+  if (ferror(input)) {
+    result = SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE;
+    goto done_pack_import;
+  }
+  error = git_indexer_commit(indexer, &progress);
+  if (error < 0) {
+    result = pack_index_failure(error);
+    goto done_pack_import;
+  }
+  if (git_odb_open(&verification.staged, staging_objects_path) < 0) {
+    goto done_pack_import;
+  }
+  if (git_odb_foreach(verification.staged, verify_pack_object, &verification) < 0) {
+    result = SKILLS_WORKSPACE_REVISION_PACK_MALFORMED;
+    goto done_pack_import;
+  }
+  if (git_odb_add_disk_alternate(verification.staged, live_objects_path) < 0 ||
+      git_repository_wrap_odb(&staged, verification.staged) < 0) {
+    goto done_pack_import;
+  }
+  result = verify_pack_closure(staged, verification.staged, revision_oid_hex,
+                               revision_count);
+  if (result == SKILLS_WORKSPACE_REVISION_OK && verification.has_new_objects) {
+    const char *name = git_indexer_name(indexer);
+    if (name == NULL || strlen(name) != SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE) {
+      result = SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE;
+    } else {
+      memcpy(pack_name, name, SKILLS_WORKSPACE_REVISION_OID_HEX_SIZE + 1);
+    }
+  }
+
+done_pack_import:
+  git_repository_free(staged);
+  git_odb_free(verification.staged);
+  git_indexer_free(indexer);
+  git_odb_free(verification.live);
+  git_repository_free(live);
+  free(live_objects_path);
+  free(staging_pack_dir);
+  fclose(input);
   return result;
 }
 

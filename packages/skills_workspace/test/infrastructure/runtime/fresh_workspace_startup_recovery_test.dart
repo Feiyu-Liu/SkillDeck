@@ -42,25 +42,28 @@ void main() {
     if (await temporary.exists()) await temporary.delete(recursive: true);
   });
 
-  test('creates schema v3 only for a genuinely empty Workspace', () async {
-    var initializations = 0;
-    final recovery = FreshWorkspaceStartupRecovery(
-      layout: layout,
-      establishedRecovery: backup,
-      initializeEmptyControlPlane: () async {
-        initializations += 1;
-        return probeDatabase.liveIdentity();
-      },
-      abandonInitializedControlPlane: probeDatabase.close,
-    );
+  test(
+    'creates the current schema only for a genuinely empty Workspace',
+    () async {
+      var initializations = 0;
+      final recovery = FreshWorkspaceStartupRecovery(
+        layout: layout,
+        establishedRecovery: backup,
+        initializeEmptyControlPlane: () async {
+          initializations += 1;
+          return probeDatabase.liveIdentity();
+        },
+        abandonInitializedControlPlane: probeDatabase.close,
+      );
 
-    final result = await recovery.recoverPrimaryForStartup();
+      final result = await recovery.recoverPrimaryForStartup();
 
-    expect(result, isA<ControlPlanePrimaryReady>());
-    expect(initializations, 1);
-    expect(await File(layout.databasePath).exists(), isTrue);
-    expect(await File(layout.backupEligibilityPath).exists(), isTrue);
-  });
+      expect(result, isA<ControlPlanePrimaryReady>());
+      expect(initializations, 1);
+      expect(await File(layout.databasePath).exists(), isTrue);
+      expect(await File(layout.backupEligibilityPath).exists(), isTrue);
+    },
+  );
 
   test('never reinitializes an established Workspace', () async {
     await probeDatabase.liveIdentity();

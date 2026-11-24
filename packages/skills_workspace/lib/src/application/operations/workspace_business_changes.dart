@@ -2,7 +2,13 @@ import '../../domain/identifiers.dart';
 
 enum WorkspaceObjectFormat { sha1, sha256 }
 
-enum WorkspaceSourceKind { local, git, wellKnown, adoptedSnapshot }
+enum WorkspaceSourceKind {
+  local,
+  git,
+  wellKnown,
+  adoptedSnapshot,
+  syncedOrigin,
+}
 
 enum WorkspaceRevisionValidationState { valid, invalid }
 

@@ -65,6 +65,8 @@ final class RepositoryCommandComposition {
     required this.finalizationRecovery,
     required this.sources,
     required this.effectiveContent,
+    required this.revisionPackExport,
+    required this.revisionPackImport,
     required this.externalSkills,
     required this.historyPort,
     required this.history,
@@ -109,6 +111,8 @@ final class RepositoryCommandComposition {
   final WorkspaceFinalizationRecoveryPort finalizationRecovery;
   final SourceAcquisitionCoordinator sources;
   final CurrentEffectiveRevisionContentPort effectiveContent;
+  final SkillsCommandHandler revisionPackExport;
+  final SkillsCommandHandler revisionPackImport;
   final ExternalSkillScannerFactory externalSkills;
   final WorkspaceHistoryPort historyPort;
   final WorkspaceHistoryService history;
@@ -156,6 +160,8 @@ final class RepositoryCommandComposition {
       writerLock: writerLock,
     );
     final handlers = <SkillsCommandHandler>[
+      revisionPackExport,
+      revisionPackImport,
       ...buildDriftCommandHandlers(
         snapshots: snapshots,
         materializations: materializations,

@@ -266,6 +266,21 @@ final class RevisionWorkerRestoreRecoveryPackCommand
   final List<String> retainedRootOids;
 }
 
+final class RevisionWorkerStageRevisionPackCommand
+    extends RevisionWorkerCommand {
+  const RevisionWorkerStageRevisionPackCommand({
+    required this.repositoryPath,
+    required this.stagingObjectsPath,
+    required this.packPath,
+    required this.revisionOids,
+  });
+
+  final String repositoryPath;
+  final String stagingObjectsPath;
+  final String packPath;
+  final List<String> revisionOids;
+}
+
 final class RevisionWorkerBuildBundleArtifactsCommand
     extends RevisionWorkerCommand {
   RevisionWorkerBuildBundleArtifactsCommand({

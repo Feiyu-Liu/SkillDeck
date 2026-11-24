@@ -269,6 +269,18 @@ Future<Object?> _execute(
         retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
       );
       return null;
+    case RevisionWorkerStageRevisionPackCommand(
+      :final repositoryPath,
+      :final stagingObjectsPath,
+      :final packPath,
+      :final revisionOids,
+    ):
+      return engine.stageRevisionPack(
+        repositoryPath: repositoryPath,
+        stagingObjectsPath: stagingObjectsPath,
+        packPath: packPath,
+        revisions: revisionOids.map(RevisionObjectId.new).toList(),
+      );
     case RevisionWorkerBuildBundleArtifactsCommand(
       :final repositoryPath,
       :final bundlePath,

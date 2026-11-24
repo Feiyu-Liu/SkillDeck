@@ -42,6 +42,8 @@ import 'src/composition/materialization_inspection_worker_pool.dart';
 import 'src/composition/operation_recovery_backup_maintenance.dart';
 import 'src/composition/operation_revision_reference_maintenance.dart';
 import 'src/composition/repository_command_composition.dart';
+import 'src/composition/revision_pack_export_command.dart';
+import 'src/composition/revision_pack_import_command.dart';
 import 'src/composition/revision_operation_plans.dart';
 import 'src/composition/revision_preparation_service.dart';
 import 'src/composition/revision_worker_task_executor.dart';
@@ -445,6 +447,18 @@ SkillsRepository createSkillsRepository(
     finalizationRecovery: finalizationRecovery,
     sources: sources,
     effectiveContent: effectiveContent,
+    revisionPackExport: buildRevisionPackExportCommand(
+      readHeads: pointers.readCurrentPackHeads,
+      accessGate: revisionAccessGate,
+      layout: layout,
+      revisions: revisionRuntime,
+    ),
+    revisionPackImport: buildRevisionPackImportCommand(
+      readCurrentEffective: pointers.readCurrentEffective,
+      accessGate: revisionAccessGate,
+      layout: layout,
+      stagePack: revisionRuntime.stageRevisionPack,
+    ),
     externalSkills: externalSkills,
     historyPort: WorkspaceHistoryReader(database),
     history: history,

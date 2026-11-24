@@ -87,6 +87,8 @@ enum WorkspaceOperationKind {
   inspectSkillDrift,
   exportSkillDriftArtifact,
   resolveSkillDrift,
+  exportRevisionPack,
+  importRevisionPack,
 }
 
 enum OperationProgressPhase {
@@ -1111,6 +1113,17 @@ final class SkillDriftExport {
 
   final String exportedPath;
 }
+
+/// The published revision heads whose objects are in the exported pack.
+final class RevisionPackExport {
+  const RevisionPackExport({required this.effective, this.upstream});
+
+  final RevisionId effective;
+  final RevisionId? upstream;
+}
+
+/// The result of verifying a pack and its requested revisions.
+enum RevisionPackImport { imported, malformed, incomplete }
 
 sealed class ActivationAttempt {
   const ActivationAttempt();

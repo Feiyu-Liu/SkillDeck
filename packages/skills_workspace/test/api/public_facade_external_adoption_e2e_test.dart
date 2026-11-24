@@ -8,6 +8,43 @@ const _nfdFileName = 'café.md';
 const _nfcFileName = 'café.md';
 
 void main() {
+  test(
+    'exports an Adopted Snapshot without a separate Upstream Revision',
+    () async {
+      final fixture = await _ExternalAdoptionFixture.create();
+      addTearDown(fixture.dispose);
+      final repository = fixture.createRepository();
+      await _expectSuccess(repository.open());
+      final discovery = await _expectSuccess(
+        repository.discoverExternalSkills(
+          const DiscoverExternalSkillsRequest(scanAllKnownLocations: true),
+        ),
+      );
+      final adoption = await _expectSuccess(
+        repository.adopt(
+          AdoptRequest(
+            selection: ExternalAdoptionSelection.fromConflict(
+              discovery.conflicts.single,
+              fixture.skillPath('a'),
+            ),
+          ),
+        ),
+      );
+      final destination = path.join(fixture.temporaryRoot.path, 'adopted.pack');
+      final heads = await _expectSuccess(
+        repository.exportRevisionPack(
+          ExportRevisionPackRequest(
+            managedSkillId: adoption.affectedSkillIds.single,
+            destinationPath: destination,
+          ),
+        ),
+      );
+      expect(heads.upstream, isNull);
+      expect(heads.effective.value, hasLength(40));
+      expect(await File(destination).openRead(0, 4).first, 'PACK'.codeUnits);
+    },
+  );
+
   test('adopts under a custom Agent added after repository creation', () async {
     final fixture = await _ExternalAdoptionFixture.create();
     addTearDown(fixture.dispose);

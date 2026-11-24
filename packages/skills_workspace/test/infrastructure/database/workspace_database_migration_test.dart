@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift_dev/api/migrations_native.dart';
+import 'package:skills_workspace/src/domain/source_descriptor.dart';
+import 'package:skills_workspace/src/infrastructure/database/source_descriptor_codec.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
@@ -73,7 +75,7 @@ void main() {
     reopened.close();
   });
 
-  test('committed schema v3 matches the current Drift declaration', () async {
+  test('committed schema v4 matches the current Drift declaration', () async {
     final verifier = SchemaVerifier(GeneratedHelper());
     final schema = await verifier.schemaAt(workspaceDatabaseSchemaVersion);
     final database = WorkspaceDatabase.forTesting(schema.newConnection());
@@ -85,6 +87,99 @@ void main() {
     await database.close();
     schema.close();
   });
+
+  test(
+    'migrates v3 without changing existing sources and stores synced provenance',
+    () async {
+      final verifier = SchemaVerifier(GeneratedHelper());
+      final schema = await verifier.schemaAt(3);
+      addTearDown(schema.close);
+      final raw = schema.rawDatabase;
+      const codec = SourceDescriptorCodec();
+      final originalDescriptors = <SourceDescriptor>[
+        LocalSourceDescriptor(locator: '/source/local'),
+        GitSourceDescriptor(locator: 'https://example.test/repo.git'),
+        WellKnownSourceDescriptor(locator: 'https://example.test/index.json'),
+        AdoptedSnapshotSourceDescriptor(
+          authoritativeLocation: '/source/adopted',
+          contentHash: 'a' * 64,
+        ),
+      ];
+      const skillId = '123e4567-e89b-42d3-a456-426614174000';
+      String lineageId(int index) =>
+          '123e4567-e89b-42d3-a456-42661417401$index';
+
+      raw
+        ..execute('PRAGMA foreign_keys = ON')
+        ..execute('BEGIN')
+        ..execute(
+          'INSERT INTO managed_skills VALUES (?, ?, ?, ?, ?, ?, 0, 0)',
+          [
+            skillId,
+            'example',
+            'example',
+            'Example',
+            'Description',
+            lineageId(0),
+          ],
+        );
+      for (var index = 0; index <= originalDescriptors.length; index++) {
+        raw.execute("INSERT INTO source_lineages VALUES (?, ?, 'sha1', 0)", [
+          lineageId(index),
+          skillId,
+        ]);
+        if (index == originalDescriptors.length) break;
+        final encoded = codec.encode(originalDescriptors[index]);
+        raw.execute('INSERT INTO skill_sources VALUES (?, ?, ?, ?)', [
+          lineageId(index),
+          encoded.kind,
+          encoded.payloadSchemaVersion,
+          ' ${encoded.payloadJson}\n',
+        ]);
+      }
+      raw.execute('COMMIT');
+      const readSources =
+          'SELECT * FROM skill_sources ORDER BY source_lineage_id';
+      final before = raw.select(readSources).map(Map.of).toList();
+      final database = WorkspaceDatabase.forTesting(schema.newConnection());
+      addTearDown(database.close);
+
+      await verifier.migrateAndValidate(database, 4);
+
+      expect(raw.select(readSources).map(Map.of).toList(), equals(before));
+      expect(raw.select('PRAGMA foreign_key_check'), isEmpty);
+      expect(raw.select('PRAGMA foreign_keys').single.values.single, 1);
+      final synced = SyncedOriginSourceDescriptor(
+        originSourceType: SyncedOriginSourceType.adoptedSnapshot,
+        originDeviceLabel: 'Origin Mac',
+        displayLabel: 'My Skills',
+      );
+      final encoded = codec.encode(synced);
+      await database
+          .into(database.skillSources)
+          .insert(
+            SkillSourcesCompanion.insert(
+              sourceLineageId: lineageId(originalDescriptors.length),
+              kind: encoded.kind,
+              payloadSchemaVersion: encoded.payloadSchemaVersion,
+              payloadJson: encoded.payloadJson,
+            ),
+          );
+      final stored = await (database.select(
+        database.skillSources,
+      )..orderBy([(row) => OrderingTerm.asc(row.sourceLineageId)])).get();
+      expect(
+        stored.map(
+          (row) => codec.decode(
+            kind: row.kind,
+            payloadSchemaVersion: row.payloadSchemaVersion,
+            payloadJson: row.payloadJson,
+          ),
+        ),
+        orderedEquals([...originalDescriptors, synced]),
+      );
+    },
+  );
 
   test('migrates schema v2 by adding the update cache tables', () async {
     final verifier = SchemaVerifier(GeneratedHelper());

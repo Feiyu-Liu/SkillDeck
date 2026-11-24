@@ -41,6 +41,7 @@ final class FakeSourcePayloadEncoding implements SourcePayloadEncodingPort {
           SourceType.git => WorkspaceSourceKind.git,
           SourceType.wellKnown => WorkspaceSourceKind.wellKnown,
           SourceType.adoptedSnapshot => WorkspaceSourceKind.adoptedSnapshot,
+          SourceType.syncedOrigin => WorkspaceSourceKind.syncedOrigin,
         },
         payloadSchemaVersion: 1,
         payloadJson: '{}',

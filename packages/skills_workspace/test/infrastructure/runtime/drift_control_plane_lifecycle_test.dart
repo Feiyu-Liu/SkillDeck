@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 
 void main() {
   test(
-    'opens schema v3 once and closes the Drift executor idempotently',
+    'opens the current schema once and closes the Drift executor idempotently',
     () async {
       final temporary = await Directory.systemTemp.createTemp(
         'control-plane-lifecycle-',

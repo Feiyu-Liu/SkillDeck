@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:skills_workspace/src/application/ports/initial_import_ports.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
 import 'package:skills_workspace/src/domain/public_models.dart';
 import 'package:skills_workspace/src/domain/source_descriptor.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_snapshot_reader.dart';
+import 'package:skills_workspace/src/infrastructure/source/application_source_payload_adapter.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
 import 'package:test/test.dart';
 
@@ -44,6 +46,31 @@ void main() {
 
     expect(snapshot, RepositorySnapshot.empty());
   });
+
+  test(
+    'returns synced origin provenance from the active source lineage',
+    () async {
+      await _insertFullProjection(database);
+      final source = SyncedOriginSourceDescriptor(
+        originSourceType: SyncedOriginSourceType.local,
+        originDeviceLabel: 'Origin Mac',
+        displayLabel: 'My Skills',
+      );
+      final result = const ApplicationSourcePayloadAdapter().encode(source);
+      final payload = (result as SourcePayloadEncoded).payload;
+      await (database.update(
+        database.skillSources,
+      )..where((row) => row.sourceLineageId.equals(_lineageId))).write(
+        SkillSourcesCompanion(
+          kind: Value(payload.kind.name),
+          payloadSchemaVersion: Value(payload.payloadSchemaVersion),
+          payloadJson: Value(payload.payloadJson),
+        ),
+      );
+
+      expect((await reader.read()).managedSkills.single.source, source);
+    },
+  );
 
   test(
     'keeps the persisted added time across revision changes and reopen',

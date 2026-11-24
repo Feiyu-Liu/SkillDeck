@@ -543,6 +543,50 @@ final class RevisionNativeEngine {
     });
   }
 
+  RevisionPackStageResult stageRevisionPack({
+    required String repositoryPath,
+    required String stagingObjectsPath,
+    required String packPath,
+    required List<RevisionObjectId> revisions,
+  }) {
+    _ensureOpen();
+    return using((arena) {
+      final name = arena<ffi.Char>(_oidCapacity);
+      final status = bindings.skills_workspace_revision_pack_import(
+        repositoryPath.toNativeUtf8(allocator: arena).cast(),
+        stagingObjectsPath.toNativeUtf8(allocator: arena).cast(),
+        packPath.toNativeUtf8(allocator: arena).cast(),
+        _copyObjectIds(revisions, arena),
+        revisions.length,
+        name,
+        _oidCapacity,
+      );
+      final failure = switch (bindings.skills_workspace_revision_status
+          .fromValue(status)) {
+        bindings
+            .skills_workspace_revision_status
+            .SKILLS_WORKSPACE_REVISION_PACK_MALFORMED =>
+          RevisionPackStageFailure.malformed,
+        bindings
+            .skills_workspace_revision_status
+            .SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE =>
+          RevisionPackStageFailure.incomplete,
+        bindings
+            .skills_workspace_revision_status
+            .SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE =>
+          RevisionPackStageFailure.unreadable,
+        _ => null,
+      };
+      if (failure != null) return (failure: failure, packName: null);
+      _checkStatus(status, operation: 'stageRevisionPack');
+      final packName = name.cast<Utf8>().toDartString();
+      return (
+        failure: null,
+        packName: packName.isEmpty ? null : RevisionObjectId(packName).value,
+      );
+    });
+  }
+
   void replaceRetentionRefs({
     required String repositoryPath,
     required List<RevisionRetentionRef> references,

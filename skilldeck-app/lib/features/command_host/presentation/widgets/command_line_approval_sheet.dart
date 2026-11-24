@@ -245,6 +245,8 @@ class CommandLineApprovalSheet extends ConsumerWidget {
             : LucideIcons.globe,
         short,
       );
+    case WorkspaceSourceKind.syncedOrigin:
+      return (LucideIcons.cloudOff, '');
   }
 }
 

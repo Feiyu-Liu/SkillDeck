@@ -284,6 +284,30 @@ external int skills_workspace_revision_merge(
   ffi.Pointer<ffi.IntPtr> conflict_count,
 );
 
+/// Indexes a Revision Pack under staging_objects_path/pack and verifies the
+/// named closure using the live Store as a read-only alternate. Returns the
+/// pack name on success, or an empty name when all objects are already live.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+    ffi.Pointer<ffi.Char>,
+    ffi.IntPtr,
+  )
+>()
+external int skills_workspace_revision_pack_import(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> staging_objects_path,
+  ffi.Pointer<ffi.Char> pack_path,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> revision_oid_hex,
+  int revision_count,
+  ffi.Pointer<ffi.Char> pack_name,
+  int pack_name_capacity,
+);
+
 /// Creates the exact `objects.pack` and `objects.idx` payloads for a staged
 /// Revision Recovery Bundle. The directory must already exist and be empty.
 @ffi.Native<
@@ -562,7 +586,10 @@ enum skills_workspace_revision_status {
   SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE(4),
   SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE(5),
   SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL(6),
-  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE(7);
+  SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE(7),
+  SKILLS_WORKSPACE_REVISION_PACK_MALFORMED(8),
+  SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE(9),
+  SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE(10);
 
   final int value;
   const skills_workspace_revision_status(this.value);
@@ -577,6 +604,9 @@ enum skills_workspace_revision_status {
         5 => SKILLS_WORKSPACE_REVISION_VERIFICATION_FAILURE,
         6 => SKILLS_WORKSPACE_REVISION_BUFFER_TOO_SMALL,
         7 => SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE,
+        8 => SKILLS_WORKSPACE_REVISION_PACK_MALFORMED,
+        9 => SKILLS_WORKSPACE_REVISION_PACK_INCOMPLETE,
+        10 => SKILLS_WORKSPACE_REVISION_PACK_UNREADABLE,
         _ => throw ArgumentError(
           'Unknown value for skills_workspace_revision_status: $value',
         ),

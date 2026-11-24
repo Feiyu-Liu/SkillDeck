@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:skills_workspace/src/domain/source_descriptor.dart';
 import 'package:skills_workspace/src/infrastructure/database/source_descriptor_codec.dart';
 import 'package:test/test.dart';
@@ -23,6 +25,12 @@ void main() {
         authoritativeLocation: '/tmp/agent/skills/one',
         contentHash: 'a' * 64,
       ),
+      for (final originSourceType in SyncedOriginSourceType.values)
+        SyncedOriginSourceDescriptor(
+          originSourceType: originSourceType,
+          originDeviceLabel: 'MacBook Pro',
+          displayLabel: 'Team Skills',
+        ),
     ];
 
     for (final source in sources) {
@@ -37,6 +45,44 @@ void main() {
         source,
       );
     }
+  });
+
+  test('synced provenance rejects extra fields and locator-shaped labels', () {
+    const payload = <String, Object?>{
+      'originSourceType': 'local',
+      'originDeviceLabel': 'MacBook Pro',
+      'displayLabel': 'Team Skills',
+    };
+    void decode(Map<String, Object?> data) => codec.decode(
+      kind: 'syncedOrigin',
+      payloadSchemaVersion: 1,
+      payloadJson: jsonEncode(data),
+    );
+
+    for (final field in ['path', 'locator', 'url', 'token', 'deviceId']) {
+      expect(
+        () => decode({...payload, field: 'unexpected'}),
+        throwsA(_reason('unexpectedField')),
+      );
+    }
+    for (final field in ['originDeviceLabel', 'displayLabel']) {
+      for (final value in [
+        '/home/device/skills',
+        'skills/example',
+        r'C:\skills',
+        'https://example.test/skills',
+        'mailto:example@example.test',
+      ]) {
+        expect(
+          () => decode({...payload, field: value}),
+          throwsA(_reason('invalidPayloadValue')),
+        );
+      }
+    }
+    expect(
+      () => decode({...payload, 'originSourceType': 'git'}),
+      throwsA(_reason('invalidPayloadValue')),
+    );
   });
 
   test('normal reads reject unknown versions and kinds', () {

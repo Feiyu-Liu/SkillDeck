@@ -69,7 +69,13 @@ final class WorkspaceSkillDriftExport {
   final String exportedPath;
 }
 
-enum WorkspaceSourceKind { local, git, wellKnown, adoptedSnapshot }
+enum WorkspaceSourceKind {
+  local,
+  git,
+  wellKnown,
+  adoptedSnapshot,
+  syncedOrigin,
+}
 
 enum WorkspaceUpdateStatus {
   current,

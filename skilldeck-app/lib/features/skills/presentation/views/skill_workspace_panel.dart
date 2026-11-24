@@ -762,7 +762,7 @@ class _SourceKindTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, icon) = switch (kind) {
+    final tag = switch (kind) {
       WorkspaceSourceKind.git => (
         context.l10n.sourceKindGit,
         LucideIcons.gitBranch,
@@ -775,7 +775,10 @@ class _SourceKindTag extends StatelessWidget {
         context.l10n.sourceKindLocal,
         LucideIcons.folderOpen,
       ),
+      WorkspaceSourceKind.syncedOrigin => null,
     };
+    if (tag == null) return const SizedBox.shrink();
+    final (label, icon) = tag;
     return Align(
       widthFactor: 0.85,
       heightFactor: 0.85,

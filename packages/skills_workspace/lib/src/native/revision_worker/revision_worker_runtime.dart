@@ -243,6 +243,20 @@ final class RevisionWorkerRuntime
     ),
   );
 
+  Future<RevisionPackStageResult> stageRevisionPack({
+    required String repositoryPath,
+    required String stagingObjectsPath,
+    required String packPath,
+    required List<RevisionObjectId> revisions,
+  }) => _delegate(
+    (worker) => worker.stageRevisionPack(
+      repositoryPath: repositoryPath,
+      stagingObjectsPath: stagingObjectsPath,
+      packPath: packPath,
+      revisions: revisions,
+    ),
+  );
+
   @override
   Future<void> buildRevisionBundleArtifacts({
     required String repositoryPath,

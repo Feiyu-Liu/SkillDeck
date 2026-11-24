@@ -456,6 +456,36 @@ final class ExportSkillDriftArtifactRequest {
   final String destinationDirectory;
 }
 
+/// Exports the current published heads of a Skill to a new pack file.
+final class ExportRevisionPackRequest {
+  const ExportRevisionPackRequest({
+    required this.managedSkillId,
+    required this.destinationPath,
+  });
+
+  final ManagedSkillId managedSkillId;
+  final String destinationPath;
+}
+
+/// Stages the requested revisions from a caller-supplied pack file.
+final class ImportRevisionPackRequest {
+  ImportRevisionPackRequest({
+    required this.managedSkillId,
+    required this.packPath,
+    required Iterable<RevisionId> revisions,
+  }) : revisions = Set<RevisionId>.unmodifiable(revisions) {
+    if (this.revisions.isEmpty) {
+      throw ArgumentError(
+        'A Revision Pack import requires at least one revision.',
+      );
+    }
+  }
+
+  final ManagedSkillId managedSkillId;
+  final String packPath;
+  final Set<RevisionId> revisions;
+}
+
 final class ResolveSkillDriftRequest {
   const ResolveSkillDriftRequest({
     required this.review,

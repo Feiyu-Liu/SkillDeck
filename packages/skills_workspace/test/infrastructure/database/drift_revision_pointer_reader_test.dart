@@ -4,7 +4,9 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
+import 'package:skills_workspace/src/domain/source_descriptor.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_revision_pointer_reader.dart';
+import 'package:skills_workspace/src/infrastructure/database/source_descriptor_codec.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
 import 'package:test/test.dart';
 
@@ -45,6 +47,38 @@ void main() {
     expect(selected!.sourceLineage, SourceLineageReference(_lineage));
     expect(selected.objectId.value, _object);
   });
+
+  for (final sourceType in SyncedOriginSourceType.values) {
+    test(
+      'reads pack heads for Synced Origin with ${sourceType.name}',
+      () async {
+        final source = const SourceDescriptorCodec().encode(
+          SyncedOriginSourceDescriptor(
+            originSourceType: sourceType,
+            originDeviceLabel: 'Office Mac',
+            displayLabel: 'Sample Skill',
+          ),
+        );
+        await database
+            .into(database.skillSources)
+            .insert(
+              SkillSourcesCompanion.insert(
+                sourceLineageId: _lineage,
+                kind: source.kind,
+                payloadSchemaVersion: source.payloadSchemaVersion,
+                payloadJson: source.payloadJson,
+              ),
+            );
+
+        final heads = await reader.readCurrentPackHeads(ManagedSkillId(_skill));
+        expect(heads?.effective.value, _object);
+        expect(
+          heads?.upstream?.value,
+          sourceType == SyncedOriginSourceType.adoptedSnapshot ? null : _object,
+        );
+      },
+    );
+  }
 
   test(
     'fails closed when current Pointer does not use active lineage',

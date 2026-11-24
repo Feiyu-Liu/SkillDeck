@@ -1,5 +1,5 @@
 /// Stable discriminator for supported Skill source provenance.
-enum SourceType { local, git, wellKnown, adoptedSnapshot }
+enum SourceType { local, git, wellKnown, adoptedSnapshot, syncedOrigin }
 
 /// Credential-free provenance needed to reacquire or explain a Skill source.
 sealed class SourceDescriptor {
@@ -183,6 +183,65 @@ final class AdoptedSnapshotSourceDescriptor extends SourceDescriptor {
       'AdoptedSnapshotSourceDescriptor('
       'authoritativeLocation: $authoritativeLocation, '
       'contentHash: $contentHash)';
+}
+
+/// The type of source retained only on the device that supplied a Skill.
+enum SyncedOriginSourceType { local, adoptedSnapshot }
+
+/// Describes a Skill whose device-bound source is on another device.
+final class SyncedOriginSourceDescriptor extends SourceDescriptor {
+  /// Creates provenance with display labels for the source and its device.
+  SyncedOriginSourceDescriptor({
+    required this.originSourceType,
+    required this.originDeviceLabel,
+    required this.displayLabel,
+  }) {
+    _requirePortableDisplayLabel(originDeviceLabel, 'originDeviceLabel');
+    _requirePortableDisplayLabel(displayLabel, 'displayLabel');
+  }
+
+  /// The source type on the device that supplied the Skill.
+  final SyncedOriginSourceType originSourceType;
+
+  /// The display name of the device that supplied the Skill.
+  final String originDeviceLabel;
+
+  /// The display name of the source.
+  final String displayLabel;
+
+  @override
+  SourceType get type => SourceType.syncedOrigin;
+
+  @override
+  bool get canCheckForUpdates => false;
+
+  @override
+  bool hasSameIdentity(SourceDescriptor other) =>
+      other is SyncedOriginSourceDescriptor &&
+      originSourceType == other.originSourceType &&
+      originDeviceLabel == other.originDeviceLabel &&
+      displayLabel == other.displayLabel;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SyncedOriginSourceDescriptor && hasSameIdentity(other);
+
+  @override
+  int get hashCode =>
+      Object.hash(type, originSourceType, originDeviceLabel, displayLabel);
+}
+
+void _requirePortableDisplayLabel(String value, String name) {
+  final label = value.trim();
+  if (label.isEmpty ||
+      label == '.' ||
+      label == '..' ||
+      label.contains('/') ||
+      label.contains('\\') ||
+      (Uri.tryParse(label)?.hasScheme ?? false)) {
+    throw ArgumentError('Invalid $name');
+  }
 }
 
 void _requireNonEmpty(String value, String name) {

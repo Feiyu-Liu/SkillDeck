@@ -1568,7 +1568,8 @@ workspace.SourceDescriptor? _source(SkillSourceInput source) =>
         locator: source.locator,
         skillPath: source.skillPath,
       ),
-      WorkspaceSourceKind.adoptedSnapshot => null,
+      WorkspaceSourceKind.adoptedSnapshot ||
+      WorkspaceSourceKind.syncedOrigin => null,
     };
 
 SkillSourceProvenance _sourceProvenance(workspace.SourceDescriptor source) =>
@@ -1593,6 +1594,10 @@ SkillSourceProvenance _sourceProvenance(workspace.SourceDescriptor source) =>
       workspace.AdoptedSnapshotSourceDescriptor() => SkillSourceProvenance(
         kind: WorkspaceSourceKind.adoptedSnapshot,
         locator: source.authoritativeLocation,
+      ),
+      workspace.SyncedOriginSourceDescriptor() => const SkillSourceProvenance(
+        kind: WorkspaceSourceKind.syncedOrigin,
+        locator: '',
       ),
     };
 

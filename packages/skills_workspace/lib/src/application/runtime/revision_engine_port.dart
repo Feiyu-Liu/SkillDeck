@@ -187,6 +187,13 @@ enum RevisionEngineFailureCode {
   unexpectedFailure,
 }
 
+enum RevisionPackStageFailure { malformed, incomplete, unreadable }
+
+typedef RevisionPackStageResult = ({
+  RevisionPackStageFailure? failure,
+  String? packName,
+});
+
 /// Stable private failure crossing the Revision worker boundary.
 ///
 /// Native diagnostics and paths deliberately remain inside the worker.
