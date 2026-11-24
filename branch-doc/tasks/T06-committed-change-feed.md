@@ -105,12 +105,21 @@ Names are provisional.
 
 ### Progress
 
-- [ ] …
+- [x] Add the schema v5 table, migration, and generated Drift artifacts.
+- [x] Track changes at the Business Commit Point and read them through the Workspace facade.
+- [x] Pass focused acceptance tests for all expected change kinds, cursor behavior, rollback, and migration.
+- [ ] Run the full acceptance gates after integration.
 
 ### Decision Log
+
+- Keep independent revisions for Content, Metadata, and Removal in each Skill row so a later change preserves earlier kinds that remain newer than the cursor.
+- Derive Content from a changed Revision selection. Read the affected Tag Assignments inside the same transaction before a tag deletion cascades.
+- Read the metadata revision and feed rows in one SQLite transaction. A vocabulary row uses a reserved subject alongside the Skill rows.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+On Dart 3.14.0, all 26 tests passed across the public facade, schema migration, and commit control-plane suites. These include rollback after a late commit failure and cursor reset against a saved pre-commit database. Strict package analysis, targeted formatting, and regeneration passed.

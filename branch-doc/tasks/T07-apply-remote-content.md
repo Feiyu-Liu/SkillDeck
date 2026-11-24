@@ -139,12 +139,31 @@ public facade test fixtures.
 
 ### Progress
 
-- [ ] …
+- [x] Wired the guarded public operation for existing managed Skills.
+- [x] Tested pack staging, fast-forward, clean merge, conflict resolution, and
+  recovery before and after the Business Commit Point.
 
 ### Decision Log
+
+- The operation validates objects in an operation-owned Store. Its recovery
+  entries publish only new Git object paths. Existing objects stay readable
+  during a crash and retention refs can be updated independently.
+- A conflict candidate records both merge parents in Git. Its Session keeps
+  the selected Upstream so the existing publish flow can preserve both facts.
+- Clean Drafts are re-materialized at their new base. Recovery checks the
+  previously observed Draft fingerprint when it captures the before image.
+- A retry with a stale Expected Effective returns `staleSnapshot`. Refresh the
+  guard and repeat to get `noChange` when the target is already contained.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Local macOS arm64 gates used Dart 3.14.0. The full Workspace suite passed
+1,624 tests, with the network suite skipped by default. The native
+integration suite passed two tests, and the native runtime and ABI checks
+passed. The coverage gate passed at 89.06% line coverage. Lockfile
+resolution, formatting, strict analysis, and reproducible generation of
+the Drift schema and FFI bindings passed.

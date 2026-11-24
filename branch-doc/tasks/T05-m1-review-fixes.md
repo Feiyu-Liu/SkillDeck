@@ -112,12 +112,13 @@ Paths are under `packages/skills_workspace/` unless they start with `.github/`.
 - [x] Restored retained-root Recovery Bundles and verified full-history export, including the missing-ancestor failure.
 - [x] Added Workspace staging cleanup on startup and journaled removal of a Skill's staged packs.
 - [x] Updated Synced Origin validation and aligned Cloud CI with the CLI workflow.
+- [x] Moved temporary pack cleanup into an explicit startup phase after journal recovery and made cleanup best effort.
 
 ### Decision Log
 
 - Kept the existing native Recovery Bundle ABI and added a separate export entry point. Both use the same pack and index writer.
 - Kept pack removal in the existing journal. Appended staging entries after existing removal entries to preserve their identifiers.
-- Both import and export use the same temporary directory prefix. Startup sweeps those directories while it holds the Workspace lock and before it admits operations.
+- Both import and export use the same temporary directory prefix. Startup sweeps those directories under the Workspace lock after journal recovery and before admitting operations. Unremovable directories are left for a later startup.
 - The 256-character limit counts Unicode code points. Label content is preserved.
 
 ### Surprises
@@ -125,10 +126,11 @@ Paths are under `packages/skills_workspace/` unless they start with `.github/`.
 ### Follow-ups
 
 - Review item 5 is scheduled for M3.
-- Re-review item 7 (startup sweep failure blocks opening; sweep hidden in a query): see `../reviews/2026-11-24-m1-m2-review.md`.
 
 ### Outcome
 
 On macOS arm64 with Flutter 3.50.0 and Dart 3.14.0, Workspace formatting, strict analysis, native integration, native ABI checks, and code generation passed. The coverage run passed 1,603 tests, with the network suite skipped by default, and reached 88.89% line coverage against the 85% gate.
 
 The Cloud package passed lockfile enforcement, formatting, strict analysis, and all 10 tests. The local workflow policy suite passed all four tests. Hosted runner execution is pending.
+
+The review item 7 follow-up passed all 28 tests in the startup coordinator and revision maintenance suites on macOS arm64 with Dart 3.14.0.

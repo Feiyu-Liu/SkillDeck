@@ -58,7 +58,8 @@ current.
 
 ### Progress
 
-- [ ] …
+- [x] Appended R1–R17 and the four follow-up decisions to the private ADR.
+- [x] Updated the proposal and branch index.
 
 ### Decision Log
 
@@ -67,3 +68,6 @@ current.
 ### Follow-ups
 
 ### Outcome
+
+A byte comparison confirmed the original ADR is intact and the appended
+R1–R17 text matches the accepted proposal verbatim.

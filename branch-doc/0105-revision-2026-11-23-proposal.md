@@ -1,5 +1,5 @@
 ---
-status: accepted (2026-11-23); repository follow-ups applied, ADR-0105 amendment pending
+status: accepted (2026-11-23); repository follow-ups applied, ADR-0105 amendment applied
 revises: ADR-0105 (decisions 1, 3, 4, 5, 6, 9, 10, 12, and the 2026-11-14 amendments); replaces Cloudflare Artifacts as the Git host
 depends-on: ADR-0106 (networked Internal Revision Engine), ADR-0107 (hosting)
 ---
@@ -20,8 +20,8 @@ depends-on: ADR-0106 (networked Internal Revision Engine), ADR-0107 (hosting)
 >   `skills_cloud` CONTEXT carries the R15 terms and is marked accepted; the
 >   CONTEXT-MAP draft marker is gone; the Skill Workspace CONTEXT, CLAUDE.md,
 >   and AGENTS.md follow-ups under Consequences are applied.
-> - **Still pending (private docs):** append the Decision section below to
->   ADR-0105 as `## Amendments (2026-11-23)`.
+> - **Done (private docs):** the Decision section below is appended to ADR-0105
+>   as `## Amendments (2026-11-23)`, followed by the 2026-11-24 decisions.
 >
 > Where this revision conflicts with an earlier amendment, this revision applies.
 > Vocabulary follows the draft `skills_cloud` CONTEXT.

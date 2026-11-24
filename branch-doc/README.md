@@ -14,7 +14,7 @@ New development documents for this work go in this folder.
 
 | File | What it is | Status |
 | --- | --- | --- |
-| `0105-revision-2026-11-23-proposal.md` | ADR-0105 revision, R1–R17: Distribution model, state-based Personal Sync, Revision Packs, macOS first | Accepted 2026-11-23; ADR-0105 amendment still to be appended in the private docs |
+| `0105-revision-2026-11-23-proposal.md` | ADR-0105 revision, R1–R17: Distribution model, state-based Personal Sync, Revision Packs, macOS first | Accepted 2026-11-23; ADR-0105 amendment applied in the private docs |
 | `cloud-build-vs-adopt-survey.md` | Build-vs-adopt survey for the client and the Cloudflare service | Reference; its Artifacts and WebSocket verdicts are superseded by R8 and R15 |
 | `brief-revision-pack-prototype.md` | Brief for the Revision Pack prototype (tests P1–P10) | Handed over; results pending |
 | `handover-phase1-git-hosting.md` | Handover for the Artifacts vs self-hosted Git comparison | Superseded by R15; kept for the record |
@@ -27,9 +27,9 @@ New development documents for this work go in this folder.
 | `tasks/T02-revision-pack-import.md` | Seam 2: Revision Pack import into staging | Implemented and verified locally |
 | `tasks/T03-synced-origin-source.md` | Seam 5: Synced Origin Source descriptor, schema v4 | Implemented and verified locally |
 | `tasks/T04-skills-cloud-package-and-feed-check.md` | New `skills_cloud` package and Feed Check scheduling (R8) | Implemented and verified locally |
-| `reviews/2026-11-24-m1-m2-review.md` | Review of T01–T04 and re-review of T05 | Items 1–4 and 6 fixed in T05. Item 5 scheduled for M3. Item 7 open |
+| `reviews/2026-11-24-m1-m2-review.md` | Review of T01–T04 and re-review of T05 | Items 1–4 and 6 fixed in T05. Item 5 scheduled for M3. Item 7 fixed before M5 |
 | `tasks/T05-m1-review-fixes.md` | Fixes for review items 1–4 and 6 | Implemented and verified locally |
 | `m5-sync-apply-contract.md` | M5 contract: `applyRemoteState` variants, results, and content rules; the committed-change feed | Confirmed 2026-11-24 |
-| `tasks/T06-committed-change-feed.md` | Seam 4: committed-change feed, schema v5 | Ready |
-| `tasks/T07-apply-remote-content.md` | Seam 3, content: fast-forward, Sync Merge, conflict to Update Candidate Session | Ready |
-| `tasks/T10-adr-0105-amendment.md` | Append the revision and the 2026-11-24 decisions to the private ADR-0105 | Ready |
+| `tasks/T06-committed-change-feed.md` | Seam 4: committed-change feed, schema v5 | Implemented and verified locally |
+| `tasks/T07-apply-remote-content.md` | Seam 3, content: fast-forward, Sync Merge, conflict to Update Candidate Session | Implemented and verified locally |
+| `tasks/T10-adr-0105-amendment.md` | Append the revision and the 2026-11-24 decisions to the private ADR-0105 | Applied and verified locally |
