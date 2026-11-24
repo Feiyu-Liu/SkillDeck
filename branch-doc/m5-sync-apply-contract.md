@@ -1,6 +1,7 @@
 # M5 contract: applying remote state and the committed-change feed
 
-Status: draft, 2026-11-24, for maintainer confirmation. It fixes the public shape
+Status: confirmed by the maintainer, 2026-11-24, including the two points marked
+below. It fixes the public shape
 of R11 seams 3 and 4. Task cards T06–T09 implement it. Names are provisional;
 shapes are not.
 
@@ -83,7 +84,7 @@ coordinator, with the usual journal, recovery, and finalization.
 | `removed` | Removal succeeded |
 | `tag(tagId)` | Vocabulary `ensure` and `rename` return the resulting local tag |
 
-**Deviation from R11, to confirm:** R11 lists six outcomes. `installed`,
+**Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
 `removed`, and `tag` are added, because their callers need the resulting
 identity or confirmation.
 
@@ -165,5 +166,5 @@ Let L be the local Effective Revision and R the target `effective`.
 | Missing from the Cloud Library after a reset | none, because `skills_cloud` detects it |
 
 Generation changes, which represent Source Replacement, are not covered by this
-contract. They are left for a later card once M4 has fixed how `skills_cloud`
+contract (confirmed 2026-11-24). They are left for a later card once M4 has fixed how `skills_cloud`
 detects them.
