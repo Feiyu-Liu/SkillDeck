@@ -125,6 +125,7 @@ Paths are under `packages/skills_workspace/` unless they start with `.github/`.
 ### Follow-ups
 
 - Review item 5 is scheduled for M3.
+- Re-review item 7 (startup sweep failure blocks opening; sweep hidden in a query): see `../reviews/2026-11-24-m1-m2-review.md`.
 
 ### Outcome
 
