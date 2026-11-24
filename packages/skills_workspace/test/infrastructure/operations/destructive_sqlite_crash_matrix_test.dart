@@ -217,7 +217,14 @@ Future<void> _expectRecoveredState(
     expect(metadata.destructionEpoch, preCommit ? 0 : 1);
     expect(await database.operationJournals.select().get(), isEmpty);
     expect(await database.personalTags.select().get(), hasLength(1));
+    final stagedPack = File(
+      path.join(
+        layout.revisionPackStagingPath(ManagedSkillId(destructiveCrashSkillId)),
+        'staged.pack',
+      ),
+    );
     if (preCommit) {
+      expect(await stagedPack.readAsString(), 'staged');
       expect(await database.managedSkills.select().get(), hasLength(1));
       expect(await database.sourceLineages.select().get(), hasLength(1));
       expect(await database.skillTagAssignments.select().get(), hasLength(1));
@@ -229,6 +236,7 @@ Future<void> _expectRecoveredState(
         'old',
       );
     } else {
+      expect(await stagedPack.parent.exists(), isFalse);
       expect(await database.managedSkills.select().get(), isEmpty);
       expect(await database.sourceLineages.select().get(), isEmpty);
       expect(await database.skillTagAssignments.select().get(), isEmpty);

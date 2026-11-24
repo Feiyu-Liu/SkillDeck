@@ -46,9 +46,8 @@ SkillsCommandHandler buildRevisionPackExportCommand({
               FileSystemEntityType.notFound) {
         return _destinationUnavailable();
       }
-      final staging = await Directory.systemTemp.createTemp(
-        'skilldeck-revision-pack-',
-      );
+      Directory? staging;
+      late final File pack;
       final ({RevisionObjectId effective, RevisionObjectId? upstream}) heads;
       try {
         // A per-Skill read permit pins this Store against destructive changes
@@ -64,14 +63,20 @@ SkillsCommandHandler buildRevisionPackExportCommand({
             return SkillsFailure(code: SkillsErrorCode.skillNotFound);
           }
           heads = selected;
+          final work = await Directory(
+            layout.revisionStoresRoot,
+          ).createTemp(WorkspaceLayout.revisionPackTemporaryPrefix);
+          staging = work;
+          pack = File(path.join(work.path, 'objects.pack'));
           context.reportProgress(OperationProgressPhase.preparing);
           await revisions.createRecoveryPack(
             repositoryPath: layout.revisionStorePath(managedSkillId),
-            bundleStagingPath: staging.path,
+            bundleStagingPath: work.path,
             retainedRoots: {
               heads.effective,
               ?heads.upstream,
             }.toList(growable: false),
+            includeHistory: true,
           );
         } finally {
           await permit.release();
@@ -82,7 +87,6 @@ SkillsCommandHandler buildRevisionPackExportCommand({
         created = target;
         final output = await target.open(mode: FileMode.writeOnlyAppend);
         try {
-          final pack = File(path.join(staging.path, 'objects.pack'));
           await for (final chunk in pack.openRead()) {
             if (token.isCancelled) return _cancelled();
             await output.writeFrom(chunk);
@@ -92,7 +96,7 @@ SkillsCommandHandler buildRevisionPackExportCommand({
           await output.close();
         }
       } finally {
-        await staging.delete(recursive: true);
+        await staging?.delete(recursive: true);
       }
       if (token.isCancelled) return _cancelled();
 
@@ -109,6 +113,13 @@ SkillsCommandHandler buildRevisionPackExportCommand({
       return result;
     } on ManagedSkillRevisionAccessCancelled {
       return _cancelled();
+    } on RevisionEngineException catch (error) {
+      if (token.isCancelled) return _cancelled();
+      if (error.code == RevisionEngineFailureCode.objectUnavailable ||
+          error.code == RevisionEngineFailureCode.storeUnavailable) {
+        return SkillsFailure(code: SkillsErrorCode.revisionStoreCorrupt);
+      }
+      rethrow;
     } on FileSystemException {
       return token.isCancelled ? _cancelled() : _destinationUnavailable();
     } finally {

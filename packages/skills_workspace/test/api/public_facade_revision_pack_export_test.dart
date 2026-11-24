@@ -135,6 +135,56 @@ void main() {
     },
   );
 
+  test('reports a missing ancestor as Store corruption', () async {
+    final fixture = await DriftFacadeFixture.create(activate: false);
+    final repository = fixture.repository;
+    final id = fixture.managedSkillId;
+    for (final notes in ['first publication\n', 'latest publication\n']) {
+      final draft = await driftSuccess(
+        repository.ensureDraft(EnsureDraftRequest(managedSkillId: id)),
+      );
+      await fixture.changeNotes(draft.path, notes);
+      await driftSuccess(
+        repository.publishDraft(PublishDraftRequest(managedSkillId: id)),
+      );
+    }
+    final stores = path.join(fixture.workspacePath, 'revision-stores');
+    final store = path.join(stores, '${id.value}.git');
+    final request = ExportRevisionPackRequest(
+      managedSkillId: id,
+      destinationPath: path.join(fixture.exportDirectory, 'heads.pack'),
+    );
+    final heads = await driftSuccess(repository.exportRevisionPack(request));
+    final ancestor = (await _git([
+      '-C',
+      store,
+      'rev-parse',
+      '${heads.effective.value}^',
+    ])).trim();
+    expect(ancestor, isNot(heads.upstream?.value));
+    await File(
+      path.join(
+        store,
+        'objects',
+        ancestor.substring(0, 2),
+        ancestor.substring(2),
+      ),
+    ).delete();
+    await File(request.destinationPath).delete();
+
+    await driftFailure(
+      repository.exportRevisionPack(request),
+      SkillsErrorCode.revisionStoreCorrupt,
+    );
+    expect(await File(request.destinationPath).exists(), isFalse);
+    expect(
+      await Directory(
+        stores,
+      ).list().any((entry) => path.basename(entry.path).startsWith('.pack-')),
+      isFalse,
+    );
+  });
+
   test(
     'returns typed failures for an unknown Skill and unusable destinations',
     () async {
@@ -191,6 +241,15 @@ void main() {
       );
       await operation.progress.firstWhere(
         (progress) => progress.phase == OperationProgressPhase.preparing,
+      );
+      final stores = Directory(
+        path.join(fixture.workspacePath, 'revision-stores'),
+      );
+      expect(
+        await stores.list().any(
+          (entry) => path.basename(entry.path).startsWith('.pack-'),
+        ),
+        isTrue,
       );
       await operation.cancel();
       await driftFailure(operation, SkillsErrorCode.operationCancelled);

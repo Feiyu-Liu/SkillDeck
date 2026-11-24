@@ -176,6 +176,15 @@ final class WorkspaceDestructiveRecoveryEntries
             );
           }
         }
+        for (final skill in removal.skills) {
+          _throwIfCancelled(cancellationToken);
+          add(
+            _absent(
+              entryId('pack-staging'),
+              _layout.revisionPackStagingPath(skill.managedSkillId),
+            ),
+          );
+        }
     }
     _recoverySpecs.stageDestructiveEntries(
       operationId,

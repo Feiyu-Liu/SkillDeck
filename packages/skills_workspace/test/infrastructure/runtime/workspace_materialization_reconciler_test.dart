@@ -693,6 +693,7 @@ final class _TreeRevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => throw UnimplementedError();
 
   @override

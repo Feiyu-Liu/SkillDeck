@@ -244,11 +244,13 @@ final class RevisionWorkerCreateRecoveryPackCommand
     required this.repositoryPath,
     required this.bundleStagingPath,
     required this.retainedRootOids,
+    this.includeHistory = false,
   });
 
   final String repositoryPath;
   final String bundleStagingPath;
   final List<String> retainedRootOids;
+  final bool includeHistory;
 }
 
 final class RevisionWorkerRestoreRecoveryPackCommand

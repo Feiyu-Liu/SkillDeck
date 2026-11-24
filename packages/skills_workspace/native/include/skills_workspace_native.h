@@ -159,6 +159,11 @@ SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_create(
     const char *repository_path, const char *bundle_staging_path,
     const char *const *retained_root_oid_hex, intptr_t retained_root_count);
 
+// Writes a staged Revision Pack containing the full closure of its roots.
+SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_export_pack_create(
+    const char *repository_path, const char *staging_path,
+    const char *const *root_oid_hex, intptr_t root_count);
+
 // Reconstructs a new staged bare Store from a Bundle's pack/index pair and
 // verifies every indexed object plus all retained roots without system Git.
 SKILLS_WORKSPACE_EXPORT int32_t skills_workspace_revision_recovery_pack_restore(

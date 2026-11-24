@@ -265,6 +265,7 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) async {
     calls.add('createRecoveryPack');
     await File(

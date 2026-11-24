@@ -505,12 +505,16 @@ final class RevisionNativeEngine {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) {
     _ensureOpen();
     using((arena) {
       final roots = _copyObjectIds(retainedRoots, arena);
+      final createPack = includeHistory
+          ? bindings.skills_workspace_revision_export_pack_create
+          : bindings.skills_workspace_revision_recovery_pack_create;
       _checkStatus(
-        bindings.skills_workspace_revision_recovery_pack_create(
+        createPack(
           repositoryPath.toNativeUtf8(allocator: arena).cast(),
           bundleStagingPath.toNativeUtf8(allocator: arena).cast(),
           roots,

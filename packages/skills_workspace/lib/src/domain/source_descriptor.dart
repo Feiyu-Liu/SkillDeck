@@ -233,13 +233,11 @@ final class SyncedOriginSourceDescriptor extends SourceDescriptor {
 }
 
 void _requirePortableDisplayLabel(String value, String name) {
-  final label = value.trim();
-  if (label.isEmpty ||
-      label == '.' ||
-      label == '..' ||
-      label.contains('/') ||
-      label.contains('\\') ||
-      (Uri.tryParse(label)?.hasScheme ?? false)) {
+  if (value.trim().isEmpty ||
+      value.runes.length > 256 ||
+      value.codeUnits.any(
+        (unit) => unit < 0x20 || (unit >= 0x7f && unit <= 0x9f),
+      )) {
     throw ArgumentError('Invalid $name');
   }
 }

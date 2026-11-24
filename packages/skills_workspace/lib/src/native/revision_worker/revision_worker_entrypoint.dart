@@ -249,11 +249,13 @@ Future<Object?> _execute(
       :final repositoryPath,
       :final bundleStagingPath,
       :final retainedRootOids,
+      :final includeHistory,
     ):
       engine.createRecoveryPack(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundleStagingPath,
         retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
+        includeHistory: includeHistory,
       );
       return null;
     case RevisionWorkerRestoreRecoveryPackCommand(

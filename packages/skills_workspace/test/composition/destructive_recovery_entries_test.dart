@@ -152,7 +152,7 @@ void main() {
     );
 
     final staged = registry.takeDestructiveEntries(_operationId);
-    expect(staged, hasLength(5));
+    expect(staged, hasLength(6));
     expect(staged.every((entry) => entry.intendedKind == null), isTrue);
     expect(
       staged.map((entry) => path.normalize(entry.targetPath)),
@@ -162,6 +162,7 @@ void main() {
         path.normalize(layout.repositoryCopyPath('current')),
         path.normalize(path.join(_agentRoot, 'current')),
         path.normalize(layout.draftPath(_skillId)),
+        path.normalize(layout.revisionPackStagingPath(_skillId)),
       ]),
     );
   });

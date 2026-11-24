@@ -233,6 +233,22 @@ external int skills_workspace_revision_diff(
   ffi.Pointer<ffi.IntPtr> required_capacity,
 );
 
+/// Writes a staged Revision Pack containing the full closure of its roots.
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<ffi.Pointer<ffi.Char>>,
+    ffi.IntPtr,
+  )
+>()
+external int skills_workspace_revision_export_pack_create(
+  ffi.Pointer<ffi.Char> repository_path,
+  ffi.Pointer<ffi.Char> staging_path,
+  ffi.Pointer<ffi.Pointer<ffi.Char>> root_oid_hex,
+  int root_count,
+);
+
 /// Initializes the local-only Revision Engine and disables external Git config
 /// search paths. Calls are reference counted and must be balanced by shutdown.
 /// Retain an init reference until all of that caller's Revision calls finish.

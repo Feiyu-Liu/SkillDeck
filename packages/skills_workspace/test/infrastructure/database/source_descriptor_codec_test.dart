@@ -47,43 +47,50 @@ void main() {
     }
   });
 
-  test('synced provenance rejects extra fields and locator-shaped labels', () {
-    const payload = <String, Object?>{
-      'originSourceType': 'local',
-      'originDeviceLabel': 'MacBook Pro',
-      'displayLabel': 'Team Skills',
-    };
-    void decode(Map<String, Object?> data) => codec.decode(
-      kind: 'syncedOrigin',
-      payloadSchemaVersion: 1,
-      payloadJson: jsonEncode(data),
-    );
-
-    for (final field in ['path', 'locator', 'url', 'token', 'deviceId']) {
-      expect(
-        () => decode({...payload, field: 'unexpected'}),
-        throwsA(_reason('unexpectedField')),
+  test(
+    'synced provenance allows ordinary names and rejects invalid labels',
+    () {
+      const payload = <String, Object?>{
+        'originSourceType': 'local',
+        'originDeviceLabel': 'MacBook Pro',
+        'displayLabel': 'Team Skills',
+      };
+      SourceDescriptor decode(Map<String, Object?> data) => codec.decode(
+        kind: 'syncedOrigin',
+        payloadSchemaVersion: 1,
+        payloadJson: jsonEncode(data),
       );
-    }
-    for (final field in ['originDeviceLabel', 'displayLabel']) {
-      for (final value in [
-        '/home/device/skills',
-        'skills/example',
-        r'C:\skills',
-        'https://example.test/skills',
-        'mailto:example@example.test',
-      ]) {
+
+      for (final field in ['path', 'locator', 'url', 'token', 'deviceId']) {
         expect(
-          () => decode({...payload, field: value}),
-          throwsA(_reason('invalidPayloadValue')),
+          () => decode({...payload, field: 'unexpected'}),
+          throwsA(_reason('unexpectedField')),
         );
       }
-    }
-    expect(
-      () => decode({...payload, 'originSourceType': 'git'}),
-      throwsA(_reason('invalidPayloadValue')),
-    );
-  });
+      for (final field in ['originDeviceLabel', 'displayLabel']) {
+        for (final value in ['notes:v2', 'Work / Personal', '..', '🐟' * 256]) {
+          final source = decode({...payload, field: value});
+          expect(jsonDecode(codec.encode(source).payloadJson)[field], value);
+        }
+        for (final value in ['', '   ']) {
+          expect(
+            () => decode({...payload, field: value}),
+            throwsA(_reason('missingRequiredField')),
+          );
+        }
+        for (final value in ['title\n', 'name\u0085', 'x' * 257]) {
+          expect(
+            () => decode({...payload, field: value}),
+            throwsA(_reason('invalidPayloadValue')),
+          );
+        }
+      }
+      expect(
+        () => decode({...payload, 'originSourceType': 'git'}),
+        throwsA(_reason('invalidPayloadValue')),
+      );
+    },
+  );
 
   test('normal reads reject unknown versions and kinds', () {
     expect(

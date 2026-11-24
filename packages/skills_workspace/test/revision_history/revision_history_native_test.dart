@@ -246,10 +246,15 @@ void main() {
       final baseTree = fixture.writeTree(<SkillContentEntry>[
         _text('SKILL.md', '# Base\n'),
       ]);
-      final root = fixture.commit(
+      final ancestor = fixture.commit(
         tree: baseTree,
         parents: const [],
         kind: RevisionCommitKind.initial,
+      );
+      final root = fixture.commit(
+        tree: baseTree,
+        parents: [ancestor],
+        kind: RevisionCommitKind.localPublish,
       );
       final publishedTree = fixture.writeTree(<SkillContentEntry>[
         _text('SKILL.md', '# Customized\n'),
@@ -324,14 +329,19 @@ void main() {
           commit: root,
           expected: RevisionCommitRequest(
             tree: baseTree,
-            parents: const [],
-            kind: RevisionCommitKind.initial,
+            parents: [ancestor],
+            kind: RevisionCommitKind.localPublish,
           ),
         );
         expect(
           () => fixture.engine.readTree(restoredPath, unreachable),
           throwsA(_nativeCode(RevisionNativeFailureCode.objectFailure)),
           reason: 'an unreachable commit must not enter the exact pack',
+        );
+        expect(
+          () => fixture.engine.readTree(restoredPath, ancestor),
+          throwsA(_nativeCode(RevisionNativeFailureCode.objectFailure)),
+          reason: 'an ancestor outside the retained roots is excluded',
         );
       }
 

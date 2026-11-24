@@ -60,6 +60,21 @@ final class DriftWorkspaceRevisionMaintenance
 
   @override
   Future<List<WorkspaceSelectedRevision>> selectedRevisions() async {
+    // Startup holds the Workspace owner lock and has yet to admit operations.
+    final stores = Directory(_layout.revisionStoresRoot);
+    if (await stores.exists()) {
+      await for (final entry in stores.list(followLinks: false)) {
+        if (entry is Directory &&
+            path
+                .basename(entry.path)
+                .startsWith(WorkspaceLayout.revisionPackTemporaryPrefix)) {
+          await _filesystem.removeOwnedPath(
+            targetPath: entry.path,
+            ownerRoot: stores.path,
+          );
+        }
+      }
+    }
     final selections = _database.currentRevisionSelection;
     final lineages = _database.sourceLineages;
     final query = _database

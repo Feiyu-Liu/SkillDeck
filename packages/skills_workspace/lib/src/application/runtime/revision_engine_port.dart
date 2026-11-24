@@ -265,6 +265,7 @@ abstract interface class RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   });
 
   /// Reconstructs a new bare Store from a verified Bundle pack/index pair.

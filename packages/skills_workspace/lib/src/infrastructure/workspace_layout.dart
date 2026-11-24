@@ -10,6 +10,8 @@ import '../domain/identifiers.dart';
 /// Business code addresses Skills and revisions by typed identity. Only this
 /// adapter turns those identities into App-owned filesystem paths.
 final class WorkspaceLayout implements OperationRecoveryLayoutPort {
+  static const revisionPackTemporaryPrefix = '.pack-';
+
   WorkspaceLayout(String rootPath)
     : rootPath = path.normalize(path.absolute(rootPath)) {
     if (!path.isAbsolute(rootPath) || path.isRootRelative(rootPath)) {

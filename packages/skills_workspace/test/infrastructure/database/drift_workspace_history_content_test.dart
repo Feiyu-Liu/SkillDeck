@@ -260,6 +260,7 @@ final class _RevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => throw UnimplementedError();
   @override
   Future<void> createStore(String repositoryPath) => throw UnimplementedError();

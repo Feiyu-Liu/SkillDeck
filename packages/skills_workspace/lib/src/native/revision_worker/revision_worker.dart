@@ -483,12 +483,14 @@ final class RevisionWorker
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) {
     return _send<void>(
       RevisionWorkerCreateRecoveryPackCommand(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundleStagingPath,
         retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+        includeHistory: includeHistory,
       ),
       _decodeVoid,
     );

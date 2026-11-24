@@ -53,7 +53,7 @@ SkillsCommandHandler buildRevisionPackImportCommand({
 
         final work = await Directory(
           layout.revisionStoresRoot,
-        ).createTemp('.pack-');
+        ).createTemp(WorkspaceLayout.revisionPackTemporaryPrefix);
         var published = false;
         try {
           await Directory(path.join(work.path, 'pack')).create();

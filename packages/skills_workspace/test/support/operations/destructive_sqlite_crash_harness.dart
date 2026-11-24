@@ -16,13 +16,16 @@ import 'package:skills_workspace/src/application/ports/operation_ports.dart';
 import 'package:skills_workspace/src/application/revision_store/managed_skill_revision_access_gate.dart';
 import 'package:skills_workspace/src/application/runtime/revision_engine_port.dart';
 import 'package:skills_workspace/src/application/runtime/workspace_journal_recovery_adapter.dart';
+import 'package:skills_workspace/src/composition/destructive_recovery_entries.dart';
 import 'package:skills_workspace/src/composition/destructive_recovery_maintenance.dart';
 import 'package:skills_workspace/src/composition/operation_recovery_backup_maintenance.dart';
+import 'package:skills_workspace/src/domain/cancellation.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
 import 'package:skills_workspace/src/domain/public_models.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
+import 'package:skills_workspace/src/native/revision_worker/revision_worker_runtime.dart';
 import 'package:skills_workspace/src/platform/filesystem/control_plane_backup_durability.dart';
 import 'package:skills_workspace/src/platform/filesystem/durable_workspace_filesystem.dart';
 import 'package:skills_workspace/src/platform/filesystem/workspace_file_lock.dart';
@@ -153,38 +156,19 @@ Future<void> runDestructiveSqliteCrashChild({
   await backups.createBackup();
 
   final operationId = OperationId(destructiveCrashOperationId);
-  final registry = OperationRecoverySpecRegistry()
-    ..stageDestructiveEntries(operationId, <OperationRecoveryEntrySpec>[
-      OperationRecoveryEntrySpec(
-        entryId: 'revision-store',
-        targetPath: layout.revisionStorePath(
-          ManagedSkillId(destructiveCrashSkillId),
-        ),
-        intendedSourcePath: null,
-        intendedKind: null,
-        makeReadOnly: false,
-        requirePlainDirectory: false,
-      ),
-      OperationRecoveryEntrySpec(
-        entryId: 'revision-bundle',
-        targetPath: layout.revisionBundlePath(
-          ManagedSkillId(destructiveCrashSkillId),
-        ),
-        intendedSourcePath: null,
-        intendedKind: null,
-        makeReadOnly: false,
-        requirePlainDirectory: false,
-      ),
-      OperationRecoveryEntrySpec(
-        entryId: 'repository-copy',
-        targetPath: layout.repositoryCopyPath('reviewer'),
-        intendedSourcePath: null,
-        intendedKind: null,
-        makeReadOnly: false,
-        requirePlainDirectory: false,
-      ),
-    ]);
+  final registry = OperationRecoverySpecRegistry();
   final recoveryIntent = _removalIntent();
+  await WorkspaceDestructiveRecoveryEntries(
+    database: database,
+    layout: layout,
+    revisions: RevisionWorkerRuntime(),
+    filesystem: filesystem,
+    recoverySpecs: registry,
+  ).prepareRecoveryEntries(
+    operationId: operationId,
+    intent: recoveryIntent,
+    cancellationToken: CancellationToken.none(),
+  );
   final plan =
       OperationPlanAssembler(
         subjectIdentities: const _FixedSubjectIdentity(),
@@ -761,6 +745,11 @@ Future<void> _seedFilesystem(WorkspaceLayout layout) async {
   await File(
     path.join(store.path, 'store.marker'),
   ).writeAsString('old-store', flush: true);
+  final packs = Directory(
+    layout.revisionPackStagingPath(ManagedSkillId(destructiveCrashSkillId)),
+  );
+  await packs.create(recursive: true);
+  await File(path.join(packs.path, 'staged.pack')).writeAsString('staged');
   final bundle = Directory(
     layout.revisionBundlePath(ManagedSkillId(destructiveCrashSkillId)),
   );

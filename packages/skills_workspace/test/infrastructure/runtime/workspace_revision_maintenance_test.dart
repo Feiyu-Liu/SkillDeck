@@ -60,6 +60,33 @@ void main() {
     expect(selected.currentEffective, RevisionObjectId(_effective));
   });
 
+  test('sweeps temporary packs and keeps Stores and staged packs', () async {
+    final stores = Directory(layout.revisionStoresRoot);
+    await stores.create();
+    final residue = await stores.createTemp(
+      WorkspaceLayout.revisionPackTemporaryPrefix,
+    );
+    final id = ManagedSkillId(_skill);
+    final store = Directory(layout.revisionStorePath(id));
+    final staged = Directory(layout.revisionPackStagingPath(id));
+    for (final directory in [residue, store, staged]) {
+      await directory.create();
+      await File(
+        path.join(directory.path, 'objects.pack'),
+      ).writeAsString('pack');
+    }
+
+    await maintenance.selectedRevisions();
+
+    expect(await residue.exists(), isFalse);
+    for (final directory in [store, staged]) {
+      expect(
+        await File(path.join(directory.path, 'objects.pack')).readAsString(),
+        'pack',
+      );
+    }
+  });
+
   test('reports a readable selected Store as healthy', () async {
     final selected =
         (await maintenance.selectedRevisions()).single
@@ -408,5 +435,6 @@ final class _MarkerRevisionEngine implements RevisionEnginePort {
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => throw UnimplementedError();
 }

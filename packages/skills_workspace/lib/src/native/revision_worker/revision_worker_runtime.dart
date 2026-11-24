@@ -220,11 +220,13 @@ final class RevisionWorkerRuntime
     required String repositoryPath,
     required String bundleStagingPath,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => _delegate(
     (worker) => worker.createRecoveryPack(
       repositoryPath: repositoryPath,
       bundleStagingPath: bundleStagingPath,
       retainedRoots: retainedRoots,
+      includeHistory: includeHistory,
     ),
   );
 

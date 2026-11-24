@@ -1262,9 +1262,9 @@ static int file_exists(const char *path) {
   return 1;
 }
 
-int32_t skills_workspace_revision_recovery_pack_create(
+static int32_t create_pack(
     const char *repository_path, const char *bundle_staging_path,
-    const char *const *retained_root_oid_hex, intptr_t retained_root_count) {
+    const char *const *retained_root_oid_hex, intptr_t retained_root_count, int include_history) {
   git_repository *repository = NULL;
   git_packbuilder *packbuilder = NULL;
   git_revwalk *walk = NULL;
@@ -1291,22 +1291,41 @@ int32_t skills_workspace_revision_recovery_pack_create(
     return result;
   }
   if (git_packbuilder_new(&packbuilder, repository) < 0 ||
-      git_revwalk_new(&walk, repository) < 0) {
+      (include_history && git_revwalk_new(&walk, repository) < 0)) {
     result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
     goto cleanup_pack_create;
   }
   for (root_index = 0; root_index < retained_root_count; root_index += 1) {
     git_oid root_oid;
-    if (!parse_oid(&root_oid, retained_root_oid_hex[root_index]) ||
-        git_revwalk_push(walk, &root_oid) < 0) {
+    int error;
+    if (!parse_oid(&root_oid, retained_root_oid_hex[root_index])) {
       result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
       goto cleanup_pack_create;
     }
+    if (include_history) {
+      error = git_revwalk_push(walk, &root_oid);
+    } else {
+      git_commit *root_commit = NULL;
+      error = git_commit_lookup(&root_commit, repository, &root_oid);
+      if (error == 0) {
+        error = git_packbuilder_insert_recur(packbuilder, &root_oid, NULL);
+      }
+      git_commit_free(root_commit);
+    }
+    if (error < 0) {
+      result = include_history && error == GIT_ENOTFOUND
+                   ? SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE
+                   : SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
+      goto cleanup_pack_create;
+    }
   }
-  // Inserting only the named commits would omit their parents.
-  if (git_packbuilder_insert_walk(packbuilder, walk) < 0) {
-    result = SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
-    goto cleanup_pack_create;
+  if (include_history) {
+    int error = git_packbuilder_insert_walk(packbuilder, walk);
+    if (error < 0) {
+      result = error == GIT_ENOTFOUND ? SKILLS_WORKSPACE_REVISION_OBJECT_FAILURE
+                                    : SKILLS_WORKSPACE_REVISION_BUNDLE_FAILURE;
+      goto cleanup_pack_create;
+    }
   }
   target_pack_path = join_path(bundle_staging_path, "objects.pack");
   target_index_path = join_path(bundle_staging_path, "objects.idx");
@@ -1347,6 +1366,19 @@ cleanup_pack_create:
   git_packbuilder_free(packbuilder);
   git_repository_free(repository);
   return result;
+}
+
+int32_t skills_workspace_revision_recovery_pack_create(
+    const char *repository_path, const char *bundle_staging_path,
+    const char *const *retained_root_oid_hex, intptr_t retained_root_count) {
+  return create_pack(repository_path, bundle_staging_path, retained_root_oid_hex,
+                     retained_root_count, 0);
+}
+
+int32_t skills_workspace_revision_export_pack_create(
+    const char *repository_path, const char *staging_path,
+    const char *const *root_oid_hex, intptr_t root_count) {
+  return create_pack(repository_path, staging_path, root_oid_hex, root_count, 1);
 }
 
 static int copy_file(const char *source_path, const char *target_path) {
