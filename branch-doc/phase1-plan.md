@@ -117,7 +117,7 @@ Ordered by dependency. Dates are not part of this plan.
 | M2 | `skills_cloud` package and Feed Check scheduling: T04 | Now |
 | M3 | Cloud API contract v0 and Device Authorization sign-in | When the service repository exists |
 | M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | After the prototype decision and M3 |
-| M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed | After M1 |
+| M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, then T08 and T09 | After M1 |
 | M6 | Metadata, tag vocabulary, and Note Conflict | After M4 and M5 |
 | M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | After M6 |
 | M8 | macOS qualification, including two Devices updating the same Git Source while offline (R3) | After M7, with staging up |
@@ -130,10 +130,10 @@ Codex never decides these. If a task reaches one, stop and ask.
 
 | Item | Blocks | Decided by |
 | --- | --- | --- |
-| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | Maintainer, from the prototype report |
-| Production API hostname | Persisting any Cloud Session, Cloud Lineage mapping, or Cloud descriptor | Maintainer |
-| Email OTP provider; owner and callback domain of the GitHub OAuth app | M3 end-to-end | Maintainer |
-| Private service repository and the Cloudflare dev and staging account | M3 | Maintainer |
+| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | Maintainer, from the prototype report. Codex runs `brief-revision-pack-prototype.md` in the service repository |
+| Production API hostname | Persisting any Cloud Session, Cloud Lineage mapping, or Cloud descriptor | **Decided 2026-11-24:** `cloud.skilldeck.cc`, one origin for the Cloud API, Better Auth, and `/device`. Staging is `cloud-staging.skilldeck.cc` |
+| Email OTP provider; owner and callback domain of the GitHub OAuth app | M3 end-to-end | **Decided 2026-11-24:** Resend for email OTP. A GitHub organization owns one OAuth App per environment, with callbacks on that environment's origin |
+| Private service repository and the Cloudflare dev and staging account | M3 | **Resolved 2026-11-24:** both exist |
 | Before beta: data region, quotas, backup, Privacy Policy text, account deletion, pack size bound | Beta | Maintainer |
 
 ## The earlier prototype branch
@@ -153,7 +153,8 @@ bring the smallest part and say so in the Decision Log.
 
 ## Schema versions on this branch
 
-The Workspace schema is at v3. Each task that needs a schema change adds the
+The Workspace schema was at v3 when this plan started. T03 added v4 and T06
+adds v5. Each task that needs a schema change adds the
 next version with its own migration and migration test. Never edit a migration
 that is already committed.
 
