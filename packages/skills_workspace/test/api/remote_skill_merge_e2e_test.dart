@@ -143,6 +143,10 @@ void main() {
       files: {'remote.md': 'remote'},
     );
     final before = repository.snapshot.revision;
+    const historyRequest = OperationHistoryRequest();
+    final historyBefore = await driftSuccess(
+      repository.inspectOperationHistory(historyRequest),
+    );
     final operation = repository.applyRemoteState(
       RemoteSkillContent(
         managedSkillId: skill,
@@ -159,6 +163,16 @@ void main() {
         .then((_) => operation.cancel());
     await cancel;
     await driftFailure(operation, SkillsErrorCode.operationCancelled);
+    final history = await driftSuccess(
+      repository.inspectOperationHistory(historyRequest),
+    );
+    expect(history.entries, hasLength(historyBefore.entries.length + 1));
+    expect(
+      history.entries
+          .singleWhere((entry) => entry.operationId == operation.operationId)
+          .status,
+      OperationTerminalStatus.cancelled,
+    );
     expect(repository.snapshot.revision, before);
     expect((await _export(repository, fixture, 'cancelled')).effective, local);
     await fixture.expectMaterializedNotes(
@@ -197,6 +211,21 @@ void main() {
         await driftSuccess(repository.applyRemoteState(request)),
         isA<RemoteApplyDraftResolutionRequired>(),
       );
+      for (final target in [local, donor.base.effective]) {
+        expect(
+          await driftSuccess(
+            repository.applyRemoteState(
+              RemoteSkillContent(
+                managedSkillId: skill,
+                expectedEffective: local,
+                effective: target,
+                upstream: donor.base.upstream!,
+              ),
+            ),
+          ),
+          isA<RemoteApplyNoChange>(),
+        );
+      }
 
       await driftSuccess(repository.close());
       repository = fixture.createRepository();

@@ -30,39 +30,9 @@ extension WorkspaceRemoteContentPreparation
 
     try {
       _throwIfCancelled(token);
-      OperationRecoveryPreCaptureVerifier? verifyDraft;
-      if (skill.draft != null) {
-        final base = await _revisions.readTree(liveStore, local);
-        final capture = DraftCaptureRequest(
-          liveDraftPath: _layout.draftPath(id),
-          stagingDestinationPath: _candidateDraftPath(operationId, id),
-          capturePosixExecutableIntent: _capturePosixExecutableIntent,
-          executableIntentOverrides: _executableIntentOverrides(base),
-          isCancelled: () => token.isCancelled,
-        );
-        final inspected = await _drafts.inspectForCleanup(
-          request: capture,
-          draftBase: base,
-        );
-        _throwIfCancelled(token);
-        final value = inspected.valueOrNull;
-        if (value == null) {
-          return SkillsFailure(code: SkillsErrorCode.ioFailure);
-        }
-        if (value.isDirty) {
-          return _remoteUnchanged(const RemoteApplyDraftResolutionRequired());
-        }
-        verifyDraft = (_) async {
-          final checked = await _drafts.inspectForCleanup(
-            request: capture,
-            draftBase: base,
-          );
-          if (token.isCancelled) return true;
-          return checked.valueOrNull?.cleanupFingerprint ==
-              value.cleanupFingerprint;
-        };
+      if (local == remote && request.packPath == null) {
+        return _remoteUnchanged(const RemoteApplyNoChange());
       }
-
       final staged = await prepareRemoteRevisionStore(
         layout: _layout,
         revisions: runtime,
@@ -100,6 +70,42 @@ extension WorkspaceRemoteContentPreparation
             descendant: local,
           )) {
         return _remoteUnchanged(const RemoteApplyNoChange());
+      }
+
+      if (skill.updateCandidate != null) {
+        return _remoteUnchanged(const RemoteApplyDraftResolutionRequired());
+      }
+      OperationRecoveryPreCaptureVerifier? verifyDraft;
+      if (skill.draft != null) {
+        final base = await _revisions.readTree(liveStore, local);
+        final capture = DraftCaptureRequest(
+          liveDraftPath: _layout.draftPath(id),
+          stagingDestinationPath: _candidateDraftPath(operationId, id),
+          capturePosixExecutableIntent: _capturePosixExecutableIntent,
+          executableIntentOverrides: _executableIntentOverrides(base),
+          isCancelled: () => token.isCancelled,
+        );
+        final inspected = await _drafts.inspectForCleanup(
+          request: capture,
+          draftBase: base,
+        );
+        _throwIfCancelled(token);
+        final value = inspected.valueOrNull;
+        if (value == null) {
+          return SkillsFailure(code: SkillsErrorCode.ioFailure);
+        }
+        if (value.isDirty) {
+          return _remoteUnchanged(const RemoteApplyDraftResolutionRequired());
+        }
+        verifyDraft = (_) async {
+          final checked = await _drafts.inspectForCleanup(
+            request: capture,
+            draftBase: base,
+          );
+          if (token.isCancelled) return true;
+          return checked.valueOrNull?.cleanupFingerprint ==
+              value.cleanupFingerprint;
+        };
       }
 
       final upstream =

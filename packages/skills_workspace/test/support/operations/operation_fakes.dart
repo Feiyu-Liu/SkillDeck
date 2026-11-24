@@ -282,8 +282,9 @@ final class FakeOperationControlPlane implements OperationControlPlanePort {
   @override
   Future<void> completePreparedEnvelopeRollback(
     PreparedOperationEnvelope envelope,
-    OperationAbortReason reason,
-  ) async {
+    OperationAbortReason reason, {
+    bool recordFailure = true,
+  }) async {
     const event = 'control.envelope-rollback-complete';
     log.add(event);
     failures.check(event);

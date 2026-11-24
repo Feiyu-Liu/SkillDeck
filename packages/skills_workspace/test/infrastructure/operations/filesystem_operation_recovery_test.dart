@@ -2076,8 +2076,9 @@ final class _PreparedRecoveryControlPlane implements OperationControlPlanePort {
   @override
   Future<void> completePreparedEnvelopeRollback(
     PreparedOperationEnvelope envelope,
-    OperationAbortReason reason,
-  ) async {
+    OperationAbortReason reason, {
+    bool recordFailure = true,
+  }) async {
     if (!identical(envelope, this.envelope)) {
       throw StateError('unexpected envelope');
     }

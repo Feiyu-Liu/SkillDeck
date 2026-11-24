@@ -4,7 +4,6 @@ import '../../application/operations/operation_models.dart';
 import '../../application/operations/workspace_business_changes.dart';
 import '../../application/ports/operation_ports.dart';
 import '../../domain/identifiers.dart';
-import '../../domain/public_models.dart';
 import 'drift_committed_change_feed.dart';
 import 'operation_plan_codec.dart';
 import 'workspace_database.dart';
@@ -337,8 +336,9 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
   @override
   Future<void> completePreparedEnvelopeRollback(
     PreparedOperationEnvelope envelope,
-    OperationAbortReason reason,
-  ) => _database.transaction(() async {
+    OperationAbortReason reason, {
+    bool recordFailure = true,
+  }) => _database.transaction(() async {
     final journal = await _requireJournal(envelope.operationId);
     _requireJournalMatchesDefinition(journal, envelope);
     final phase = _parsePhase(journal.phase);
@@ -348,11 +348,15 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
         'illegalEnvelopeRollbackCompletionPhase',
       );
     }
-    await _writeRecord(
-      envelope,
-      journal: journal,
-      status: reason == OperationAbortReason.cancelled ? 'cancelled' : 'failed',
-    );
+    if (recordFailure) {
+      await _writeRecord(
+        envelope,
+        journal: journal,
+        status: reason == OperationAbortReason.cancelled
+            ? 'cancelled'
+            : 'failed',
+      );
+    }
     await _markJournalCompleted(
       journal,
       terminalRevision: envelope.expectedRepositoryRevision.value,
@@ -897,11 +901,6 @@ final class DriftOperationControlPlane implements OperationControlPlanePort {
     required OperationJournal journal,
     required String status,
   }) async {
-    if (status != 'succeeded' &&
-        definition.record.kind ==
-            WorkspaceOperationKind.applyRemoteState.name) {
-      return;
-    }
     final survivingSubjects = <OperationSubjectPlan>[];
     for (final subject in definition.record.subjects) {
       final skill =

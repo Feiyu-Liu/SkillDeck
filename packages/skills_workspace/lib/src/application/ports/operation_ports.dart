@@ -146,12 +146,13 @@ abstract interface class OperationControlPlanePort {
     OperationAbortReason reason,
   );
 
-  /// Records successful rollback when candidate construction failed before
-  /// the Prepared envelope could be sealed.
+  /// Completes rollback before sealing. A candidate that requires no change
+  /// can complete the Journal without an Operation Record.
   Future<void> completePreparedEnvelopeRollback(
     PreparedOperationEnvelope envelope,
-    OperationAbortReason reason,
-  );
+    OperationAbortReason reason, {
+    bool recordFailure = true,
+  });
 
   Future<List<JournaledOperation>> loadRecoverableOperations();
 

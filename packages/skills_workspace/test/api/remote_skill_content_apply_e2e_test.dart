@@ -50,6 +50,13 @@ void main() {
     ),
   );
 
+  Future<List<OperationId>> operationHistory() async => [
+    for (final entry in (await driftSuccess(
+      repository.inspectOperationHistory(const OperationHistoryRequest()),
+    )).entries)
+      entry.operationId,
+  ];
+
   for (final stageFirst in [false, true]) {
     test(
       'fast-forwards from ${stageFirst ? 'staged' : 'supplied'} pack data',
@@ -125,13 +132,22 @@ void main() {
     );
   }
 
-  test('a dirty Draft blocks the remote change', () async {
+  test('a dirty Draft blocks only a new remote change', () async {
     final remote = await incoming();
     final draft = await driftSuccess(
       repository.ensureDraft(EnsureDraftRequest(managedSkillId: skillId)),
     );
     await fixture.changeNotes(draft.path, 'my draft\n');
     final before = repository.snapshot.revision;
+    final historyBefore = await operationHistory();
+    final journalsBefore = _databaseRows(
+      layout.databasePath,
+    )['operation_journals'];
+
+    expect(
+      await driftSuccess(apply(base.effective)),
+      isA<RemoteApplyNoChange>(),
+    );
 
     expect(
       await driftSuccess(apply(remote.revision, packPath: remote.packPath)),
@@ -139,6 +155,11 @@ void main() {
     );
 
     expect(repository.snapshot.revision, before);
+    expect(await operationHistory(), historyBefore);
+    expect(
+      _databaseRows(layout.databasePath)['operation_journals'],
+      journalsBefore,
+    );
     await fixture.expectEffectiveNotes(DriftFacadeFixture.baseNotes);
     await fixture.expectMaterializedNotes(
       DriftFacadeFixture.baseNotes,
@@ -184,7 +205,7 @@ void main() {
   );
 
   test(
-    'invalid or absent pack data leaves live files and SQLite intact',
+    'invalid or absent pack data records failure without changing business state',
     () async {
       final remote = await incoming();
       final invalid = File(
@@ -194,6 +215,8 @@ void main() {
       final before = repository.snapshot.revision;
       final storeBefore = await _storeBytes(liveStore);
       final rowsBefore = _databaseRows(layout.databasePath);
+      final operationHistoryBefore = await operationHistory();
+      final failedOperationIds = <OperationId>[];
       final historyBefore = (await fixture.history()).revisions
           .map((entry) => (entry.reference, entry.contentHash))
           .toList();
@@ -207,16 +230,39 @@ void main() {
         ),
         (null, SkillsErrorCode.revisionStoreCorrupt, null),
       ]) {
-        await driftFailure(
-          apply(remote.revision, packPath: packPath),
-          code,
-          reason: reason,
-        );
+        final operation = apply(remote.revision, packPath: packPath);
+        await driftFailure(operation, code, reason: reason);
+        failedOperationIds.add(operation.operationId);
         expect(repository.snapshot.revision, before);
         expect(await _storeBytes(liveStore), equals(storeBefore));
-        expect(_databaseRows(layout.databasePath), equals(rowsBefore));
+        final rows = _databaseRows(layout.databasePath);
+        const operationTables = {
+          'operation_records',
+          'operation_subjects',
+          'operation_journals',
+          'operation_journal_steps',
+        };
+        for (final entry in rowsBefore.entries) {
+          if (!operationTables.contains(entry.key)) {
+            expect(rows[entry.key], entry.value, reason: entry.key);
+          }
+        }
+        final record = rows['operation_records']!.singleWhere(
+          (row) => row['operation_id'] == operation.operationId.value,
+        );
+        expect(record['status'], 'failed');
+        expect(
+          rows['operation_records'],
+          hasLength(
+            rowsBefore['operation_records']!.length + failedOperationIds.length,
+          ),
+        );
         await _expectNoPackResidue(layout, staging);
       }
+      expect(
+        await operationHistory(),
+        unorderedEquals([...operationHistoryBefore, ...failedOperationIds]),
+      );
       expect(
         (await fixture.history()).revisions.map(
           (entry) => (entry.reference, entry.contentHash),
@@ -311,7 +357,23 @@ void main() {
         } else {
           expect(await _storeBytes(liveStore), equals(storeBefore));
           expect(await _storeBytes(staging.path), equals(stageBefore));
-          expect(_databaseRows(layout.databasePath), equals(rowsBefore));
+          final recovered = _databaseRows(layout.databasePath);
+          final records = recovered['operation_records']!;
+          final rollbackRecord = records.singleWhere(
+            (row) => row['operation_id'] == operationId.value,
+          );
+          expect(rollbackRecord['status'], 'failed');
+          expect(
+            recovered['operation_subjects']!.singleWhere(
+              (row) => row['operation_id'] == operationId.value,
+            )['managed_skill_id'],
+            skillId.value,
+          );
+          records.remove(rollbackRecord);
+          recovered['operation_subjects']!.removeWhere(
+            (row) => row['operation_id'] == operationId.value,
+          );
+          expect(recovered, equals(rowsBefore));
         }
         expect(
           await Directory(layout.operationStagingPath(operationId)).exists(),

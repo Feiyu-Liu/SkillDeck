@@ -791,6 +791,30 @@ void main() {
         );
       },
     );
+
+    test(
+      'reference reconciliation failure rolls back the sealed plan',
+      () async {
+        final harness = OperationHarness();
+        harness.referenceMaintenance.failOnCalls.add(1);
+
+        final outcome = await harness.createCoordinator().executeDeferred<void>(
+          operationId: _operationId,
+          expectedRepositoryRevision: RepositoryRevision.initial(),
+          buildEnvelope: _envelope,
+          prepareCandidate: (envelope, cancellationToken) async {},
+          buildPlan: (envelope, preparedCandidate) =>
+              _plan(envelope.operationId, envelope.expectedRepositoryRevision),
+        );
+
+        expect(outcome, isA<OperationRolledBack>());
+        expect(harness.log.events, contains('recovery.rollback'));
+        expect(
+          harness.controlPlane.journals.single.phase,
+          OperationJournalPhase.completed,
+        );
+      },
+    );
   });
 
   group('OperationCoordinator.recover', () {

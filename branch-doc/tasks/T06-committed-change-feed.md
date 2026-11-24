@@ -108,7 +108,7 @@ Names are provisional.
 - [x] Add the schema v5 table, migration, and generated Drift artifacts.
 - [x] Track changes at the Business Commit Point and read them through the Workspace facade.
 - [x] Pass focused acceptance tests for all expected change kinds, cursor behavior, rollback, and migration.
-- [ ] Run the full acceptance gates after integration.
+- [x] Run the full acceptance gates after integration.
 
 ### Decision Log
 
@@ -123,3 +123,5 @@ Names are provisional.
 ### Outcome
 
 On Dart 3.14.0, all 26 tests passed across the public facade, schema migration, and commit control-plane suites. These include rollback after a late commit failure and cursor reset against a saved pre-commit database. Strict package analysis, targeted formatting, and regeneration passed.
+
+After T11 integration on macOS arm64 with Dart 3.14.0, the full Workspace suite passed 1,625 tests with one network test skipped. Both native integration tests passed. Lockfile resolution, package formatting, and strict analysis passed. Filtered line coverage was 89.08% against the 85% gate, including the targeted coverage retry recorded in T11.

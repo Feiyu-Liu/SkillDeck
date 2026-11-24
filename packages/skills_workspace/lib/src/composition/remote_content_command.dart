@@ -49,13 +49,6 @@ SkillsCommandHandler buildRemoteContentCommand({
         context: const {'reason': 'effectiveRevisionChanged'},
       );
     }
-    if (skill.updateCandidate != null) {
-      return SkillsSuccess(
-        value: const RemoteApplyDraftResolutionRequired(),
-        changed: false,
-      );
-    }
-
     ManagedSkillRevisionAccessPermit? permit;
     SkillsResult<PreparedRemoteContent>? preparationResult;
     final OperationExecutionOutcome outcome;
@@ -64,6 +57,8 @@ SkillsCommandHandler buildRemoteContentCommand({
         operationId: context.operationId,
         expectedRepositoryRevision: snapshot.revision,
         lockWaitPolicy: context.lockWaitPolicy,
+        // The applying phase makes the objects available to retention refs.
+        reconcileReferencesAfterSealing: false,
         buildEnvelope: (id, revision) => plans.createRemoteContentEnvelope(
           operationId: id,
           expectedRepositoryRevision: revision,
@@ -86,10 +81,15 @@ SkillsCommandHandler buildRemoteContentCommand({
             token: cancellationToken,
           );
           preparationResult = result;
-          if (result case SkillsSuccess(:final value) when value.plan != null) {
-            return value;
+          switch (result) {
+            case SkillsSuccess(:final value):
+              if (value.plan != null) return value;
+              throw const OperationPreparationUnchanged();
+            case SkillsFailure():
+              throw const _RemoteContentPreparationFailed();
+            case SkillsCommittedFinalizationPending():
+              throw StateError('Candidate preparation cannot commit.');
           }
-          throw const _RemoteContentUnchanged();
         },
         buildPlan: (envelope, prepared) => plans.sealRemoteContentPlan(
           envelope: envelope,
@@ -144,7 +144,9 @@ SkillsCommandHandler buildRemoteContentCommand({
       case OperationCommittedFinalizationPending():
         return finalizationPending(outcome);
       case OperationRolledBack() || OperationRejected():
-        if (token.isCancelled) {
+        if (outcome case OperationRolledBack(
+          reason: OperationAbortReason.cancelled,
+        )) {
           return SkillsFailure(code: SkillsErrorCode.operationCancelled);
         }
         if (outcome is OperationRolledBack) {
@@ -185,6 +187,6 @@ SkillsCommandHandler buildRemoteContentCommand({
   },
 );
 
-final class _RemoteContentUnchanged implements Exception {
-  const _RemoteContentUnchanged();
+final class _RemoteContentPreparationFailed implements Exception {
+  const _RemoteContentPreparationFailed();
 }

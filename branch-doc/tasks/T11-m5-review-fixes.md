@@ -82,12 +82,23 @@ No public API change.
 
 ### Progress
 
-- [ ] …
+- [x] Remove the operation-kind branches and record failed and cancelled applies.
+- [x] Check equal and ancestor targets before Draft and Update Candidate Session blockers.
+- [x] Pass the focused public facade, committed-change feed, coordinator, and crash-recovery tests.
+- [x] Run the full Workspace acceptance gates and record the result in T06.
 
 ### Decision Log
 
+- A preparation result that needs no change completes the Prepared rollback without an Operation Record and runs the existing completed-envelope cleanup. Cancellation observed during preparation takes the ordinary cancellation path.
+- The remote content command defers retention ref reconciliation until the applying phase has published its Git objects and the operation has committed. If early reconciliation fails for a caller using the default timing, the coordinator rolls back the sealed plan.
+- Check the Effective guard first. An equal target with no supplied pack skips the Store copy. A supplied pack still goes through pack validation. Check ancestry before inspecting the Draft or Update Candidate Session.
+- Adjusted the malformed-pack and pre-commit crash assertions to expect the new failed Operation Record while preserving checks on the business rows, revision pointers, and files. Prepared-envelope failures appear in Workspace operation history because the envelope has no per-Skill subjects.
 ### Surprises
+
+- The full coverage run passed 1,624 tests and skipped one network test. The large clean-merge validation test timed out at the default 30 seconds. It passed in the ordinary full suite and in a separate coverage run with a three-minute timeout. The final coverage report combines both runs.
 
 ### Follow-ups
 
 ### Outcome
+
+On macOS arm64 with Dart 3.14.0, lockfile resolution, format checking, and strict analysis passed. All 50 focused tests, 1,625 full Workspace tests, and both native integration tests passed. The full suite skipped one network test. Filtered line coverage reached 89.08% (20,676 of 23,210) against the 85% gate. Both generic operation files have zero `WorkspaceOperationKind.` references.

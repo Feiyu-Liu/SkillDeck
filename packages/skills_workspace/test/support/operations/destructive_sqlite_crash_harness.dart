@@ -1099,8 +1099,13 @@ final class _CrashControlPlane implements OperationControlPlanePort {
   @override
   Future<void> completePreparedEnvelopeRollback(
     PreparedOperationEnvelope envelope,
-    OperationAbortReason reason,
-  ) => _delegate.completePreparedEnvelopeRollback(envelope, reason);
+    OperationAbortReason reason, {
+    bool recordFailure = true,
+  }) => _delegate.completePreparedEnvelopeRollback(
+    envelope,
+    reason,
+    recordFailure: recordFailure,
+  );
 
   @override
   Future<void> completeRollback(

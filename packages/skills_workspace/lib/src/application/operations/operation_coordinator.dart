@@ -3,7 +3,6 @@ import 'dart:async';
 import '../../domain/cancellation.dart';
 import '../../domain/identifiers.dart';
 import '../../domain/lock_wait_policy.dart';
-import '../../domain/public_models.dart';
 import '../ports/operation_ports.dart';
 import 'operation_models.dart';
 
@@ -30,6 +29,11 @@ typedef DeferredOperationPlanBuilder<T> =
       PreparedOperationEnvelope envelope,
       T preparedCandidate,
     );
+
+/// Ends candidate preparation without applying a change or recording a failure.
+final class OperationPreparationUnchanged implements Exception {
+  const OperationPreparationUnchanged();
+}
 
 final class OperationCoordinator {
   const OperationCoordinator({
@@ -151,6 +155,7 @@ final class OperationCoordinator {
     required PreparedOperationEnvelopeBuilder buildEnvelope,
     required DeferredCandidateBuilder<T> prepareCandidate,
     required DeferredOperationPlanBuilder<T> buildPlan,
+    bool reconcileReferencesAfterSealing = true,
     LockWaitPolicy? lockWaitPolicy,
     CancellationToken? cancellationToken,
     void Function()? onBusinessCommitted,
@@ -229,26 +234,33 @@ final class OperationCoordinator {
           );
         }
         await _controlPlane.sealPreparedPlan(envelope, plan);
-        // A remote apply publishes Git objects during its journaled applying
-        // phase. Reconcile their retention refs after that phase has committed.
-        if (plan.record.kind != WorkspaceOperationKind.applyRemoteState.name) {
+      } on Object catch (error) {
+        final cancelled =
+            error is _CancellationBeforeCommit || cancellation.isCancelled;
+        final unchanged = !cancelled && error is OperationPreparationUnchanged;
+        return await _rollbackPreparedEnvelope(
+          envelope,
+          cancelled
+              ? OperationAbortReason.cancelled
+              : OperationAbortReason.preparationFailed,
+          preparedRecovery,
+          unchanged: unchanged,
+          detail: cancelled || unchanged ? null : _classifyAbort(error),
+        );
+      }
+      if (reconcileReferencesAfterSealing) {
+        try {
           await _referenceMaintenance.reconcileRevisionReferences(
             selectedSkillIds: _referenceSkillIds(plan),
           );
+        } on Object catch (error) {
+          return await _rollback(
+            plan,
+            OperationAbortReason.preparationFailed,
+            OperationJournalPhase.prepared,
+            detail: _classifyAbort(error),
+          );
         }
-      } on _CancellationBeforeCommit {
-        return await _rollbackPreparedEnvelope(
-          envelope,
-          OperationAbortReason.cancelled,
-          preparedRecovery,
-        );
-      } on Object catch (error) {
-        return await _rollbackPreparedEnvelope(
-          envelope,
-          OperationAbortReason.preparationFailed,
-          preparedRecovery,
-          detail: _classifyAbort(error),
-        );
       }
       return await _executePreparedPlan(
         plan,
@@ -373,9 +385,6 @@ final class OperationCoordinator {
     try {
       await _recovery.rollback(plan, observedPhase: observedPhase);
       await _controlPlane.completeRollback(plan, reason);
-      if (plan.record.kind == WorkspaceOperationKind.applyRemoteState.name) {
-        await _controlPlane.deleteCompletedJournal(plan.operationId);
-      }
       await _referenceMaintenance.reconcileRevisionReferences(
         selectedSkillIds: _referenceSkillIds(plan),
       );
@@ -396,6 +405,7 @@ final class OperationCoordinator {
     PreparedOperationEnvelope envelope,
     OperationAbortReason reason,
     PreparedOperationRecoveryPort preparedRecovery, {
+    required bool unchanged,
     OperationAbortDetail? detail,
   }) async {
     try {
@@ -403,10 +413,13 @@ final class OperationCoordinator {
         envelope,
         observedPhase: OperationJournalPhase.prepared,
       );
-      await _controlPlane.completePreparedEnvelopeRollback(envelope, reason);
-      if (envelope.record.kind ==
-          WorkspaceOperationKind.applyRemoteState.name) {
-        await _controlPlane.deleteCompletedJournal(envelope.operationId);
+      await _controlPlane.completePreparedEnvelopeRollback(
+        envelope,
+        reason,
+        recordFailure: !unchanged,
+      );
+      if (unchanged) {
+        await _cleanupRecoveredPreparedEnvelope(envelope, preparedRecovery);
       } else {
         await _referenceMaintenance.reconcileRevisionReferences(
           selectedSkillIds: _referenceSkillIds(envelope),
