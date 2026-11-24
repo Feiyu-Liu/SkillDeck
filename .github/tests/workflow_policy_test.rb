@@ -107,9 +107,12 @@ class WorkflowPolicyTest < Minitest::Test
     assert translation.fetch('steps').any? { |step| step.dig('with', 'flutter-version') == '3.29.3' }
     cloud = workflows.fetch('skills-cloud-ci.yml')
     %w[pull_request push].each do |event|
-      assert_equal ['packages/skills_cloud/**'], triggers(cloud).fetch(event).fetch('paths')
+      assert_equal ['packages/skills_cloud/**', '.github/**'], triggers(cloud).fetch(event).fetch('paths')
     end
     cloud_job = cloud.dig('jobs', 'verify')
+    cli_job = workflows.fetch('skilldeck-cli-ci.yml').dig('jobs', 'verify')
+    assert_equal cli_job.fetch('strategy'), cloud_job.fetch('strategy')
+    assert_equal cli_job.fetch('runs-on'), cloud_job.fetch('runs-on')
     assert_equal 'packages/skills_cloud', cloud_job.dig('defaults', 'run', 'working-directory')
     assert_equal [
       'dart pub get --enforce-lockfile',

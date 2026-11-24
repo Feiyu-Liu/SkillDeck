@@ -1,10 +1,10 @@
 name: SkillDeck Cloud Client CI
 on:
   pull_request:
-    paths: ['packages/skills_cloud/**']
+    paths: ['packages/skills_cloud/**', '.github/**']
   push:
     branches: [main]
-    paths: ['packages/skills_cloud/**']
+    paths: ['packages/skills_cloud/**', '.github/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,7 +13,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
-    runs-on: ubuntu-24.04
+    # PRs use Linux. Main and manual runs also cover macOS and Windows.
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-24.04"]' || '["ubuntu-24.04", "macos-15", "windows-2022"]') }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     defaults:
       run:
