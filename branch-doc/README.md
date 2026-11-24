@@ -21,3 +21,4 @@ New development documents for this work go in this folder.
 | `git-hosting-local-test-results-2026-11-23.md` | Local Git hosting test results | Input to R15 |
 | `windows-http-test-plan.md` | Windows HTTP qualification plan | Paused (R17) |
 | `windows-http-2026-11-23.md` | First Windows HTTP qualification run | Input to R17 |
+| `execplan-template.md` | Template for the ExecPlans handed to Codex, with simplicity rules against over-engineering | Draft |
