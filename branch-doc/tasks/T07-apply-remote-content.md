@@ -105,7 +105,9 @@ public facade test fixtures.
   the filesystem as they were, including after a simulated crash, using the
   existing crash or recovery harnesses. After commit, the Skill's used staging
   is gone.
-- **Repeats:** repeating a successful call returns `noChange`.
+- **Repeats:** repeating a successful call with the refreshed
+  `expectedEffective` returns `noChange`. A repeat with the old guard returns
+  `staleSnapshot` (wording corrected 2026-11-24, M5 review item 2).
 - **Gates:**
   - the T01 gates;
   - native changes need `dart run tool/regenerate.dart`, a clean tree, and the

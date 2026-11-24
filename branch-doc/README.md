@@ -29,7 +29,9 @@ New development documents for this work go in this folder.
 | `tasks/T04-skills-cloud-package-and-feed-check.md` | New `skills_cloud` package and Feed Check scheduling (R8) | Implemented and verified locally |
 | `reviews/2026-11-24-m1-m2-review.md` | Review of T01–T04 and re-review of T05 | Items 1–4 and 6 fixed in T05. Item 5 scheduled for M3. Item 7 fixed before M5 |
 | `tasks/T05-m1-review-fixes.md` | Fixes for review items 1–4 and 6 | Implemented and verified locally |
-| `m5-sync-apply-contract.md` | M5 contract: `applyRemoteState` variants, results, and content rules; the committed-change feed | Confirmed 2026-11-24 |
-| `tasks/T06-committed-change-feed.md` | Seam 4: committed-change feed, schema v5 | Implemented and verified locally |
-| `tasks/T07-apply-remote-content.md` | Seam 3, content: fast-forward, Sync Merge, conflict to Update Candidate Session | Implemented and verified locally |
+| `m5-sync-apply-contract.md` | M5 contract: `applyRemoteState` variants, results, and content rules; the committed-change feed | Confirmed 2026-11-24; check order and retry wording clarified by the M5 review; one open question |
+| `tasks/T06-committed-change-feed.md` | Seam 4: committed-change feed, schema v5 | Implemented; review fixes in T11 |
+| `tasks/T07-apply-remote-content.md` | Seam 3, content: fast-forward, Sync Merge, conflict to Update Candidate Session | Implemented; review fixes in T11 |
 | `tasks/T10-adr-0105-amendment.md` | Append the revision and the 2026-11-24 decisions to the private ADR-0105 | Applied and verified locally |
+| `reviews/2026-11-24-m5-review.md` | Review of T06, T07, T10, and item 7 of the M1–M2 review | Items 1 (medium), 2 (code order), 4, and 6 go to T11. Item 3 open |
+| `tasks/T11-m5-review-fixes.md` | Fixes for M5 review items 1, 2, 4 (optional), and 6 | Ready |

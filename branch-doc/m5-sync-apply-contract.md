@@ -25,6 +25,9 @@ the maintainer decisions of 2026-11-24:
 - **Retry safety:** every call is safe to repeat. A repeated call either finds
   the state already applied (`noChange`) or fails the guard (stale). Nothing is
   remembered about callers.
+  - For content, a repeat with the same `expectedEffective` after a change was
+    applied fails the guard. The caller refreshes the guard and repeats, and
+    then gets `noChange` (clarified 2026-11-24, M5 review item 2).
 
 ## Seam 4: committed-change feed (T06)
 
@@ -100,9 +103,10 @@ identity or confirmation.
 
 Let L be the local Effective Revision and R the target `effective`.
 
-1. **Blocked Skill:** a Dirty Draft or an existing Update Candidate Session
-   returns `draftResolutionRequired`, with no change. Other Skills are
-   unaffected.
+1. **Blocked Skill:** after the guard, and after the two `noChange` cases in
+   rule 2 (L = R, and R an ancestor of L), a Dirty Draft or an existing Update
+   Candidate Session returns `draftResolutionRequired`, with no change. Other
+   Skills are unaffected. (Order clarified 2026-11-24, M5 review item 2.)
 2. **Content decision:**
 
    | Case | Result |
@@ -168,3 +172,11 @@ Let L be the local Effective Revision and R the target `effective`.
 Generation changes, which represent Source Replacement, are not covered by this
 contract (confirmed 2026-11-24). They are left for a later card once M4 has fixed how `skills_cloud`
 detects them.
+
+## Open questions
+
+- **Reading the current revisions (M5 review item 3):** the only public way to
+  learn a Skill's current Effective and Upstream `RevisionId` is
+  `exportRevisionPack`. Decide when writing T08 and T09, or in M4, whether to
+  add them to the committed-change feed, add a small read, or have
+  `skills_cloud` cache them from apply and export results.
