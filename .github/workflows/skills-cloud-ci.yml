@@ -1,0 +1,31 @@
+name: SkillDeck Cloud Client CI
+on:
+  pull_request:
+    paths: ['packages/skills_cloud/**']
+  push:
+    branches: [main]
+    paths: ['packages/skills_cloud/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: skills-cloud-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: packages/skills_cloud
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-ci
+        with:
+          native: 'false'
+      - run: dart pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - run: dart test

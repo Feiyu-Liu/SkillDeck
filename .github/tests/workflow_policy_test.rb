@@ -19,7 +19,7 @@ class WorkflowPolicyTest < Minitest::Test
   end
 
   def test_entrypoints_are_read_only_pr_and_main_verification
-    assert_equal 6, workflows.size
+    assert_equal 7, workflows.size
     workflows.each do |name, workflow|
       assert_equal({'contents' => 'read'}, workflow.fetch('permissions'), name)
       events = triggers(workflow)
@@ -105,6 +105,18 @@ class WorkflowPolicyTest < Minitest::Test
     translation = workflows.fetch('skills-translation-ci.yml').dig('jobs', 'minimum-sdk')
     assert_equal 2, translation.dig('strategy', 'matrix', 'package').length
     assert translation.fetch('steps').any? { |step| step.dig('with', 'flutter-version') == '3.29.3' }
+    cloud = workflows.fetch('skills-cloud-ci.yml')
+    %w[pull_request push].each do |event|
+      assert_equal ['packages/skills_cloud/**'], triggers(cloud).fetch(event).fetch('paths')
+    end
+    cloud_job = cloud.dig('jobs', 'verify')
+    assert_equal 'packages/skills_cloud', cloud_job.dig('defaults', 'run', 'working-directory')
+    assert_equal [
+      'dart pub get --enforce-lockfile',
+      'dart format --output=none --set-exit-if-changed .',
+      'dart analyze --fatal-infos',
+      'dart test',
+    ], cloud_job.fetch('steps').map { |step| step['run'] }.compact
     setup = YAML.load_file(File.join(ROOT, 'actions/setup-ci/action.yml'))
     assert_equal '3.50.0', setup.dig('inputs', 'flutter-version', 'default')
   end
