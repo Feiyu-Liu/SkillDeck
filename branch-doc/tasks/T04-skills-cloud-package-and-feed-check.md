@@ -90,12 +90,24 @@ All behaviour is tested with a fake clock, and no test sleeps in real time.
 
 ### Progress
 
-- [ ] …
+- [x] Added the Dart package, scheduler, and path-filtered CI workflow.
+- [x] Verified timing, trigger coalescing, backoff, and shutdown with a fake clock.
 
 ### Decision Log
 
+- Periodic delays start when a check completes, so time spent checking never starts an overlapping check.
+- Explicit lifecycle triggers run promptly. Periodic checks still observe the most recent applicable `Retry-After` deadline.
+- Failures use equal jitter over an exponential window from a four-minute first ceiling to a 30-minute cap. The scheduler treats callback exceptions as failures.
+- `fake_async` is a development dependency. The scheduler uses SDK timers and a monotonic clock in production.
+
 ### Surprises
+
+- The repository workflow policy test enumerates workflows and now covers the Cloud path filter and commands.
 
 ### Follow-ups
 
+- The App supplies the lifecycle events and the Feed Check callback at integration.
+
 ### Outcome
+
+Dart 3.14.0 passed the enforced lockfile, formatting, strict analysis, and all 10 fake-clock tests. The workflow policy suite passed all four tests. Hosted CI execution is pending.

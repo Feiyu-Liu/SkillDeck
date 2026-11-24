@@ -95,12 +95,26 @@ Names are provisional. Follow package naming, but keep the shape.
 
 ### Progress
 
-- [ ] …
+- [x] Added the opaque revision identifier and the Workspace export operation.
+- [x] Verified that a fresh Git repository can read the history, trees, and bytes reachable from both exported heads.
 
 ### Decision Log
 
+- The export uses SQLite-selected heads and the existing per-Skill revision read permit. It releases the permit before copying the pack to the caller's destination.
+- Reused the native recovery-pack path and kept its ABI. The export publishes only the pack file and deletes the temporary index.
+- The destination is created exclusively so concurrent exports cannot overwrite one another.
+
 ### Surprises
+
+- The existing native pack builder inserted commits and their trees without walking parents. It now walks ancestry before writing the pack.
+- Workspace stores a recovery baseline even for an adopted snapshot without an Upstream Revision. The export omits that synthetic upstream.
 
 ### Follow-ups
 
+- A forced process exit during the destination copy can leave a partial file. Normal failure and cancellation clean it up.
+
 ### Outcome
+
+On macOS arm64 with Dart 3.14.0, 21 focused export, adoption, and revision-pointer tests passed. The fresh-repository test verifies both head trees and their history. The native integration and ABI checks passed.
+
+The full Workspace suite passed 1,601 tests. The network suite was skipped by default. Line coverage was 88.89%, above the 85% gate.

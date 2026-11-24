@@ -90,12 +90,23 @@ Names are provisional.
 
 ### Progress
 
-- [ ] …
+- [x] Added the Workspace import operation, native indexing, and named-revision validation.
+- [x] Verified partial packs, live-only no-ops, repeated imports, malformed input, incomplete closures, and cancellation.
 
 ### Decision Log
 
+- The existing per-Skill read permit protects access to the live object store during validation. The staging object database uses the live object database as a read-only alternate.
+- Validated pack and index files are published by a single directory rename, using the indexed pack name to deduplicate repeated imports.
+- Successful imports retain staged packs as file output for the later Sync apply milestone. Staging uses the Workspace layout and requires no database rows.
+
 ### Surprises
+
+- libgit2 alone does not distinguish every missing dependency from malformed input. A separate walk checks the named commit, tree, and blob closure over staged and live objects. A thin pack with an unresolved delta base cannot be indexed and reports malformed. Phase 1 sends self-contained packs.
 
 ### Follow-ups
 
+- M5 owns applying staged objects and any cleanup associated with that apply.
+
 ### Outcome
+
+On macOS arm64 with Dart 3.14.0, all six public API cases passed. The tests compare live Store, SQLite, and WAL bytes before and after import. Native ABI and runtime lifecycle checks passed. Regeneration reproduced the generated bindings byte for byte. The full Workspace suite passed at 88.89% line coverage.

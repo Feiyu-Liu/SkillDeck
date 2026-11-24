@@ -23,7 +23,7 @@ New development documents for this work go in this folder.
 | `windows-http-2026-11-23.md` | First Windows HTTP qualification run | Input to R17 |
 | `execplan-template.md` | Template for the ExecPlans handed to Codex, with simplicity rules against over-engineering | Draft |
 | `phase1-plan.md` | Phase 1 (Personal Sync, macOS) plan: goal, binding decisions, components, milestones M1–M8, blockers | Draft |
-| `tasks/T01-revision-pack-export.md` | Seam 1: Revision Pack export and the public revision identifier (R16) | Ready |
-| `tasks/T02-revision-pack-import.md` | Seam 2: Revision Pack import into staging | Ready after T01 |
-| `tasks/T03-synced-origin-source.md` | Seam 5: Synced Origin Source descriptor, schema v4 | Ready |
-| `tasks/T04-skills-cloud-package-and-feed-check.md` | New `skills_cloud` package and Feed Check scheduling (R8) | Ready |
+| `tasks/T01-revision-pack-export.md` | Seam 1: Revision Pack export and the public revision identifier (R16) | Implemented and verified locally |
+| `tasks/T02-revision-pack-import.md` | Seam 2: Revision Pack import into staging | Implemented and verified locally |
+| `tasks/T03-synced-origin-source.md` | Seam 5: Synced Origin Source descriptor, schema v4 | Implemented and verified locally |
+| `tasks/T04-skills-cloud-package-and-feed-check.md` | New `skills_cloud` package and Feed Check scheduling (R8) | Implemented and verified locally |

@@ -85,12 +85,22 @@ Names are provisional.
 
 ### Progress
 
-- [ ] …
+- [x] Added the descriptor, strict payload decoding, and the v3-to-v4 migration.
+- [x] Verified source round trips, snapshot projection, historical rows, and unsupported update checks.
 
 ### Decision Log
 
+- The table migration changes the allowed descriptor kinds and copies existing row values, including the original JSON bytes.
+- The App adapter handles the new variant as a distinct source kind without an address. Existing UI and grouping code handle that case without adding a provenance presentation.
+
 ### Surprises
+
+- The App already exhaustively matches the public source descriptor. A compatibility change was required to keep it compiling.
 
 ### Follow-ups
 
+- M5 creates the descriptor when applying state received through Personal Sync.
+
 ### Outcome
+
+On macOS arm64 with Dart 3.14.0, all 35 focused source and migration tests passed. Regeneration reproduced the Drift outputs and v4 schema. The full Workspace suite passed at 88.89% line coverage. Flutter 3.50.0 passed strict App analysis and all 49 focused App tests.
