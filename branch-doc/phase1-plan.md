@@ -56,8 +56,9 @@ Each line is binding. The R number points to the full text.
   Update Candidate Session. A Dirty Draft or Update Candidate Session blocks
   incoming content for that Skill only.
 - **Metadata (R5):** every synced value has a Field Version and every write is
-  a compare-and-set. Favorites, tag assignments, and tag names settle in server
-  order. Concurrent Note edits form a Note Conflict that keeps both texts.
+  a compare-and-set. Favorites, tag assignments, tag names, and tag colors
+  settle in server order (colors added 2026-11-25). Concurrent Note edits
+  form a Note Conflict that keeps both texts.
 - **Workspace boundary (R9, R11):** `skills_workspace` gains exactly seams 1–5
   and does no cloud network I/O. Its public API never gains reservation or
   outcome-inspection operations, URLs, credentials, cloud identifiers, Field

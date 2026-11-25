@@ -52,7 +52,8 @@ the maintainer decisions of 2026-11-24:
   - `content` means the Skill's Effective or Upstream Revision changed, or the
     Skill was created.
   - `metadata` means its Favorite, Note, or Tag Assignments changed.
-  - The vocabulary row changes when a tag is created, renamed, or deleted.
+  - The vocabulary row changes when a tag is created, renamed, recolored, or
+    deleted.
 
 ## Seam 3: apply remote state (T07–T09)
 
@@ -69,7 +70,7 @@ coordinator, with the usual journal, recovery, and finalization.
 | `RemoteSkillInstall` | `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T08 |
 | `RemoteSkillMetadata` | `managedSkillId`, `expectedEffective`, `favorite`, `note` (null clears it), `tagIds` (the complete set of local tag IDs) | T09 |
 | `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective` | T09 |
-| `RemoteTagVocabulary` | one of `ensure(name)`, `rename(tagId, name)`, or `delete(tagId)` | T09 |
+| `RemoteTagVocabulary` | one of `ensure(name, color)`, `update(tagId, name, color)`, or `delete(tagId)`; `color` is `#RRGGBB` or null | T09 |
 
 `expectedEffective`, `effective`, and `upstream` are `RevisionId`s.
 
@@ -93,7 +94,7 @@ answering two questions raised while implementing T08).
 | `skillSlotOccupied(occupant)` | Install only: a different local Skill holds the Skill Slot |
 | `installed(managedSkillId)` | Install succeeded |
 | `removed` | Removal succeeded, or Vocabulary `delete` removed the tag |
-| `tag(tagId)` | Vocabulary `ensure` and `rename` return the resulting local tag |
+| `tag(tagId)` | Vocabulary `ensure` and `update` return the resulting local tag |
 
 **Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
 `removed`, and `tag` are added, because their callers need the resulting
@@ -168,15 +169,17 @@ Let L be the local Effective Revision and R the target `effective`.
     `draftResolutionRequired`. That becomes the R10 Attention Reason "Removed on
     another Device while a Draft exists here".
 - **Vocabulary:**
-  - `ensure` returns the existing tag when the normalized name exists;
-  - `rename` onto an existing normalized name moves the assignments into that
-    tag and deletes the renamed one;
+  - `ensure` and `update` leave the resulting tag with exactly the given
+    display name and color;
+  - `ensure` returns the existing tag when the normalized name exists, and
+    creates one otherwise;
+  - `update` onto an existing normalized name moves the assignments into that
+    tag and deletes the updated one;
   - `delete` removes the tag and its assignments and gives `removed`. An
     unknown tag gives `noChange`, so a retry is safe.
   - The local tags' existing normalization rules apply.
-  - Tag colors are local only: `rename` keeps the color, a merge keeps the
-    color of the tag it merges into, and `ensure` creates a tag with no color
-    (decided 2026-11-25, when writing T09).
+  - Tag colors are synced (decided by the maintainer on 2026-11-25, when
+    writing T09). The vocabulary feed already reports a color change.
 
 ## Where each R10 Attention Reason comes from
 

@@ -60,8 +60,9 @@ Names are provisional.
       after trimming throws `ArgumentError`;
     - `tagIds`, the complete set of local tag IDs.
   - `RemoteSkillRemoval`, with `managedSkillId` and `expectedEffective`.
-  - `RemoteTagVocabulary`, as three cases: `ensure(name)`,
-    `rename(tagId, name)`, and `delete(tagId)`.
+  - `RemoteTagVocabulary`, as three cases: `ensure(name, color)`,
+    `update(tagId, name, color)`, and `delete(tagId)`. `color` is a final
+    value: `#RRGGBB`, or null for no color, validated as `PersonalTag` does.
 - **New results:** `removed` and `tag(tagId)`.
 - **Metadata:**
   - the guard runs first. A different current Effective gives `staleSnapshot`
@@ -83,24 +84,25 @@ Names are provisional.
   - an unknown or already removed Skill gives `skillNotFound`. `skills_cloud`
     treats that as done on retry.
 - **Vocabulary:** no guard. The local normalization rules apply.
-  - `ensure(name)`:
+  - **Rule for both `ensure` and `update`:** the resulting tag ends with
+    exactly the given display name and color. When it already has them,
+    nothing changes.
+  - `ensure(name, color)`:
     - if a tag with that normalized name exists, the result is `tag(id)` of
-      that tag and nothing changes;
-    - otherwise a tag with no color is created, and the result is `tag(newId)`.
-  - `rename(tagId, name)`:
-    - the same normalized name as the tag's own gives `tag(tagId)`, and only
-      the display name changes, if it differs;
-    - a name that another tag already has moves every assignment into that
-      tag, deletes the renamed tag, and gives `tag(otherId)`, in one Business
-      Commit;
+      that tag;
+    - otherwise a tag is created, and the result is `tag(newId)`.
+  - `update(tagId, name, color)`:
+    - when no other tag has that normalized name, the tag itself gets the
+      name and color, and the result is `tag(tagId)`;
+    - when another tag already has it, every assignment moves into that tag,
+      the updated tag is deleted, the other tag gets the name and color, and
+      the result is `tag(otherId)`, all in one Business Commit;
     - an unknown `tagId` gives `personalTagNotFound`.
   - `delete(tagId)`: removes the tag and its assignments, and gives `removed`.
     An unknown `tagId` gives `noChange`, so a retry is safe.
-- **Tag colors are local only.** The confirmed contract syncs tag names, not
-  colors:
-  - `rename` keeps the tag's color, unlike `updatePersonalTag`, which sets it;
-  - a merge keeps the color of the tag it merges into;
-  - `ensure` creates a tag with no color.
+- **Tag colors are synced** (decided by the maintainer on 2026-11-25). A
+  color-only change is already reported as `vocabularyChanged`, because it
+  writes the same tag row as a rename.
 - **Review item T08-2:** a Source payload encoding failure in remote install
   maps to the same code that local install uses (`invalidSkill`), not
   `transportRejected`.
@@ -133,15 +135,21 @@ Each item is a test through the public API with the existing facade fixtures.
     and "removed" respectively, with the existing destructive crash harness.
 - **Vocabulary:**
   - `ensure`:
-    - a new name gives a new tag;
-    - the same name in different case or spacing gives the existing tag
-      with no revision bump.
-  - `rename`:
-    - a plain rename keeps the tag's color;
-    - a rename onto an existing name:
+    - a new name gives a new tag with the given color;
+    - the same display name and color give the existing tag with no revision
+      bump;
+    - a name that differs only in case or spacing gives the existing tag and
+      changes its display name;
+    - the same name with a different color, or with null, changes only the
+      color and reports `vocabularyChanged`.
+  - `update`:
+    - a color-only update reports `vocabularyChanged` and no `metadata`;
+    - an invalid color throws `ArgumentError`;
+    - an update onto an existing name:
       - moves the assignments, including a Skill that had both tags, which
         ends with one assignment;
-      - deletes the renamed tag;
+      - deletes the updated tag;
+      - gives the surviving tag the requested name and color;
       - reports `vocabularyChanged` and `metadata` for each affected Skill.
   - `delete`:
     - it removes the assignments, and the feed reports them;
@@ -152,11 +160,10 @@ Each item is a test through the public API with the existing facade fixtures.
 ### Scope fence
 
 - **In scope:** `packages/skills_workspace/`. The contract already matches
-  this card: `delete` gives `removed` or `noChange`, and colors stay local.
+  this card: `delete` gives `removed` or `noChange`, and colors are synced.
 - **Out of scope:**
   - Field Versions, Note Conflicts, and server tag mapping, which belong to
     `skills_cloud` (M6);
-  - syncing tag colors;
   - Generation changes;
   - review item T13-1, remote ancestry after a Store loss;
   - App changes;
@@ -171,7 +178,7 @@ Each item is a test through the public API with the existing facade fixtures.
   kind, or schema change.
 - Bypassing the reviewed RepositoryRevision would mean adding a remote flag
   to the destructive planner. Say how you would avoid that first.
-- A rename merge cannot be one Business Commit with the existing library
+- An update that merges two tags cannot be one Business Commit with the existing library
   changes.
 - The feed would not report a cascaded assignment change with the existing
   business changes.
