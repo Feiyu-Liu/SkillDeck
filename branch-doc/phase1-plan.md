@@ -117,7 +117,7 @@ Ordered by dependency. Dates are not part of this plan.
 | M2 | `skills_cloud` package and Feed Check scheduling: T04 | Now |
 | M3 | Cloud API contract v0 and Device Authorization sign-in | When the service repository exists |
 | M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | After the prototype decision and M3 |
-| M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, T11 (review fixes), T12 (current-revision read), then T08 and T09 | After M1 |
+| M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, T11 (review fixes), T12 (current-revision read), T08, T13 (Recovery Bundle fix), then T09 | After M1 |
 | M6 | Metadata, tag vocabulary, and Note Conflict | After M4 and M5 |
 | M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | After M6 |
 | M8 | macOS qualification, including two Devices updating the same Git Source while offline (R3) | After M7, with staging up |
