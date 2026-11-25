@@ -134,12 +134,39 @@ Each item is a test through the public API with a real Store, unless noted.
 
 ### Progress
 
-- [ ] …
+- [x] Centralized the history-first build in the Recovery Bundle publisher.
+- [x] Verified real Store loss after fast-forward, clean merge, remote install followed by a local publish, and two successive recoveries with a publish in between.
+- [x] Recreated a legacy short bundle with the roots-only native call and verified recovery before and after another publish.
+- [x] Extended the mixed-operation manifest test to restore each bundle into an independent Store and compare all commits reachable from its manifest roots.
 
 ### Decision Log
 
+Removed the history option from the publisher and preparation service. Both the worker and direct engine paths try a history pack. Only an object-unavailable error during construction triggers a second build with the same roots. Subsequent verification and restoration use the existing path.
+
 ### Surprises
+
+- The legacy short-bundle test confirms that publish and reopen succeed after ancestors have been lost. Export still returns `revisionStoreCorrupt` on both recoveries.
+- On macOS arm64 with Dart 3.14.0, a fresh local Skill with 50 successive edits to the same notes file produced a 22,212-byte bundle before and after the change (all bundle files combined). SQLite already retained all 51 commits in this fixture. The 50th public publish took 434.273 ms before and 398.810 ms after, measured once per build. These single samples do not establish a speedup.
 
 ### Follow-ups
 
+Recovering ancestors already lost from a legacy Store requires another copy of those revisions, deferred to M7.
+
 ### Outcome
+
+macOS arm64, Dart 3.14.0. Run from `packages/skills_workspace/`. Each command below exited 0. Coverage files and logs are under `/tmp/t14-run/`.
+
+| Command | Exit | Result |
+|---|---:|---|
+| `dart pub get --enforce-lockfile` | 0 | Used the lockfile's pub.dev host after the configured mirror failed resolution. |
+| `dart run tool/regenerate.dart` | 0 | No tracked generated-file changes. |
+| `dart format --output=none --set-exit-if-changed .` | 0 | Clean. |
+| `dart analyze --fatal-infos` | 0 | No issues. |
+| `dart test -j 1 -r expanded` | 0 | 1,663 passed, one network suite skipped. |
+| `dart test -j 1 -r expanded integration_test` | 0 | Both native integration tests passed. |
+| `dart test -j 1 -r expanded --coverage=/tmp/t14-run/coverage` | 0 | 1,663 passed, same skip. |
+| `dart run coverage:format_coverage --lcov --in=/tmp/t14-run/coverage --out=/tmp/t14-run/raw.info --package=. --report-on=lib` | 0 | LCOV generated. |
+| `dart run tool/filter_coverage.dart /tmp/t14-run/raw.info /tmp/t14-run/lcov.info` | 0 | Project filter applied. |
+| `dart run tool/check_coverage.dart /tmp/t14-run/lcov.info 85` | 0 | 89.23% (21,017 of 23,554 lines). |
+
+Windows and Linux were not run.

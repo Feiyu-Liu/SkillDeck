@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/skills_workspace.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
+import 'package:skills_workspace/src/native/revision_engine/revision_native_engine.dart';
 import 'package:skills_workspace/src/native/revision_engine/revision_recovery_bundle.dart';
 import 'package:test/test.dart';
 
@@ -138,5 +139,35 @@ Future<Set<String>> _expectRetainedRoots(
     containsAll(desired),
     reason: step,
   );
+  final scratch = await Directory.systemTemp.createTemp('bundle-history-');
+  final restored = path.join(scratch.path, 'restored.git');
+  final engine = RevisionNativeEngine.open();
+  try {
+    final bundle = layout.revisionBundlePath(id);
+    engine.restoreRecoveryPack(
+      stagedRepositoryPath: restored,
+      packPath: path.join(bundle, 'objects.pack'),
+      indexPath: path.join(bundle, 'objects.idx'),
+      retainedRoots: manifest.retainedPublishedRoots,
+    );
+    Future<Set<String>> commits(String store) async {
+      final result = await Process.run('git', [
+        '--git-dir=$store',
+        'rev-list',
+        ...manifest.retainedPublishedRoots.map((root) => root.value),
+      ]);
+      expect(result.exitCode, 0, reason: step);
+      return (result.stdout as String).trim().split(RegExp(r'\s+')).toSet();
+    }
+
+    expect(
+      await commits(restored),
+      await commits(layout.revisionStorePath(id)),
+      reason: step,
+    );
+  } finally {
+    engine.close();
+    await scratch.delete(recursive: true);
+  }
   return desired;
 }

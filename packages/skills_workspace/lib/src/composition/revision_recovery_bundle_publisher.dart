@@ -45,7 +45,6 @@ final class RevisionRecoveryBundlePublisher {
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedPublishedRoots,
     bool includeDraftAndSession = true,
-    bool includeHistory = false,
   }) async {
     final committed = await _readCommittedRoots(
       sourceLineage,
@@ -62,23 +61,33 @@ final class RevisionRecoveryBundlePublisher {
     final bundleWorker = _revisions is RevisionBundleWorkerPort
         ? _revisions as RevisionBundleWorkerPort
         : null;
-    if (bundleWorker != null) {
-      await bundleWorker.buildRevisionBundleArtifacts(
-        repositoryPath: repositoryPath,
-        bundlePath: bundlePath,
-        sourceLineage: sourceLineage,
-        currentUpstream: currentUpstream,
-        currentEffective: currentEffective,
-        retainedRoots: roots,
-        includeHistory: includeHistory,
-      );
-    } else {
-      await _revisions.createRecoveryPack(
-        repositoryPath: repositoryPath,
-        bundleStagingPath: bundlePath,
-        retainedRoots: roots,
-        includeHistory: includeHistory,
-      );
+    Future<void> buildPack({required bool includeHistory}) async {
+      if (bundleWorker != null) {
+        await bundleWorker.buildRevisionBundleArtifacts(
+          repositoryPath: repositoryPath,
+          bundlePath: bundlePath,
+          sourceLineage: sourceLineage,
+          currentUpstream: currentUpstream,
+          currentEffective: currentEffective,
+          retainedRoots: roots,
+          includeHistory: includeHistory,
+        );
+      } else {
+        await _revisions.createRecoveryPack(
+          repositoryPath: repositoryPath,
+          bundleStagingPath: bundlePath,
+          retainedRoots: roots,
+          includeHistory: includeHistory,
+        );
+      }
+    }
+
+    try {
+      await buildPack(includeHistory: true);
+    } on RevisionEngineException catch (error) {
+      if (error.code != RevisionEngineFailureCode.objectUnavailable) rethrow;
+      // A Store restored from an older bundle can lack intermediate commits.
+      await buildPack(includeHistory: false);
     }
     await _filesystem.flushRecursively(repositoryPath);
 

@@ -1114,7 +1114,6 @@ final class WorkspaceRevisionPreparationService
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
     bool includeDraftAndSession = true,
-    bool includeHistory = false,
   }) =>
       RevisionRecoveryBundlePublisher(
         revisions: _revisions,
@@ -1130,7 +1129,6 @@ final class WorkspaceRevisionPreparationService
         currentEffective: currentEffective,
         retainedPublishedRoots: retainedRoots,
         includeDraftAndSession: includeDraftAndSession,
-        includeHistory: includeHistory,
       );
 
   String _storePath(ManagedSkillId id) => _layout.revisionStorePath(id);

@@ -129,7 +129,6 @@ extension WorkspaceRemoteInstallPreparation
         currentUpstream: upstream,
         currentEffective: effective,
         retainedRoots: roots,
-        includeHistory: true,
       );
       await _writeTree(
         _candidateMaterializationPath(operationId, managedSkillId),
