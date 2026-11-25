@@ -48,19 +48,35 @@ Names are provisional.
 
 - Add `RemoteSkillInstall` to `ApplyRemoteStateRequest`, with:
   - `packPath`;
-  - `effective` and `upstream`, both `RevisionId`s;
+  - `effective: RevisionId` and `upstream: RevisionId?`;
   - `source`: a Git, Well-known, or Synced Origin Source Descriptor. The
     constructor rejects a Local or Adopted Snapshot descriptor with an
     `ArgumentError`, because those are Device-Bound (R7).
+- **Absent Upstream (decided 2026-11-25, answering Codex's question):**
+  - `upstream` may be null only when `source` is a Synced Origin whose
+    `originSourceType` is `adoptedSnapshot`. Such a Skill has no tracked
+    Upstream, which is why `exportRevisionPack` omits it on the origin Device.
+  - The constructor throws `ArgumentError` when `upstream` is null for any
+    other source, or set for that one.
+  - When it is null, the internal Upstream is the root commit of
+    `effective`'s history. On the origin Device, adoption sets the internal
+    Upstream to the initial commit and later publishes never move it, so both
+    Devices then hold the same baseline.
+  - `exportRevisionPack` and `inspectRevisionSelections` still report no
+    Upstream for the installed Skill.
+- **Same gap in T07:** make `RemoteSkillContent.upstream` nullable. Null means
+  the Lineage Head has no Upstream: keep the local internal Upstream, and skip
+  the contract's Upstream rule. Do not check the Source here.
 - Add two results to `RemoteApplyResult`:
   - `installed(managedSkillId)`;
   - `skillSlotOccupied(occupant: ManagedSkillId)`.
 - **Behaviour:**
-  - the pack must contain the full closure of `effective` and `upstream`;
+  - the pack must contain the full closure of `effective` and, when given,
+    `upstream`;
   - the new Skill's Slot Key and names come from `effective`'s tree, which
     must be a valid Skill;
   - the Skill is created with the given descriptor, a new Source Lineage, and
-    a selection of `effective` and `upstream`. It has no Draft and no
+    a selection of `effective` and the Upstream above. It has no Draft and no
     Activations;
   - the committed-change feed reports `content` for the new Skill (T06 should
     already do this through the selection change).
@@ -94,6 +110,14 @@ including `test/support/remote_revision_pack_fixture.dart`.
   - a later `exportRevisionPack` of the new Skill contains the donor's
     history;
   - the committed-change feed reports `content` for `id`.
+- **Adopted Snapshot origin:**
+  - a donor that adopted a snapshot and then published locally installs on
+    the new Workspace with a null `upstream`;
+  - the new Skill's internal Upstream is the root commit, and
+    `exportRevisionPack` and `inspectRevisionSelections` report no Upstream;
+  - a later content apply with a null `upstream` keeps that internal Upstream.
+- **Request validation:** a null `upstream` with any other source, and a
+  non-null one with an Adopted Snapshot origin, both throw `ArgumentError`.
 - **Customized donor:** with a donor whose Effective differs from its
   Upstream, both are installed as given.
 - **Synced Origin:** a donor installed from a Local Source installs on the new
@@ -113,7 +137,8 @@ including `test/support/remote_revision_pack_fixture.dart`.
 
 ### Scope fence
 
-- **In scope:** `packages/skills_workspace/`, and the Install outline in the
+- **In scope:** `packages/skills_workspace/`, including making
+  `RemoteSkillContent.upstream` nullable, and the Install outline in the
   contract.
 - **Out of scope:**
   - initial metadata, Favorite, Note, and Tag Assignments (T09);
@@ -124,7 +149,7 @@ including `test/support/remote_revision_pack_fixture.dart`.
   - Generation changes;
   - App changes;
   - native and schema changes.
-- **Expected size:** about 10–18 files, 600–1,100 lines including tests.
+- **Expected size:** about 12–20 files, 650–1,200 lines including tests.
 
 ### Stop and ask if
 
@@ -136,6 +161,8 @@ including `test/support/remote_revision_pack_fixture.dart`.
   provide, for example a locator or a fetch time for a Git Source.
 - A pack whose `upstream` is not an ancestor of `effective` cannot be
   installed with the current selection rules.
+- `effective`'s history has more than one root commit, so the internal
+  Upstream for an Adopted Snapshot origin is ambiguous.
 
 ## Maintained by Codex
 

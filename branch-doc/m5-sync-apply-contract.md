@@ -65,13 +65,20 @@ coordinator, with the usual journal, recovery, and finalization.
 
 | Variant | Fields | Card |
 | --- | --- | --- |
-| `RemoteSkillContent` | `managedSkillId`, `expectedEffective`, target `effective` and `upstream`, optional `packPath` | T07 |
-| `RemoteSkillInstall` | `packPath`, `effective`, `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T08 |
+| `RemoteSkillContent` | `managedSkillId`, `expectedEffective`, target `effective` and optional `upstream`, optional `packPath` | T07, T08 |
+| `RemoteSkillInstall` | `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T08 |
 | `RemoteSkillMetadata` | `managedSkillId`, `expectedEffective`, `favorite`, `note` (null clears it), `tagIds` (the complete set of local tag IDs) | T09 |
 | `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective` | T09 |
 | `RemoteTagVocabulary` | one of `ensure(name)`, `rename(tagId, name)`, or `delete(tagId)` | T09 |
 
 `expectedEffective`, `effective`, and `upstream` are `RevisionId`s.
+
+`upstream` is absent only for a Skill whose origin is an Adopted Snapshot,
+which has no tracked Upstream (R7). `exportRevisionPack` omits it on the origin
+Device, so the Lineage Head has none either. Install accepts a null `upstream`
+only with a Synced Origin of `originSourceType: adoptedSnapshot`, and then uses
+the root commit of `effective`'s history as the internal Upstream (decided
+2026-11-25, answering a question raised while implementing T08).
 
 ### Results
 
@@ -124,7 +131,7 @@ Let L be the local Effective Revision and R the target `effective`.
    - **invalid tree:** the existing validation failure.
 4. **Upstream:** let U be the local Upstream and V the target `upstream`. If one
    descends from the other, keep the descendant. Otherwise keep V, the side
-   from the Lineage Head.
+   from the Lineage Head. When V is absent, keep U.
 5. **Objects:** objects come from the live Store plus this Skill's pack
    staging.
    - When `packPath` is given, the pack is first imported as in T02.
