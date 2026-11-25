@@ -93,12 +93,14 @@ answering two questions raised while implementing T08).
 | `draftResolutionRequired` | A Dirty Draft or an Update Candidate Session blocks this Skill |
 | `skillSlotOccupied(occupant)` | Install only: a different local Skill holds the Skill Slot |
 | `installed(managedSkillId)` | Install succeeded |
+| `metadataApplied` | Metadata changed the Favorite, Note, or Tag Assignments (added 2026-11-25) |
 | `removed` | Removal succeeded, or Vocabulary `delete` removed the tag |
 | `tag(tagId)` | Vocabulary `ensure` and `update` return the resulting local tag |
 
 **Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
 `removed`, and `tag` are added, because their callers need the resulting
-identity or confirmation.
+identity or confirmation. `metadataApplied` was added on 2026-11-25 for the
+same reason.
 
 **Expected failures**, all as typed failures with existing codes:
 - the `expectedEffective` guard fails: `staleSnapshot` with
@@ -158,8 +160,8 @@ Let L be the local Effective Revision and R the target `effective`.
   - takes no initial metadata. `skills_cloud` follows it with
     `RemoteSkillMetadata` (decided 2026-11-25, when writing T08).
 - **Metadata:** sets the Favorite, Note, and Tag Assignment set to the given
-  values. It is guarded by `expectedEffective` and does nothing when the values
-  already match.
+  values and returns `metadataApplied`. It is guarded by `expectedEffective`
+  and returns `noChange` when the values already match.
 - **Removal:**
   - follows the existing Removal path, guarded by `expectedEffective` instead
     of a reviewed RepositoryRevision;

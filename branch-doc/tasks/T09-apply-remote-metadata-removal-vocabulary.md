@@ -63,12 +63,13 @@ Names are provisional.
   - `RemoteTagVocabulary`, as three cases: `ensure(name, color)`,
     `update(tagId, name, color)`, and `delete(tagId)`. `color` is a final
     value: `#RRGGBB`, or null for no color, validated as `PersonalTag` does.
-- **New results:** `removed` and `tag(tagId)`.
+- **New results:** `metadataApplied`, `removed`, and `tag(tagId)`.
 - **Metadata:**
   - the guard runs first. A different current Effective gives `staleSnapshot`
     with `reason: effectiveRevisionChanged`, as in T07;
   - the Favorite, Note, and assignment set become exactly the given values, in
-    one Business Commit;
+    one Business Commit, and the result is `metadataApplied`. Added
+    2026-11-25, answering Codex: the card had no result for a first write;
   - when every value already matches, the result is `noChange`, with no
     revision bump and no Operation Record;
   - an unknown tag ID gives `personalTagNotFound`, and nothing changes;
@@ -113,6 +114,7 @@ Each item is a test through the public API with the existing facade fixtures.
 
 - **Metadata:**
   - setting all three fields:
+    - returns `metadataApplied`;
     - changes the snapshot;
     - bumps the revision once;
     - gives one feed entry with exactly `{metadata}`.
