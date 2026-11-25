@@ -37,4 +37,4 @@ New development documents for this work go in this folder.
 | `tasks/T11-m5-review-fixes.md` | Fixes for M5 review items 1, 2, 4 (optional), and 6 | Implemented and verified locally |
 | `tasks/T12-inspect-revision-selections.md` | Seam 4: read the current Effective and Upstream `RevisionId` of Skills | Implemented and verified locally |
 | `tasks/T08-apply-remote-install.md` | Seam 3, install: create a synced Skill on a new Device from a pack | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
-| `tasks/T13-recovery-bundle-roots.md` | Fix T08-1: Recovery Bundles keep every revision that reconciliation retains | Ready |
+| `tasks/T13-recovery-bundle-roots.md` | Fix T08-1: Recovery Bundles keep every revision that reconciliation retains | Implemented, reviewed, and accepted. T13-1 (remote-only ancestors) awaits a decision |
