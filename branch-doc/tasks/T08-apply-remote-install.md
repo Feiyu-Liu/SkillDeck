@@ -58,10 +58,13 @@ Names are provisional.
     Upstream, which is why `exportRevisionPack` omits it on the origin Device.
   - The constructor throws `ArgumentError` when `upstream` is null for any
     other source, or set for that one.
-  - When it is null, the internal Upstream is the root commit of
-    `effective`'s history. On the origin Device, adoption sets the internal
-    Upstream to the initial commit and later publishes never move it, so both
-    Devices then hold the same baseline.
+  - When it is null, the internal Upstream is `effective` itself, as local
+    adoption does (adoption sets Upstream and Effective to the same initial
+    commit). For these Skills the internal Upstream is only a recovery
+    baseline: it is not public, not exported, and never compared, so it need
+    not match the origin Device's. No history walk and no native change are
+    needed. (Revised 2026-11-25, answering Codex's second question. The
+    earlier root-commit rule was over-specified.)
   - `exportRevisionPack` and `inspectRevisionSelections` still report no
     Upstream for the installed Skill.
 - **Same gap in T07:** make `RemoteSkillContent.upstream` nullable. Null means
@@ -83,7 +86,9 @@ Names are provisional.
 - **Slot rules:**
   - a different Skill in the slot returns `skillSlotOccupied(occupant)`;
   - **retry:** if the occupant's current Effective and Upstream equal the
-    request's and its Source Descriptor equals `source`, the call returns
+    request's (as `inspectRevisionSelections` reports them, so a null Upstream
+    matches a null one) and its Source Descriptor equals `source`, the call
+    returns
     `installed(occupant)` and changes nothing. This makes a lost response safe
     to retry without remembering callers. Commit IDs include their creation
     time, so an independent local Skill never matches by accident.
@@ -113,9 +118,10 @@ including `test/support/remote_revision_pack_fixture.dart`.
 - **Adopted Snapshot origin:**
   - a donor that adopted a snapshot and then published locally installs on
     the new Workspace with a null `upstream`;
-  - the new Skill's internal Upstream is the root commit, and
-    `exportRevisionPack` and `inspectRevisionSelections` report no Upstream;
-  - a later content apply with a null `upstream` keeps that internal Upstream.
+  - `exportRevisionPack` and `inspectRevisionSelections` report no Upstream;
+  - a later Restore Publish succeeds;
+  - a later content apply with a null `upstream` succeeds and keeps the
+    internal Upstream.
 - **Request validation:** a null `upstream` with any other source, and a
   non-null one with an Adopted Snapshot origin, both throw `ArgumentError`.
 - **Customized donor:** with a donor whose Effective differs from its
@@ -149,7 +155,7 @@ including `test/support/remote_revision_pack_fixture.dart`.
   - Generation changes;
   - App changes;
   - native and schema changes.
-- **Expected size:** about 12–20 files, 650–1,200 lines including tests.
+- **Expected size:** about 10–18 files, 600–1,100 lines including tests.
 
 ### Stop and ask if
 
@@ -161,8 +167,6 @@ including `test/support/remote_revision_pack_fixture.dart`.
   provide, for example a locator or a fetch time for a Git Source.
 - A pack whose `upstream` is not an ancestor of `effective` cannot be
   installed with the current selection rules.
-- `effective`'s history has more than one root commit, so the internal
-  Upstream for an Adopted Snapshot origin is ambiguous.
 
 ## Maintained by Codex
 

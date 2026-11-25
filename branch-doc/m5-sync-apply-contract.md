@@ -77,8 +77,9 @@ coordinator, with the usual journal, recovery, and finalization.
 which has no tracked Upstream (R7). `exportRevisionPack` omits it on the origin
 Device, so the Lineage Head has none either. Install accepts a null `upstream`
 only with a Synced Origin of `originSourceType: adoptedSnapshot`, and then uses
-the root commit of `effective`'s history as the internal Upstream (decided
-2026-11-25, answering a question raised while implementing T08).
+`effective` as the internal Upstream, as local adoption does. That Upstream is
+only a recovery baseline and is never exposed or compared (decided 2026-11-25,
+answering two questions raised while implementing T08).
 
 ### Results
 
