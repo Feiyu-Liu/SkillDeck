@@ -18,6 +18,7 @@ import 'package:skills_workspace/src/infrastructure/activation/file_system_activ
 import 'package:skills_workspace/src/infrastructure/activation/file_system_update_slot_migration_inspector.dart';
 import 'package:skills_workspace/src/infrastructure/content/direct_revision_content_worker.dart';
 import 'package:skills_workspace/src/infrastructure/content/file_system_published_artifact_inspector.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_committed_revision_roots.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_draft_update_state.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_revision_pointer_reader.dart';
@@ -203,6 +204,7 @@ Future<void> main(List<String> arguments) async {
         repositoryCopyPathForSlot: layout.repositoryCopyPath,
       ),
       preparation: WorkspaceRevisionPreparationService(
+        readCommittedRoots: DriftCommittedRevisionRoots(database).readForBundle,
         revisions: runtime,
         layout: layout,
         filesystem: filesystem,

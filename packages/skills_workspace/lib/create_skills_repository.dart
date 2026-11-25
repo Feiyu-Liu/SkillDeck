@@ -64,6 +64,7 @@ import 'src/infrastructure/agents/platform_agent_root_ownership_inspection.dart'
 import 'src/infrastructure/content/file_system_published_artifact_inspector.dart';
 import 'src/infrastructure/database/drift_activation_metadata_reader.dart';
 import 'src/infrastructure/database/drift_committed_change_feed.dart';
+import 'src/infrastructure/database/drift_committed_revision_roots.dart';
 import 'src/infrastructure/database/drift_destructive_planning_state.dart';
 import 'src/infrastructure/database/drift_draft_update_state.dart';
 import 'src/infrastructure/database/drift_operation_control_plane.dart';
@@ -372,11 +373,13 @@ SkillsRepository createSkillsRepository(
   final slotMigrations = FileSystemUpdateSlotMigrationInspector(
     repositoryCopyPathForSlot: layout.repositoryCopyPath,
   );
+  final committedRevisionRoots = DriftCommittedRevisionRoots(database);
   final revisionPreparation = WorkspaceRevisionPreparationService(
     revisions: revisionRuntime,
     layout: layout,
     filesystem: filesystem,
     drafts: draftSnapshots,
+    readCommittedRoots: committedRevisionRoots.readForBundle,
   );
   final revisionOperationPlans = WorkspaceRevisionOperationPlans(
     assembler: operationPlans,
@@ -436,6 +439,7 @@ SkillsRepository createSkillsRepository(
       revisions: revisionRuntime,
       layout: layout,
       filesystem: filesystem,
+      readCommittedRoots: committedRevisionRoots.readForBundle,
     ),
     recoveryEntries: destructiveEntries,
     operationPlans: operationPlans,

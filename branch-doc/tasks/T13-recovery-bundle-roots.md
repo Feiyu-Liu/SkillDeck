@@ -130,12 +130,38 @@ Each item is a test through the public API with a real Store, unless noted.
 
 ### Progress
 
-- [ ] …
+- [x] Centralized the committed root query and used it when publishing every bundle.
+- [x] Reproduced the local loss failure before the fix. Repeated the two-publish scenario after the fix, restored the first publish's files, lost the Store a second time, and verified history and export again.
+- [x] Verified an older Dirty Draft base, an open Update Candidate that can still be resolved and published, and the live manifest after each operation in the mixed local/remote sequence.
 
 ### Decision Log
 
+- The bundle publisher reads committed roots for its target lineage in one SQLite transaction and combines them with revisions prepared by the operation. The same reader supplies committed roots to reference reconciliation. Only reconciliation adds journal roots. Candidate publication and abandonment exclude the closing Draft and Session, while retaining objects also referenced by history or selections.
+- Source replacement reads the new lineage. Removal does not build a bundle. Initial remote installation keeps `includeHistory` because the recipient has no local publication records for intermediate donor revisions.
+- Existing crash, recovery, and bundle assertions were preserved. Database-backed crash fixtures use the production root reader. Isolated preparation fixtures supply an empty committed set.
+
 ### Surprises
+
+- Public commands either block an Effective change while a customization Draft is dirty or re-anchor the Draft. To exercise an older persisted Draft base, the test uses public operations to create two publications and the dirty files, then points the Draft base at the older publication in SQLite while closed. Public inspection after recovery confirms which revision it compares against.
+- A separate real-Store probe fast-forwarded over a remote-only intermediate commit. Export succeeded before loss. After loss, open succeeded and integrity was `recovered`. The intermediate object was absent and export returned `revisionStoreCorrupt` with empty context. The destination file was absent.
 
 ### Follow-ups
 
+- The maintainer can use the remote-only probe to decide whether later bundles should also preserve remote ancestry. Existing short bundles acquire the new roots the next time a mutation writes a bundle for that Skill.
+
 ### Outcome
+
+Verified on macOS arm64 with Dart 3.14.0 in a separate worktree at d9e7521 with the T13 changes applied. Both full runs passed 1,643 tests with one network test skipped by default.
+
+| Command | Exit | Result |
+|---|---:|---|
+| `dart pub get --enforce-lockfile --no-example` | 65, then 0 | Local mirror differs from the lockfile host. Retried with PUB_HOSTED_URL=https://pub.dev. |
+| `dart format --output=none --set-exit-if-changed .` | 0 | 493 files checked |
+| `flutter pub get` in example | 0 | Installed the example dependencies for whole-package analysis |
+| `dart analyze --fatal-infos` | 3, then 0 | First run lacked example dependencies. Final run had no issues. |
+| `dart test -j 1` | 0 | 1,643 passed |
+| `dart test -j 1 integration_test` | 0 | 2 passed |
+| `dart test -j 1 --coverage=coverage` | 0 | 1,643 passed |
+| `dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.raw.info --package=. --report-on=lib` | 0 | Generated LCOV |
+| `dart run tool/filter_coverage.dart coverage/lcov.raw.info coverage/lcov.info` | 0 | Filtered LCOV |
+| `dart run tool/check_coverage.dart coverage/lcov.info 85` | 0 | 89.10% (20,816 / 23,363 lines) |

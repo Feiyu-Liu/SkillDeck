@@ -54,6 +54,7 @@ final class WorkspaceRevisionPreparationService
     required WorkspaceLayout layout,
     required DurableWorkspaceFilesystem filesystem,
     required DraftSnapshotCoordinator drafts,
+    required ReadCommittedRecoveryRoots readCommittedRoots,
     bool? capturePosixExecutableIntent,
     RevisionRecoveryBundleCodec bundleCodec =
         const RevisionRecoveryBundleCodec(),
@@ -61,6 +62,7 @@ final class WorkspaceRevisionPreparationService
        _layout = layout,
        _filesystem = filesystem,
        _drafts = drafts,
+       _readCommittedRoots = readCommittedRoots,
        _capturePosixExecutableIntent =
            capturePosixExecutableIntent ?? !Platform.isWindows,
        _bundleCodec = bundleCodec;
@@ -69,6 +71,7 @@ final class WorkspaceRevisionPreparationService
   final WorkspaceLayout _layout;
   final DurableWorkspaceFilesystem _filesystem;
   final DraftSnapshotCoordinator _drafts;
+  final ReadCommittedRecoveryRoots _readCommittedRoots;
   final bool _capturePosixExecutableIntent;
   final RevisionRecoveryBundleCodec _bundleCodec;
 
@@ -725,6 +728,7 @@ final class WorkspaceRevisionPreparationService
         currentUpstream: intent.incomingUpstream,
         currentEffective: commit,
         retainedRoots: <RevisionObjectId>[commit],
+        includeDraftAndSession: false,
       );
       await _writeTree(
         _candidateMaterializationPath(operationId, intent.managedSkillId),
@@ -800,6 +804,7 @@ final class WorkspaceRevisionPreparationService
         currentUpstream: intent.previousUpstream,
         currentEffective: intent.previousEffective,
         retainedRoots: retainedRoots,
+        includeDraftAndSession: false,
       );
       return UpdateCandidateAbandonPreparationSuccess(
         PreparedUpdateCandidateAbandon(
@@ -1081,6 +1086,7 @@ final class WorkspaceRevisionPreparationService
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeDraftAndSession = true,
   }) async {
     final bundle = _candidateBundlePath(operationId, managedSkillId);
     await _filesystem.removeOwnedPath(
@@ -1095,6 +1101,7 @@ final class WorkspaceRevisionPreparationService
       currentUpstream: currentUpstream,
       currentEffective: currentEffective,
       retainedRoots: retainedRoots,
+      includeDraftAndSession: includeDraftAndSession,
     );
   }
 
@@ -1106,11 +1113,13 @@ final class WorkspaceRevisionPreparationService
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeDraftAndSession = true,
     bool includeHistory = false,
   }) =>
       RevisionRecoveryBundlePublisher(
         revisions: _revisions,
         filesystem: _filesystem,
+        readCommittedRoots: _readCommittedRoots,
         codec: _bundleCodec,
       ).publish(
         repositoryPath: store,
@@ -1120,6 +1129,7 @@ final class WorkspaceRevisionPreparationService
         currentUpstream: currentUpstream,
         currentEffective: currentEffective,
         retainedPublishedRoots: retainedRoots,
+        includeDraftAndSession: includeDraftAndSession,
         includeHistory: includeHistory,
       );
 

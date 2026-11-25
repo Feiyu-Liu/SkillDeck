@@ -10,6 +10,12 @@ import '../application/runtime/revision_engine_port.dart';
 import '../native/revision_engine/revision_recovery_bundle.dart';
 import '../platform/filesystem/durable_workspace_filesystem.dart';
 
+typedef ReadCommittedRecoveryRoots =
+    Future<Set<RevisionObjectId>> Function(
+      SourceLineageReference lineage, {
+      required bool includeDraftAndSession,
+    });
+
 /// Publishes and reopens one complete Revision Recovery Bundle.
 ///
 /// Candidate construction stays operation-private. The caller remains
@@ -18,13 +24,16 @@ final class RevisionRecoveryBundlePublisher {
   const RevisionRecoveryBundlePublisher({
     required RevisionEnginePort revisions,
     required DurableWorkspaceFilesystem filesystem,
+    required ReadCommittedRecoveryRoots readCommittedRoots,
     RevisionRecoveryBundleCodec codec = const RevisionRecoveryBundleCodec(),
   }) : _revisions = revisions,
        _filesystem = filesystem,
+       _readCommittedRoots = readCommittedRoots,
        _codec = codec;
 
   final RevisionEnginePort _revisions;
   final DurableWorkspaceFilesystem _filesystem;
+  final ReadCommittedRecoveryRoots _readCommittedRoots;
   final RevisionRecoveryBundleCodec _codec;
 
   Future<void> publish({
@@ -35,15 +44,19 @@ final class RevisionRecoveryBundlePublisher {
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedPublishedRoots,
+    bool includeDraftAndSession = true,
     bool includeHistory = false,
   }) async {
-    final rootsByObjectId = <String, RevisionObjectId>{
-      for (final root in retainedPublishedRoots) root.value: root,
-      currentUpstream.value: currentUpstream,
-      currentEffective.value: currentEffective,
-    };
-    final roots = rootsByObjectId.values.toList()
-      ..sort((left, right) => left.value.compareTo(right.value));
+    final committed = await _readCommittedRoots(
+      sourceLineage,
+      includeDraftAndSession: includeDraftAndSession,
+    );
+    final roots = {
+      ...committed,
+      ...retainedPublishedRoots,
+      currentUpstream,
+      currentEffective,
+    }.toList()..sort((left, right) => left.value.compareTo(right.value));
 
     await _filesystem.ensureDirectory(bundlePath);
     final bundleWorker = _revisions is RevisionBundleWorkerPort

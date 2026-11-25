@@ -23,6 +23,7 @@ import 'package:skills_workspace/src/composition/revision_preparation_service.da
 import 'package:skills_workspace/src/composition/revision_worker_task_executor.dart';
 import 'package:skills_workspace/src/infrastructure/content/direct_revision_content_worker.dart';
 import 'package:skills_workspace/src/infrastructure/content/file_system_published_artifact_inspector.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_committed_revision_roots.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart'
     hide ManagedSkill;
@@ -145,6 +146,7 @@ Future<OperationExecutionOutcome> _runSkillDriftRecovery({
   );
   await revisions.start();
   final preparation = WorkspaceRevisionPreparationService(
+    readCommittedRoots: DriftCommittedRevisionRoots(database).readForBundle,
     revisions: revisions,
     layout: layout,
     filesystem: filesystem,

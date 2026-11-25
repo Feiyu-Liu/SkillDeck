@@ -6,6 +6,7 @@ import '../../application/ports/workspace_lifecycle_ports.dart';
 import '../../application/runtime/revision_engine_port.dart';
 import '../../domain/identifiers.dart';
 import '../workspace_layout.dart';
+import 'drift_committed_revision_roots.dart';
 import 'operation_plan_codec.dart';
 import 'workspace_database.dart' as db;
 
@@ -74,90 +75,25 @@ final class DriftWorkspaceRevisionReferenceReconciliation
             if (bySkill != 0) return bySkill;
             return left.id.compareTo(right.id);
           });
-    final lineageById = <String, db.SourceLineage>{
-      for (final lineage in lineages) lineage.id: lineage,
-    };
-    final refsByLineage = <String, Map<String, RevisionObjectId>>{};
+    final lineageIds = lineages.map((lineage) => lineage.id).toSet();
+    final rootsByLineage = await DriftCommittedRevisionRoots(_database).read();
 
-    void add({
-      required String lineage,
-      required RevisionObjectId object,
-      required String name,
-    }) {
-      if (!lineageById.containsKey(lineage)) return;
-      refsByLineage.putIfAbsent(
-        lineage,
-        () => <String, RevisionObjectId>{},
-      )[name] = object;
+    void add(String lineage, RevisionObjectId object) {
+      if (lineageIds.contains(lineage)) {
+        rootsByLineage
+            .putIfAbsent(lineage, () => <RevisionObjectId>{})
+            .add(object);
+      }
     }
 
-    final selections = await _database
-        .select(_database.currentRevisionSelection)
-        .get();
-    for (final selection in selections) {
-      add(
-        lineage: selection.sourceLineageId,
-        object: RevisionObjectId(selection.upstreamObjectId),
-        name:
-            'refs/skills-workspace/current/${selection.managedSkillId}/upstream',
-      );
-      add(
-        lineage: selection.sourceLineageId,
-        object: RevisionObjectId(selection.effectiveObjectId),
-        name:
-            'refs/skills-workspace/current/${selection.managedSkillId}/effective',
-      );
-    }
-
-    final drafts = await _database.select(_database.draftWorkspaces).get();
-    for (final draft in drafts) {
-      add(
-        lineage: draft.sourceLineageId,
-        object: RevisionObjectId(draft.baseObjectId),
-        name: 'refs/skills-workspace/draft/${draft.managedSkillId}/base',
-      );
-    }
-
-    final sessions = await _database
-        .select(_database.updateCandidateSessions)
-        .get();
-    for (final session in sessions) {
-      final prefix = 'refs/skills-workspace/session/${session.managedSkillId}';
-      add(
-        lineage: session.sourceLineageId,
-        object: RevisionObjectId(session.previousUpstreamObjectId),
-        name: '$prefix/previous-upstream',
-      );
-      add(
-        lineage: session.sourceLineageId,
-        object: RevisionObjectId(session.previousEffectiveObjectId),
-        name: '$prefix/previous-effective',
-      );
-      add(
-        lineage: session.sourceLineageId,
-        object: RevisionObjectId(session.incomingUpstreamObjectId),
-        name: '$prefix/incoming-upstream',
-      );
-      add(
-        lineage: session.sourceLineageId,
-        object: RevisionObjectId(session.candidateObjectId),
-        name: '$prefix/candidate',
-      );
-    }
-
-    await _addPublishedHistory(add);
     await _addRecoverablePlans(add);
 
     final desiredStores = <_DesiredStoreRefs>[];
     for (final lineage in lineages) {
-      final refs =
-          refsByLineage[lineage.id] ?? const <String, RevisionObjectId>{};
       final managedSkillId = ManagedSkillId(lineage.managedSkillId);
       final storePath = _layout.revisionStorePath(managedSkillId);
       final objects =
-          <String, RevisionObjectId>{
-              for (final object in refs.values) object.value: object,
-            }.values.toList(growable: false)
+          (rootsByLineage[lineage.id] ?? const <RevisionObjectId>{}).toList()
             ..sort((left, right) => left.value.compareTo(right.value));
       final values = <RevisionRetentionRef>[
         for (var index = 0; index < objects.length; index += 1)
@@ -171,50 +107,8 @@ final class DriftWorkspaceRevisionReferenceReconciliation
     return List<_DesiredStoreRefs>.unmodifiable(desiredStores);
   }
 
-  Future<void> _addPublishedHistory(
-    void Function({
-      required String lineage,
-      required RevisionObjectId object,
-      required String name,
-    })
-    add,
-  ) async {
-    final subjects = _database.operationSubjects;
-    final records = _database.operationRecords;
-    final query = _database.select(subjects).join(<Join<HasResultSet, dynamic>>[
-      innerJoin(records, records.operationId.equalsExp(subjects.operationId)),
-    ])..where(records.status.equals('succeeded'));
-    final rows = await query.get();
-    for (final row in rows) {
-      final subject = row.readTable(subjects);
-      final lineage = subject.sourceLineageId;
-      if (lineage == null) continue;
-      final prefix =
-          'refs/skills-workspace/history/${subject.operationId}/${subject.subjectId}';
-      if (subject.beforeObjectId case final object?) {
-        add(
-          lineage: lineage,
-          object: RevisionObjectId(object),
-          name: '$prefix/before',
-        );
-      }
-      if (subject.afterObjectId case final object?) {
-        add(
-          lineage: lineage,
-          object: RevisionObjectId(object),
-          name: '$prefix/after',
-        );
-      }
-    }
-  }
-
   Future<void> _addRecoverablePlans(
-    void Function({
-      required String lineage,
-      required RevisionObjectId object,
-      required String name,
-    })
-    add,
+    void Function(String lineage, RevisionObjectId object) add,
   ) async {
     final journals = await _database.select(_database.operationJournals).get();
     for (final journal in journals) {
@@ -224,57 +118,36 @@ final class DriftWorkspaceRevisionReferenceReconciliation
         payload: journal.planJson,
       );
       if (definition is! OperationPlan) continue;
-      final operationPrefix =
-          'refs/skills-workspace/journal/${definition.operationId.value}';
-      for (
-        var index = 0;
-        index < definition.revisionSelectionChanges.length;
-        index++
-      ) {
-        final change = definition.revisionSelectionChanges[index];
-        void addAddress(RevisionAddress? address, String role) {
-          if (address == null) return;
-          add(
-            lineage: address.sourceLineage.encoded,
-            object: address.objectId,
-            name: '$operationPrefix/selection-$index/$role',
-          );
+      for (final change in definition.revisionSelectionChanges) {
+        for (final address in [
+          change.previousUpstream,
+          change.previousEffective,
+          change.intendedUpstream,
+          change.intendedEffective,
+        ]) {
+          if (address != null) {
+            add(address.sourceLineage.encoded, address.objectId);
+          }
         }
-
-        addAddress(change.previousUpstream, 'previous-upstream');
-        addAddress(change.previousEffective, 'previous-effective');
-        addAddress(change.intendedUpstream, 'intended-upstream');
-        addAddress(change.intendedEffective, 'intended-effective');
       }
 
       for (final subject in definition.record.subjects) {
         final lineage = subject.sourceLineage;
         if (lineage == null) continue;
-        final prefix =
-            '$operationPrefix/subject/${subject.reference.subjectId}';
         if (subject.beforeObjectId case final object?) {
-          add(lineage: lineage.encoded, object: object, name: '$prefix/before');
+          add(lineage.encoded, object);
         }
         if (subject.afterObjectId case final object?) {
-          add(lineage: lineage.encoded, object: object, name: '$prefix/after');
+          add(lineage.encoded, object);
         }
       }
 
-      var mutationIndex = 0;
       for (final mutation in definition.businessChanges.mutations) {
         switch (mutation) {
           case PutRevisionMetadata(:final sourceLineageId, :final objectId):
-            add(
-              lineage: sourceLineageId,
-              object: RevisionObjectId(objectId),
-              name: '$operationPrefix/metadata-$mutationIndex',
-            );
+            add(sourceLineageId, RevisionObjectId(objectId));
           case PutDraftWorkspace(:final sourceLineageId, :final baseObjectId):
-            add(
-              lineage: sourceLineageId,
-              object: RevisionObjectId(baseObjectId),
-              name: '$operationPrefix/draft-base-$mutationIndex',
-            );
+            add(sourceLineageId, RevisionObjectId(baseObjectId));
           case PutUpdateCandidateSession(
             :final sourceLineageId,
             :final previousUpstreamObjectId,
@@ -282,22 +155,17 @@ final class DriftWorkspaceRevisionReferenceReconciliation
             :final incomingUpstreamObjectId,
             :final candidateObjectId,
           ):
-            for (final entry in <String, String>{
-              'previous-upstream': previousUpstreamObjectId,
-              'previous-effective': previousEffectiveObjectId,
-              'incoming-upstream': incomingUpstreamObjectId,
-              'candidate': candidateObjectId,
-            }.entries) {
-              add(
-                lineage: sourceLineageId,
-                object: RevisionObjectId(entry.value),
-                name: '$operationPrefix/session-$mutationIndex/${entry.key}',
-              );
+            for (final object in [
+              previousUpstreamObjectId,
+              previousEffectiveObjectId,
+              incomingUpstreamObjectId,
+              candidateObjectId,
+            ]) {
+              add(sourceLineageId, RevisionObjectId(object));
             }
           default:
             break;
         }
-        mutationIndex += 1;
       }
     }
   }

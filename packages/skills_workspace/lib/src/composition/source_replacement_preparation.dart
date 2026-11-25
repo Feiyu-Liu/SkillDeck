@@ -22,6 +22,7 @@ final class WorkspaceSourceReplacementPreparation
     required RevisionEnginePort revisions,
     required WorkspaceLayout layout,
     required DurableWorkspaceFilesystem filesystem,
+    required ReadCommittedRecoveryRoots readCommittedRoots,
     RevisionRecoveryBundleCodec bundleCodec =
         const RevisionRecoveryBundleCodec(),
   }) : _sources = sources,
@@ -29,6 +30,7 @@ final class WorkspaceSourceReplacementPreparation
        _revisions = revisions,
        _layout = layout,
        _filesystem = filesystem,
+       _readCommittedRoots = readCommittedRoots,
        _bundleCodec = bundleCodec;
 
   final SourceAcquisitionCoordinator _sources;
@@ -36,6 +38,7 @@ final class WorkspaceSourceReplacementPreparation
   final RevisionEnginePort _revisions;
   final WorkspaceLayout _layout;
   final DurableWorkspaceFilesystem _filesystem;
+  final ReadCommittedRecoveryRoots _readCommittedRoots;
   final RevisionRecoveryBundleCodec _bundleCodec;
 
   @override
@@ -116,6 +119,7 @@ final class WorkspaceSourceReplacementPreparation
       await RevisionRecoveryBundlePublisher(
         revisions: _revisions,
         filesystem: _filesystem,
+        readCommittedRoots: _readCommittedRoots,
         codec: _bundleCodec,
       ).publish(
         repositoryPath: storePath,

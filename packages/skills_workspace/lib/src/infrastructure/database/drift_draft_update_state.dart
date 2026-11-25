@@ -11,6 +11,7 @@ import '../../application/update/update_models.dart';
 import '../../domain/cancellation.dart';
 import '../../domain/identifiers.dart';
 import '../../domain/public_models.dart';
+import 'drift_committed_revision_roots.dart';
 import 'workspace_database.dart' as db;
 
 /// Drift-owned state projection shared by Draft and Update application flows.
@@ -149,10 +150,12 @@ final class DriftDraftUpdateState
       _database.updateCandidateItems,
     )..where((item) => item.managedSkillId.equals(managedSkillId.value))).get();
     itemRows.sort((left, right) => left.path.compareTo(right.path));
-    final retainedPublishedRoots = await _readPublishedRoots(
-      managedSkillId: managedSkillId,
-      sourceLineage: sourceLineage,
-    );
+    final published = await DriftCommittedRevisionRoots(
+      _database,
+    ).readPublished(lineage: sourceLineage);
+    final retainedPublishedRoots =
+        (published[lineage.id] ?? const <RevisionObjectId>{}).toList()
+          ..sort((left, right) => left.value.compareTo(right.value));
     return UpdateCandidateState(
       managedSkillId: managedSkillId,
       sourceLineage: sourceLineage,
@@ -168,38 +171,6 @@ final class DriftDraftUpdateState
       retainedPublishedRoots: retainedPublishedRoots,
       conflicts: itemRows.map(_candidateItem).toList(growable: false),
     );
-  }
-
-  Future<List<RevisionObjectId>> _readPublishedRoots({
-    required ManagedSkillId managedSkillId,
-    required SourceLineageReference sourceLineage,
-  }) async {
-    final subjects = _database.operationSubjects;
-    final records = _database.operationRecords;
-    final query =
-        _database.select(subjects).join(<Join<HasResultSet, dynamic>>[
-          innerJoin(
-            records,
-            records.operationId.equalsExp(subjects.operationId),
-          ),
-        ])..where(
-          subjects.managedSkillId.equals(managedSkillId.value) &
-              subjects.sourceLineageId.equals(sourceLineage.encoded) &
-              records.status.equals('succeeded'),
-        );
-    final roots = <String, RevisionObjectId>{};
-    for (final row in await query.get()) {
-      final subject = row.readTable(subjects);
-      if (subject.beforeObjectId case final object?) {
-        roots[object] = RevisionObjectId(object);
-      }
-      if (subject.afterObjectId case final object?) {
-        roots[object] = RevisionObjectId(object);
-      }
-    }
-    final values = roots.values.toList(growable: false)
-      ..sort((left, right) => left.value.compareTo(right.value));
-    return List<RevisionObjectId>.unmodifiable(values);
   }
 
   Future<_CurrentState?> _readCurrentState(

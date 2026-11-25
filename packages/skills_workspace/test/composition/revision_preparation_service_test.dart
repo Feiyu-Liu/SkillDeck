@@ -47,6 +47,8 @@ void main() {
     await revisions.start();
     final filesystem = PlatformDurableWorkspaceFilesystem();
     service = WorkspaceRevisionPreparationService(
+      readCommittedRoots: (_, {includeDraftAndSession = true}) async =>
+          const {},
       revisions: revisions,
       layout: layout,
       filesystem: filesystem,
@@ -399,6 +401,8 @@ void main() {
       () async {
         final filesystem = PlatformDurableWorkspaceFilesystem();
         final failing = WorkspaceRevisionPreparationService(
+          readCommittedRoots: (_, {includeDraftAndSession = true}) async =>
+              const {},
           revisions: _FailingRevisions(code),
           layout: layout,
           filesystem: filesystem,
@@ -1081,6 +1085,7 @@ WorkspaceRevisionPreparationService _windowsService(
   RevisionWorkerRuntime revisions,
   WorkspaceLayout layout,
 ) => WorkspaceRevisionPreparationService(
+  readCommittedRoots: (_, {includeDraftAndSession = true}) async => const {},
   revisions: revisions,
   layout: layout,
   filesystem: PlatformDurableWorkspaceFilesystem(),

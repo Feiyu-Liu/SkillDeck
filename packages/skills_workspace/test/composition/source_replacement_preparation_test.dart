@@ -42,6 +42,8 @@ void main() {
     );
     revisions = _RevisionEngine();
     preparation = WorkspaceSourceReplacementPreparation(
+      readCommittedRoots: (_, {includeDraftAndSession = true}) async =>
+          const {},
       sources: SourceAcquisitionCoordinator(
         local: sources,
         git: sources,
