@@ -493,15 +493,41 @@ final class RemoteSkillContent extends ApplyRemoteStateRequest {
     required this.managedSkillId,
     required this.expectedEffective,
     required this.effective,
-    required this.upstream,
+    this.upstream,
     this.packPath,
   });
 
   final ManagedSkillId managedSkillId;
   final RevisionId expectedEffective;
   final RevisionId effective;
-  final RevisionId upstream;
+  final RevisionId? upstream;
   final String? packPath;
+}
+
+/// Installs a portable source directly from a downloaded Revision Pack.
+final class RemoteSkillInstall extends ApplyRemoteStateRequest {
+  RemoteSkillInstall({
+    required this.packPath,
+    required this.effective,
+    this.upstream,
+    required this.source,
+  }) {
+    final expectsUpstream = switch (source) {
+      GitSourceDescriptor() || WellKnownSourceDescriptor() => true,
+      SyncedOriginSourceDescriptor(:final originSourceType) =>
+        originSourceType != SyncedOriginSourceType.adoptedSnapshot,
+      LocalSourceDescriptor() || AdoptedSnapshotSourceDescriptor() =>
+        throw ArgumentError('Remote install requires a portable source.'),
+    };
+    if (expectsUpstream != (upstream != null)) {
+      throw ArgumentError('Upstream does not match the remote source type.');
+    }
+  }
+
+  final String packPath;
+  final RevisionId effective;
+  final RevisionId? upstream;
+  final SourceDescriptor source;
 }
 
 /// Stages the requested revisions from a caller-supplied pack file.

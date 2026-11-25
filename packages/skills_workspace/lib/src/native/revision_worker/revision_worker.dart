@@ -581,6 +581,7 @@ final class RevisionWorker
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => _send<void>(
     RevisionWorkerBuildBundleArtifactsCommand(
       repositoryPath: repositoryPath,
@@ -589,6 +590,7 @@ final class RevisionWorker
       currentUpstreamOid: currentUpstream.value,
       currentEffectiveOid: currentEffective.value,
       retainedRootOids: retainedRoots.map((root) => root.value).toList(),
+      includeHistory: includeHistory,
     ),
     _decodeVoid,
   );

@@ -23,7 +23,10 @@ extension WorkspaceRemoteContentPreparation
     final id = skill.id;
     final local = state.currentEffective;
     final remote = RevisionObjectId(request.effective.value);
-    final remoteUpstream = RevisionObjectId(request.upstream.value);
+    final remoteUpstream = switch (request.upstream) {
+      final head? => RevisionObjectId(head.value),
+      null => null,
+    };
     final lineage = state.sourceLineage;
     final timestamp = DateTime.now().toUtc().microsecondsSinceEpoch;
     final liveStore = _storePath(id);
@@ -38,28 +41,13 @@ extension WorkspaceRemoteContentPreparation
         revisions: runtime,
         operationId: operationId,
         managedSkillId: id,
-        targetRevisions: [remote, remoteUpstream],
+        targetRevisions: [remote, ?remoteUpstream],
         packPath: request.packPath,
         cancellationToken: token,
       );
       _throwIfCancelled(token);
       if (staged.packFailure case final failure?) {
-        return SkillsFailure(
-          code: switch (failure) {
-            RevisionPackStageFailure.malformed =>
-              SkillsErrorCode.archiveInvalid,
-            RevisionPackStageFailure.incomplete =>
-              SkillsErrorCode.revisionStoreCorrupt,
-            RevisionPackStageFailure.unreadable => SkillsErrorCode.ioFailure,
-          },
-          context: {
-            'reason': switch (failure) {
-              RevisionPackStageFailure.malformed => 'packMalformed',
-              RevisionPackStageFailure.incomplete => 'packIncomplete',
-              RevisionPackStageFailure.unreadable => 'packUnreadable',
-            },
-          },
-        );
+        return _remotePackFailure(failure);
       }
       final store = staged.storePath;
       final incoming = await _revisions.readTree(store, remote);
@@ -109,11 +97,12 @@ extension WorkspaceRemoteContentPreparation
       }
 
       final upstream =
-          await _revisions.isAncestor(
-            repositoryPath: store,
-            ancestor: remoteUpstream,
-            descendant: state.previousUpstream,
-          )
+          remoteUpstream == null ||
+              await _revisions.isAncestor(
+                repositoryPath: store,
+                ancestor: remoteUpstream,
+                descendant: state.previousUpstream,
+              )
           ? state.previousUpstream
           : remoteUpstream;
       final incomingFrontmatter = _frontmatter(incoming);

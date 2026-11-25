@@ -148,6 +148,29 @@ void main() {
     },
   );
 
+  test('an absent remote Upstream keeps a tracked local Upstream', () async {
+    final before = await inspectSelection();
+    expect(before.upstream, isNotNull);
+    final remote = await donor.incoming(
+      parent: local,
+      files: {'remote.md': 'incoming'},
+    );
+    final applied = await driftSuccess(
+      repository.applyRemoteState(
+        RemoteSkillContent(
+          managedSkillId: skill,
+          expectedEffective: local,
+          effective: remote.revision,
+          packPath: remote.packPath,
+        ),
+      ),
+    );
+    expect(applied, isA<RemoteApplyFastForwarded>());
+    final after = await inspectSelection();
+    expect(after.effective, remote.revision);
+    expect(after.upstream, before.upstream);
+  });
+
   test('cancels before applying remote content', () async {
     final remote = await donor.incoming(
       parent: local,

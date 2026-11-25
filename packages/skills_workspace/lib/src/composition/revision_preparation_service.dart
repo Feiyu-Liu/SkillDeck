@@ -25,6 +25,7 @@ import '../domain/slot_key.dart';
 import '../infrastructure/source/frontmatter_parser.dart';
 import '../infrastructure/source/source_models.dart';
 import '../infrastructure/content/normalized_skill_tree.dart';
+import '../infrastructure/content/content_result.dart';
 import '../infrastructure/workspace_layout.dart';
 import '../native/revision_engine/revision_recovery_bundle.dart';
 import '../native/revision_worker/revision_worker_runtime.dart';
@@ -34,6 +35,7 @@ import 'revision_recovery_bundle_publisher.dart';
 import 'remote_revision_store.dart';
 
 part 'remote_content_preparation.dart';
+part 'remote_install_preparation.dart';
 
 /// Shared Revision preparation adapter for Install, Draft, Update and Restore.
 ///
@@ -1104,6 +1106,7 @@ final class WorkspaceRevisionPreparationService
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) =>
       RevisionRecoveryBundlePublisher(
         revisions: _revisions,
@@ -1117,6 +1120,7 @@ final class WorkspaceRevisionPreparationService
         currentUpstream: currentUpstream,
         currentEffective: currentEffective,
         retainedPublishedRoots: retainedRoots,
+        includeHistory: includeHistory,
       );
 
   String _storePath(ManagedSkillId id) => _layout.revisionStorePath(id);

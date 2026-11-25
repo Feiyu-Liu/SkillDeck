@@ -172,12 +172,28 @@ including `test/support/remote_revision_pack_fixture.dart`.
 
 ### Progress
 
-- [ ] …
+- [x] Implemented pack installation and nullable Upstream for content apply.
+- [x] Exercised donor and receiver Workspaces, pack failures, retry, Restore Publish, and both crash boundaries.
+- [x] Completed the package gates on macOS arm64.
 
 ### Decision Log
 
+- The remote apply command shares cancellation, no-change handling, rollback, and finalization between install and content updates. Installation prepares an empty candidate Store so all requested history must come from the supplied pack.
+- An exact retry uses the same public head projection as pack export and revision inspection. The adopted-snapshot recovery baseline is local to the receiver.
+- The initial Recovery Bundle includes the full closure of both requested heads. Its Dart worker uses the existing history-inclusive pack builder. This preserves donor ancestry even when startup reconstructs the new Store from its bundle.
+- The receiving Workspace records the install as a single published operation. Only the service projects earlier donor operations.
+
 ### Surprises
+
+- A content apply must release the exclusive Store permit before refreshing the snapshot. Snapshot refresh reads the Store when the Skill has a Draft. The existing fast-forward test with a clean Draft exercises this ordering.
+- If the process dies before the install commits, the proposed Skill does not exist after rollback. The sealed plan retains the failed Workspace operation even when its proposed Skill subject is discarded.
 
 ### Follow-ups
 
+- T09 owns initial metadata. Windows and Linux qualification use the platform gates.
+
 ### Outcome
+
+Verified on macOS arm64 with Dart 3.14.0. Package lockfile resolution, formatting, and strict static analysis passed. All 34 focused tests passed. The full serial coverage run passed 1,639 tests with one opt-in network test skipped. Both native integration tests passed. Filtered line coverage was 89.12% (20,857 of 23,404 lines, gate 85%).
+
+Two separate local Workspaces exercised donor export, installation, and content apply. After moving the new Store aside, startup restored it from the initial Recovery Bundle. Re-export into an empty Git repository verified the donor commits and their file contents. No live Cloud service was involved.

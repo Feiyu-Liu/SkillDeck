@@ -35,6 +35,7 @@ final class RevisionRecoveryBundlePublisher {
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedPublishedRoots,
+    bool includeHistory = false,
   }) async {
     final rootsByObjectId = <String, RevisionObjectId>{
       for (final root in retainedPublishedRoots) root.value: root,
@@ -56,12 +57,14 @@ final class RevisionRecoveryBundlePublisher {
         currentUpstream: currentUpstream,
         currentEffective: currentEffective,
         retainedRoots: roots,
+        includeHistory: includeHistory,
       );
     } else {
       await _revisions.createRecoveryPack(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundlePath,
         retainedRoots: roots,
+        includeHistory: includeHistory,
       );
     }
     await _filesystem.flushRecursively(repositoryPath);

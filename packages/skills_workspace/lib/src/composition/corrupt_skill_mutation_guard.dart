@@ -166,6 +166,7 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.applyRemoteState => switch (request
       as ApplyRemoteStateRequest) {
     RemoteSkillContent(:final managedSkillId) => {managedSkillId},
+    RemoteSkillInstall() => const <ManagedSkillId>{},
   },
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,
   WorkspaceOperationKind.activate =>

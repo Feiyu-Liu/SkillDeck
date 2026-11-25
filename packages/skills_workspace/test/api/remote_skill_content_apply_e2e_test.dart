@@ -3,11 +3,10 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/skills_workspace.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
-import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
 import '../support/drift_facade_fixture.dart';
-import '../support/process/direct_dart_process.dart';
+import '../support/operations/remote_apply_test_support.dart';
 import '../support/remote_revision_pack_fixture.dart';
 
 void main() {
@@ -147,7 +146,7 @@ void main() {
     await fixture.changeNotes(draft.path, 'my draft\n');
     final before = repository.snapshot.revision;
     final historyBefore = await operationHistory();
-    final journalsBefore = _databaseRows(
+    final journalsBefore = readOperationDatabaseRows(
       layout.databasePath,
     )['operation_journals'];
 
@@ -164,7 +163,7 @@ void main() {
     expect(repository.snapshot.revision, before);
     expect(await operationHistory(), historyBefore);
     expect(
-      _databaseRows(layout.databasePath)['operation_journals'],
+      readOperationDatabaseRows(layout.databasePath)['operation_journals'],
       journalsBefore,
     );
     await fixture.expectEffectiveNotes(DriftFacadeFixture.baseNotes);
@@ -221,7 +220,7 @@ void main() {
       await invalid.writeAsString('not a revision pack');
       final before = repository.snapshot.revision;
       final storeBefore = await _storeBytes(liveStore);
-      final rowsBefore = _databaseRows(layout.databasePath);
+      final rowsBefore = readOperationDatabaseRows(layout.databasePath);
       final operationHistoryBefore = await operationHistory();
       final failedOperationIds = <OperationId>[];
       final historyBefore = (await fixture.history()).revisions
@@ -242,7 +241,7 @@ void main() {
         failedOperationIds.add(operation.operationId);
         expect(repository.snapshot.revision, before);
         expect(await _storeBytes(liveStore), equals(storeBefore));
-        final rows = _databaseRows(layout.databasePath);
+        final rows = readOperationDatabaseRows(layout.databasePath);
         const operationTables = {
           'operation_records',
           'operation_subjects',
@@ -304,40 +303,16 @@ void main() {
         await driftSuccess(repository.close());
         final storeBefore = await _storeBytes(liveStore);
         final stageBefore = await _storeBytes(staging.path);
-        final rowsBefore = _databaseRows(layout.databasePath);
+        final rowsBefore = readOperationDatabaseRows(layout.databasePath);
         final operationId = OperationId('123e4567-e89b-42d3-a456-426614174099');
-        final helper = await Process.start(
-          Platform.resolvedExecutable,
-          directDartScriptArguments(
-            'test/support/operations/remote_content_crash_helper.dart',
-            [
-              layout.rootPath,
-              skillId.value,
-              base.effective.value,
-              remote.revision.value,
-              operationId.value,
-              if (committed) 'afterCommit' else 'beforeCommit',
-            ],
-          ),
-        );
-        final output = [
-          helper.stdout.drain<void>(),
-          helper.stderr.drain<void>(),
-        ];
-        expect(
-          await helper.exitCode.timeout(
-            const Duration(seconds: 60),
-            onTimeout: () {
-              helper.kill();
-              throw StateError(
-                'The remote apply crash point was not reached in time.',
-              );
-            },
-          ),
-          committed ? 72 : 71,
-        );
-        await Future.wait(output);
-        final interrupted = _databaseRows(layout.databasePath);
+        await crashRemoteApply([
+          layout.rootPath,
+          skillId.value,
+          base.effective.value,
+          remote.revision.value,
+          operationId.value,
+        ], committed: committed);
+        final interrupted = readOperationDatabaseRows(layout.databasePath);
         expect(
           interrupted['operation_journals']!.single['phase'],
           committed ? 'committed' : 'applying',
@@ -364,7 +339,7 @@ void main() {
         } else {
           expect(await _storeBytes(liveStore), equals(storeBefore));
           expect(await _storeBytes(staging.path), equals(stageBefore));
-          final recovered = _databaseRows(layout.databasePath);
+          final recovered = readOperationDatabaseRows(layout.databasePath);
           final records = recovered['operation_records']!;
           final rollbackRecord = records.singleWhere(
             (row) => row['operation_id'] == operationId.value,
@@ -387,7 +362,7 @@ void main() {
           isFalse,
         );
         expect(
-          _databaseRows(layout.databasePath)['operation_journals'],
+          readOperationDatabaseRows(layout.databasePath)['operation_journals'],
           isEmpty,
         );
       },
@@ -414,22 +389,3 @@ Future<Map<String, List<int>>> _storeBytes(String liveStore) async => {
     if (entry is File)
       path.relative(entry.path, from: liveStore): await entry.readAsBytes(),
 };
-
-Map<String, List<Map<String, Object?>>> _databaseRows(String databasePath) {
-  final database = sqlite3.open(databasePath, mode: OpenMode.readOnly);
-  try {
-    final tables = database.select(
-      "SELECT name FROM sqlite_schema WHERE type = 'table' "
-      "AND name NOT LIKE 'sqlite_%'",
-    );
-    return {
-      for (final {'name': name as String} in tables)
-        name: database
-            .select('SELECT * FROM "$name" ORDER BY rowid')
-            .map((row) => Map<String, Object?>.of(row))
-            .toList(),
-    };
-  } finally {
-    database.close();
-  }
-}

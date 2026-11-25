@@ -25,6 +25,7 @@ prepareRemoteRevisionStore({
   required ManagedSkillId managedSkillId,
   required List<RevisionObjectId> targetRevisions,
   String? packPath,
+  bool createNewStore = false,
   required CancellationToken cancellationToken,
 }) async {
   final liveStore = layout.revisionStorePath(managedSkillId);
@@ -32,18 +33,21 @@ prepareRemoteRevisionStore({
     operationId,
     managedSkillId,
   );
-  await _copyStore(
-    Directory(liveStore),
-    Directory(candidate),
-    cancellationToken,
-  );
+  if (createNewStore) {
+    await revisions.createStore(candidate);
+  } else {
+    await _copyStore(
+      Directory(liveStore),
+      Directory(candidate),
+      cancellationToken,
+    );
+  }
   final candidatePacks = path.join(candidate, 'objects', 'pack');
   final used = <String>[];
   final staging = Directory(layout.revisionPackStagingPath(managedSkillId));
-  final stagingType = await FileSystemEntity.type(
-    staging.path,
-    followLinks: false,
-  );
+  final stagingType = createNewStore
+      ? FileSystemEntityType.notFound
+      : await FileSystemEntity.type(staging.path, followLinks: false);
   if (stagingType != FileSystemEntityType.notFound) {
     if (stagingType != FileSystemEntityType.directory) {
       throw const RevisionEngineException(

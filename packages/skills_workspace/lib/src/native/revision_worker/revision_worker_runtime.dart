@@ -295,6 +295,7 @@ final class RevisionWorkerRuntime
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   }) => _delegate(
     (worker) => worker.buildRevisionBundleArtifacts(
       repositoryPath: repositoryPath,
@@ -303,6 +304,7 @@ final class RevisionWorkerRuntime
       currentUpstream: currentUpstream,
       currentEffective: currentEffective,
       retainedRoots: retainedRoots,
+      includeHistory: includeHistory,
     ),
   );
 

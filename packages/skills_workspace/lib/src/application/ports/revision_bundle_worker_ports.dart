@@ -14,6 +14,7 @@ abstract interface class RevisionBundleWorkerPort {
     required RevisionObjectId currentUpstream,
     required RevisionObjectId currentEffective,
     required List<RevisionObjectId> retainedRoots,
+    bool includeHistory = false,
   });
 
   Future<void> verifyRevisionBundleArtifacts({

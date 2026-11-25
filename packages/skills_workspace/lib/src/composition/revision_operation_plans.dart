@@ -25,6 +25,7 @@ import '../infrastructure/workspace_layout.dart';
 import '../platform/operations/operation_recovery_bundle.dart';
 
 import 'remote_revision_store.dart';
+import 'revision_preparation_service.dart' show RemoteInstallEvidence;
 
 /// Binds revision-backed mutations to one recoverable filesystem transaction.
 ///
@@ -341,7 +342,7 @@ final class WorkspaceRevisionOperationPlans
     return operation;
   }
 
-  PreparedOperationEnvelope createRemoteContentEnvelope({
+  PreparedOperationEnvelope createRemoteApplyEnvelope({
     required OperationId operationId,
     required RepositoryRevision expectedRepositoryRevision,
     required ManagedSkillId managedSkillId,
@@ -404,6 +405,67 @@ final class WorkspaceRevisionOperationPlans
                   preparedPlan.businessChanges,
                   selection!.intendedEffective!.objectId,
                 ),
+        ),
+      ],
+    );
+    _requireSealed(envelope, plan);
+    recovery.register();
+    return plan;
+  }
+
+  OperationPlan sealRemoteInstallPlan({
+    required PreparedOperationEnvelope envelope,
+    required RemoteInstallEvidence evidence,
+  }) {
+    final operationId = envelope.operationId;
+    final id = evidence.managedSkillId;
+    final repositoryCopy = _layout.repositoryCopyPath(evidence.slotKey);
+    final recovery =
+        (_RecoveryPlanBuilder(envelope: envelope, registry: _recoverySpecs)
+              ..addDirectory(
+                targetPath: _storePath(id),
+                intendedSourcePath: _candidateRevisionRoot(operationId, id),
+                makeReadOnly: false,
+                requirePlainDirectory: false,
+              )
+              ..addDirectory(
+                targetPath: _bundlePath(id),
+                intendedSourcePath: _layout.operationBundleCandidatePath(
+                  operationId,
+                  id,
+                ),
+              )
+              ..addDirectory(
+                targetPath: repositoryCopy,
+                intendedSourcePath: _candidateMaterializationPath(
+                  operationId,
+                  id,
+                ),
+              ))
+            .finish();
+    final plan = _assembler.assemble(
+      operationId: operationId,
+      expectedRepositoryRevision: envelope.expectedRepositoryRevision,
+      kind: WorkspaceOperationKind.applyRemoteState,
+      retainWithoutSubjects: true,
+      businessChanges: evidence.businessChanges,
+      recoverySteps: recovery.steps,
+      revisionSelectionChanges: [
+        RevisionSelectionChangePlan(
+          managedSkillId: id,
+          previousUpstream: null,
+          previousEffective: null,
+          intendedUpstream: evidence.upstream,
+          intendedEffective: evidence.effective,
+        ),
+      ],
+      subjects: [
+        OperationSubjectIntent(
+          managedSkillId: id,
+          displayName: evidence.declaredName,
+          sourceLineage: evidence.effective.sourceLineage,
+          afterObjectId: evidence.effective.objectId,
+          afterContentHash: evidence.contentHash,
         ),
       ],
     );

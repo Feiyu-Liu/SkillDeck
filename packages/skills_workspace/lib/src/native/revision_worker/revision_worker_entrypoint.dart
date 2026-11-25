@@ -318,11 +318,13 @@ Future<Object?> _execute(
       :final repositoryPath,
       :final bundlePath,
       :final retainedRootOids,
+      :final includeHistory,
     ):
       engine.createRecoveryPack(
         repositoryPath: repositoryPath,
         bundleStagingPath: bundlePath,
         retainedRoots: retainedRootOids.map(RevisionObjectId.new).toList(),
+        includeHistory: includeHistory,
       );
       return _executeInjectedTask(taskExecutor, command);
     case RevisionWorkerVerifyBundleArtifactsCommand():

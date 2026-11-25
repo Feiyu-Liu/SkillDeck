@@ -316,6 +316,7 @@ final class RevisionWorkerBuildBundleArtifactsCommand
     required this.currentUpstreamOid,
     required this.currentEffectiveOid,
     required List<String> retainedRootOids,
+    this.includeHistory = false,
   }) : retainedRootOids = List<String>.unmodifiable(retainedRootOids);
 
   final String repositoryPath;
@@ -324,6 +325,7 @@ final class RevisionWorkerBuildBundleArtifactsCommand
   final String currentUpstreamOid;
   final String currentEffectiveOid;
   final List<String> retainedRootOids;
+  final bool includeHistory;
 }
 
 final class RevisionWorkerVerifyBundleArtifactsCommand

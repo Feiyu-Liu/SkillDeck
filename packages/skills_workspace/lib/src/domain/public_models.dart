@@ -1132,6 +1132,18 @@ sealed class RemoteApplyResult {
   const RemoteApplyResult();
 }
 
+final class RemoteApplyInstalled extends RemoteApplyResult {
+  const RemoteApplyInstalled(this.managedSkillId);
+
+  final ManagedSkillId managedSkillId;
+}
+
+final class RemoteApplySkillSlotOccupied extends RemoteApplyResult {
+  const RemoteApplySkillSlotOccupied(this.occupant);
+
+  final ManagedSkillId occupant;
+}
+
 final class RemoteApplyNoChange extends RemoteApplyResult {
   const RemoteApplyNoChange();
 }

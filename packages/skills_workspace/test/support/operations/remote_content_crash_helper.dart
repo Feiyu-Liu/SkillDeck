@@ -27,6 +27,7 @@ import 'package:skills_workspace/src/infrastructure/database/workspace_database.
 import 'package:skills_workspace/src/infrastructure/database/workspace_snapshot_reader.dart';
 import 'package:skills_workspace/src/infrastructure/identity/uuid_workspace_identities.dart';
 import 'package:skills_workspace/src/infrastructure/revision_store_update_candidate_content.dart';
+import 'package:skills_workspace/src/infrastructure/source/application_source_payload_adapter.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
 import 'package:skills_workspace/src/native/revision_worker/revision_worker_runtime.dart';
 import 'package:skills_workspace/src/platform/activation/workspace_activation_location_identity.dart';
@@ -40,11 +41,54 @@ import 'package:skills_workspace/src/platform/operations/filesystem_operation_re
 import 'package:skills_workspace/src/platform/operations/operation_recovery_bundle.dart';
 
 Future<void> main(List<String> arguments) async {
-  final [workspace, skill, expected, target, operation, crashPoint] = arguments;
+  final (workspace, operation, crashPoint, request) = switch (arguments) {
+    [
+      final workspace,
+      'install',
+      final pack,
+      final effective,
+      final upstream,
+      final operation,
+      final crashPoint,
+    ] =>
+      (
+        workspace,
+        operation,
+        crashPoint,
+        RemoteSkillInstall(
+          packPath: pack,
+          effective: RevisionId(effective),
+          upstream: RevisionId(upstream),
+          source: SyncedOriginSourceDescriptor(
+            originSourceType: SyncedOriginSourceType.local,
+            originDeviceLabel: 'Donor Device',
+            displayLabel: 'Donor folder',
+          ),
+        ),
+      ),
+    [
+      final workspace,
+      final skill,
+      final expected,
+      final target,
+      final operation,
+      final crashPoint,
+    ] =>
+      (
+        workspace,
+        operation,
+        crashPoint,
+        RemoteSkillContent(
+          managedSkillId: ManagedSkillId(skill),
+          expectedEffective: RevisionId(expected),
+          effective: RevisionId(target),
+          upstream: RevisionId(target),
+        ),
+      ),
+    _ => throw ArgumentError('Unexpected remote apply crash helper arguments.'),
+  };
   final layout = WorkspaceLayout(workspace);
-  final id = ManagedSkillId(skill);
   final operationId = OperationId(operation);
-  final store = layout.revisionStorePath(id);
   final database = WorkspaceDatabase.forFile(File(layout.databasePath));
   final primitives = Platform.isWindows
       ? const WindowsFilesystemPrimitives()
@@ -72,6 +116,7 @@ Future<void> main(List<String> arguments) async {
       filesystem: runtime,
       content: runtime,
     );
+    final pointers = DriftRevisionPointerReader(database);
     final states = DriftDraftUpdateState(
       database: database,
       draftInspection: DriftUpdateDraftInspection(
@@ -85,13 +130,19 @@ Future<void> main(List<String> arguments) async {
       candidateContent: RevisionStoreUpdateCandidateContent(
         accessGate: access,
         storePath: layout.revisionStorePath,
-        pointers: DriftRevisionPointerReader(database),
+        pointers: pointers,
         revisionEngine: runtime,
       ),
     );
     final registry = OperationRecoverySpecRegistry();
-    final liveObjects = await filesystem.resolveMutationPath(
-      path.join(store, 'objects'),
+    final publishedParent = await filesystem.resolveMutationPath(
+      switch (request) {
+        RemoteSkillContent(:final managedSkillId) => path.join(
+          layout.revisionStorePath(managedSkillId),
+          'objects',
+        ),
+        RemoteSkillInstall() => layout.revisionStoresRoot,
+      },
     );
     final recovery = FilesystemOperationRecovery(
       layout: layout,
@@ -102,7 +153,7 @@ Future<void> main(List<String> arguments) async {
       onMutationBarrier: (barrier, targetPath) {
         if (crashPoint == 'beforeCommit' &&
             barrier == DurablePathMutationBarrier.afterCandidatePublished &&
-            path.isWithin(liveObjects, targetPath)) {
+            path.isWithin(publishedParent, targetPath)) {
           exit(71);
         }
       },
@@ -160,14 +211,12 @@ Future<void> main(List<String> arguments) async {
       plans: plans,
       runtime: runtime,
       access: access,
+      identities: const UuidWorkspaceIdentities(),
+      sourcePayloads: const ApplicationSourcePayloadAdapter(),
+      readPackHeads: pointers.readCurrentPackHeads,
     );
     final result = await command.execute(
-      RemoteSkillContent(
-        managedSkillId: id,
-        expectedEffective: RevisionId(expected),
-        effective: RevisionId(target),
-        upstream: RevisionId(target),
-      ),
+      request,
       SkillsCommandContext(
         operationId: operationId,
         cancellationToken: CancellationToken.none(),

@@ -28,6 +28,45 @@ void main() {
     expect(() => update.managedSkillIds.clear(), throwsUnsupportedError);
   });
 
+  test('remote install accepts exactly the portable source and head pairs', () {
+    final head = RevisionId('a' * 40);
+    RemoteSkillInstall install(SourceDescriptor source, RevisionId? upstream) =>
+        RemoteSkillInstall(
+          packPath: 'skill.pack',
+          effective: head,
+          upstream: upstream,
+          source: source,
+        );
+
+    SyncedOriginSourceDescriptor origin(SyncedOriginSourceType type) =>
+        SyncedOriginSourceDescriptor(
+          originSourceType: type,
+          originDeviceLabel: 'Donor',
+          displayLabel: 'Sample',
+        );
+    final adopted = origin(SyncedOriginSourceType.adoptedSnapshot);
+    expect(install(adopted, null).upstream, isNull);
+    expect(() => install(adopted, head), throwsArgumentError);
+    for (final source in [
+      origin(SyncedOriginSourceType.local),
+      GitSourceDescriptor(locator: 'https://example.com/repo.git'),
+      WellKnownSourceDescriptor(locator: 'https://example.com/skills.json'),
+    ]) {
+      expect(install(source, head).upstream, head);
+      expect(() => install(source, null), throwsArgumentError);
+    }
+    for (final source in [
+      LocalSourceDescriptor(locator: '/tmp/skill'),
+      AdoptedSnapshotSourceDescriptor(
+        authoritativeLocation: '/tmp/skill',
+        contentHash: 'b' * 64,
+      ),
+    ]) {
+      expect(() => install(source, null), throwsArgumentError);
+      expect(() => install(source, head), throwsArgumentError);
+    }
+  });
+
   test('source operations stay source-agnostic', () {
     final sources = <SourceDescriptor>[
       LocalSourceDescriptor(locator: '/tmp/skills'),
