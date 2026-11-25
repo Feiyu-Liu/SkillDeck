@@ -66,7 +66,7 @@ coordinator, with the usual journal, recovery, and finalization.
 | Variant | Fields | Card |
 | --- | --- | --- |
 | `RemoteSkillContent` | `managedSkillId`, `expectedEffective`, target `effective` and `upstream`, optional `packPath` | T07 |
-| `RemoteSkillInstall` | `packPath`, `effective`, `upstream`, `source` (Git, Well-known, or Synced Origin descriptor), optional initial metadata | T08 |
+| `RemoteSkillInstall` | `packPath`, `effective`, `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T08 |
 | `RemoteSkillMetadata` | `managedSkillId`, `expectedEffective`, `favorite`, `note` (null clears it), `tagIds` (the complete set of local tag IDs) | T09 |
 | `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective` | T09 |
 | `RemoteTagVocabulary` | one of `ensure(name)`, `rename(tagId, name)`, or `delete(tagId)` | T09 |
@@ -134,13 +134,20 @@ Let L be the local Effective Revision and R the target `effective`.
 
 ### Other variants (T08, T09, outline only)
 
-- **Install:**
+- **Install (T08):**
   - verifies the pack, then creates the Store from it rather than from a tree;
   - creates the managed Skill with the given Source Descriptor and selects
     `effective` and `upstream`;
   - creates no Activations (R6);
+  - rejects a Local or Adopted Snapshot descriptor, which are Device-Bound
+    (R7);
   - returns `skillSlotOccupied` instead of the install flow's
-    `sourceReplacementRequired`.
+    `sourceReplacementRequired`;
+  - on retry, returns `installed(occupant)` with no change when the slot's
+    occupant already has the requested Effective, Upstream, and Source
+    Descriptor;
+  - takes no initial metadata. `skills_cloud` follows it with
+    `RemoteSkillMetadata` (decided 2026-11-25, when writing T08).
 - **Metadata:** sets the Favorite, Note, and Tag Assignment set to the given
   values. It is guarded by `expectedEffective` and does nothing when the values
   already match.
