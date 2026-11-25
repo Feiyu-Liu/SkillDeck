@@ -8,13 +8,14 @@ import '../process/direct_dart_process.dart';
 Future<void> crashRemoteApply(
   List<String> arguments, {
   required bool committed,
+  String script = 'test/support/operations/remote_content_crash_helper.dart',
 }) async {
   final helper = await Process.start(
     Platform.resolvedExecutable,
-    directDartScriptArguments(
-      'test/support/operations/remote_content_crash_helper.dart',
-      [...arguments, committed ? 'afterCommit' : 'beforeCommit'],
-    ),
+    directDartScriptArguments(script, [
+      ...arguments,
+      committed ? 'afterCommit' : 'beforeCommit',
+    ]),
   );
   final output = [helper.stdout.drain<void>(), helper.stderr.drain<void>()];
   final code = await helper.exitCode.timeout(

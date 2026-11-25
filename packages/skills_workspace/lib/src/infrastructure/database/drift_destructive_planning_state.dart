@@ -112,19 +112,32 @@ final class DriftDestructivePlanningState
 
       final draft = draftBySkill[id];
       final DestructiveDraftState draftState;
+      Future<bool> Function()? verifyCleanDraft;
       if (draft == null) {
         draftState = DestructiveDraftState.absent;
       } else if (purpose == DestructivePlanningPurpose.removal ||
+          (purpose == DestructivePlanningPurpose.guardedRemoval &&
+              sessionSkillIds.contains(id)) ||
           !targetManagedSkillIds.contains(publicSkill.id)) {
-        // Removal deletes the Draft with the aggregate and therefore needs
-        // only the durable presence bit. Unrelated Skills must never be
-        // inspected while planning another Skill's destructive operation.
+        // An open session already blocks guarded Removal. Local Removal and
+        // unrelated Skills only need the durable presence bit.
         draftState = DestructiveDraftState.clean;
       } else {
         final inspected = await _draftInspection.inspectForUpdate(
           skill: publicSkill,
           cancellationToken: cancellationToken,
         );
+        if (inspected case UpdateDraftInspectionSuccess(:final inspection)
+            when purpose == DestructivePlanningPurpose.guardedRemoval &&
+                !inspection.isDirty) {
+          verifyCleanDraft = inspection.verifyCleanDraft;
+          if (verifyCleanDraft == null) {
+            throw const DestructivePlanningStateException(
+              DestructivePlanningStateFailureCode.draftInspectionFailed,
+              reason: 'cleanDraftFingerprintUnavailable',
+            );
+          }
+        }
         draftState = switch (inspected) {
           UpdateDraftInspectionSuccess(:final inspection) =>
             inspection.isDirty
@@ -170,6 +183,7 @@ final class DriftDestructivePlanningState
           activationIds: activationIds,
           draftState: draftState,
           hasUpdateCandidateSession: sessionSkillIds.contains(id),
+          verifyCleanDraft: verifyCleanDraft,
         ),
       );
     }

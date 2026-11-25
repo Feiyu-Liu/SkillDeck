@@ -8,10 +8,9 @@ enum DestructiveDraftState { absent, clean, dirty }
 
 /// Identifies which destructive operation is requesting the lock-held state.
 ///
-/// Source Replacement requires an authoritative dirty-state inspection for
-/// its target. Removal only needs to know whether a Draft path exists because
-/// the entire aggregate is deleted regardless of unpublished content.
-enum DestructivePlanningPurpose { sourceReplacement, removal }
+/// Source Replacement and guarded Removal require an authoritative dirty-state
+/// inspection. Local Removal only needs to know whether a Draft path exists.
+enum DestructivePlanningPurpose { sourceReplacement, removal, guardedRemoval }
 
 final class DestructiveSourceLineageState {
   const DestructiveSourceLineageState({required this.sourceLineage});
@@ -38,6 +37,7 @@ final class DestructiveManagedSkillState {
     required List<String> activationIds,
     required this.draftState,
     required this.hasUpdateCandidateSession,
+    this.verifyCleanDraft,
   }) : sourceLineages = List.unmodifiable(sourceLineages),
        activationIds = List.unmodifiable(activationIds) {
     _requireText(slotKey, 'slotKey');
@@ -93,6 +93,7 @@ final class DestructiveManagedSkillState {
   final List<String> activationIds;
   final DestructiveDraftState draftState;
   final bool hasUpdateCandidateSession;
+  final Future<bool> Function()? verifyCleanDraft;
 }
 
 final class DestructivePlanningSnapshot {

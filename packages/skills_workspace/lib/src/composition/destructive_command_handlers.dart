@@ -7,6 +7,7 @@ import '../application/operations/operation_coordinator.dart';
 import '../application/operations/operation_models.dart';
 import '../application/operations/operation_plan_assembler.dart';
 import '../application/ports/destructive_operation_ports.dart';
+import '../application/ports/update_ports.dart';
 import '../application/runtime/workspace_snapshot_publisher.dart';
 import '../domain/identifiers.dart';
 import '../domain/public_models.dart';
@@ -237,6 +238,89 @@ Future<SkillsResult<MutationReport>> _remove({
       affectedSkillIds: request.managedSkillIds,
     ),
   );
+}
+
+Future<SkillsResult<RemoteApplyResult>> applyRemoteRemoval({
+  required RemoteSkillRemoval request,
+  required SkillsCommandContext context,
+  required WorkspaceSnapshotPublisher snapshots,
+  required OperationCoordinator operations,
+  required UpdateRevisionStatePort states,
+  required DestructivePlanningStatePort state,
+  required DestructiveOperationPlanner planner,
+}) async {
+  final snapshot = snapshots.current;
+  final id = request.managedSkillId;
+  SkillsResult<RemoteApplyResult>? rejection;
+
+  Never reject(SkillsResult<RemoteApplyResult> result) {
+    rejection = result;
+    throw const _DestructivePlanningRejected();
+  }
+
+  final result = await executeMutation<RemoteApplyResult>(
+    context: context,
+    planningSnapshot: snapshot,
+    operations: operations,
+    snapshots: snapshots,
+    valueFromSnapshot: (_) => const RemoteApplyRemoved(),
+    buildPlan: (operationId, _) async {
+      if (snapshot.findSkill(id) == null) {
+        reject(SkillsFailure(code: SkillsErrorCode.skillNotFound));
+      }
+      final selection = await states.readUpdateState(id);
+      if (selection == null) {
+        reject(SkillsFailure(code: SkillsErrorCode.revisionStoreCorrupt));
+      }
+      if (selection.currentEffective.value != request.expectedEffective.value) {
+        reject(
+          SkillsFailure(
+            code: SkillsErrorCode.staleSnapshot,
+            context: const {'reason': 'effectiveRevisionChanged'},
+          ),
+        );
+      }
+
+      final token = context.cancellationToken;
+      final DestructivePlanningSnapshot lockHeldSnapshot;
+      try {
+        lockHeldSnapshot = await state.readPlanningSnapshot(
+          publicSnapshot: snapshot,
+          purpose: DestructivePlanningPurpose.guardedRemoval,
+          targetManagedSkillIds: {id},
+          cancellationToken: token,
+        );
+      } on DestructivePlanningStateException catch (failure) {
+        if (failure.code !=
+            DestructivePlanningStateFailureCode.operationCancelled) {
+          rethrow;
+        }
+        reject(SkillsFailure(code: SkillsErrorCode.operationCancelled));
+      }
+      final skill = lockHeldSnapshot.findSkill(id)!;
+      if (skill.draftState == DestructiveDraftState.dirty ||
+          skill.hasUpdateCandidateSession) {
+        reject(
+          SkillsSuccess(
+            value: const RemoteApplyDraftResolutionRequired(),
+            changed: false,
+          ),
+        );
+      }
+      final planned = await planner.planRemovalAtSnapshot(
+        operationId: operationId,
+        snapshot: lockHeldSnapshot,
+        managedSkillIds: {id},
+        cancellationToken: token,
+      );
+      if (planned.failureOrNull case final failure?) {
+        reject(_planningFailure(failure));
+      }
+      return planned.valueOrNull!;
+    },
+  );
+  // A guard or blocker rejects planning before execute writes a Prepared row.
+  return rejection ?? result;
 }
 
 SkillsFailure<T> _planningFailure<T>(

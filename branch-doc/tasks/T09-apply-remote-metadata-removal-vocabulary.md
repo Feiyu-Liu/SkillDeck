@@ -189,12 +189,36 @@ Each item is a test through the public API with the existing facade fixtures.
 
 ### Progress
 
-- [ ] …
+- [x] Implemented all three request variants in the public Workspace facade.
+- [x] Covered feed entries, retries, rejected writes, destructive recovery, and T08-2.
 
 ### Decision Log
 
+- One SQLite Business Commit applies a Skill's complete metadata or merges two tags and their assignments. Existing business mutations drive the committed-change feed.
+- Remote Removal checks the expected Effective Revision under the writer lock, then shares the deletion plan and recovery entries with local Removal. An open Update Candidate Session blocks Removal even when its Draft is clean.
+- Remote install reports a rejected Source payload as `invalidSkill`. A public facade test exercises this with a credential-bearing fixture locator.
+
 ### Surprises
+
+An editor can change a clean Draft after the writer checks it. Guarded Removal now uses the existing recovery capture verifier. The regression test edits the Draft after Prepared and checks that the concurrent edit and Skill survive rollback and reopen.
 
 ### Follow-ups
 
+T13-1, retention of remote-only ancestors after Store loss, remains a separate decision.
+
 ### Outcome
+
+Verified on macOS arm64 with Dart 3.14.0 from `packages/skills_workspace/`. Each row reports its own exit code. `D` denotes the fresh evidence directory `/tmp/t09-gates.wKnhuT/final`.
+
+| Command | Exit |
+| --- | ---: |
+| `dart format --output=none --set-exit-if-changed .` | 0 |
+| `dart analyze --fatal-infos` | 0 |
+| `dart test -j 1 --reporter expanded` | 0 |
+| `dart test -j 1 integration_test --reporter expanded` | 0 |
+| `dart test -j 1 --coverage=$D/coverage --reporter expanded` | 0 |
+| `dart run coverage:format_coverage --lcov --in=$D/coverage --out=$D/lcov.raw.info --package=. --report-on=lib` | 0 |
+| `dart run tool/filter_coverage.dart $D/lcov.raw.info $D/lcov.info` | 0 |
+| `dart run tool/check_coverage.dart $D/lcov.info 85` | 0 |
+
+Both full runs passed 1,659 tests. One opt-in public GitHub network suite was skipped by default. Both native integration tests passed. Filtered line coverage was 89.22% (21,011 of 23,549 lines). Windows and Linux runs remain outstanding.

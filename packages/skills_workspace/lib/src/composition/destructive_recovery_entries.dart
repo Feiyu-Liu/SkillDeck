@@ -43,6 +43,8 @@ final class WorkspaceDestructiveRecoveryEntries
     required OperationId operationId,
     required DestructiveOperationRecoveryIntent intent,
     required CancellationToken cancellationToken,
+    Map<ManagedSkillId, Future<bool> Function()> draftCaptureVerifiers =
+        const {},
   }) async {
     _throwIfCancelled(cancellationToken);
     final activations = await _readActivations(intent);
@@ -168,10 +170,12 @@ final class WorkspaceDestructiveRecoveryEntries
             );
           }
           if (skill.hasDraft) {
+            final verify = draftCaptureVerifiers[skill.managedSkillId];
             add(
               _absent(
                 entryId('draft'),
                 _layout.draftPath(skill.managedSkillId),
+                verifyBeforeCapture: verify == null ? null : (_) => verify(),
               ),
             );
           }
@@ -264,15 +268,19 @@ final class WorkspaceDestructiveRecoveryEntries
     requirePlainDirectory: false,
   );
 
-  OperationRecoveryEntrySpec _absent(String id, String target) =>
-      OperationRecoveryEntrySpec(
-        entryId: id,
-        targetPath: target,
-        intendedSourcePath: null,
-        intendedKind: null,
-        makeReadOnly: false,
-        requirePlainDirectory: false,
-      );
+  OperationRecoveryEntrySpec _absent(
+    String id,
+    String target, {
+    OperationRecoveryPreCaptureVerifier? verifyBeforeCapture,
+  }) => OperationRecoveryEntrySpec(
+    entryId: id,
+    targetPath: target,
+    intendedSourcePath: null,
+    intendedKind: null,
+    verifyBeforeCapture: verifyBeforeCapture,
+    makeReadOnly: false,
+    requirePlainDirectory: false,
+  );
 }
 
 String _identity(String value) => Platform.isWindows

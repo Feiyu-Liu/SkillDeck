@@ -42,6 +42,8 @@ abstract interface class DestructiveRecoveryEntryPreparationPort {
     required OperationId operationId,
     required DestructiveOperationRecoveryIntent intent,
     required CancellationToken cancellationToken,
+    Map<ManagedSkillId, Future<bool> Function()> draftCaptureVerifiers =
+        const {},
   });
 }
 

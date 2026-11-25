@@ -36,9 +36,11 @@ import 'src/application/runtime/workspace_request_gate.dart';
 import 'src/application/runtime/workspace_snapshot_publisher.dart';
 import 'src/application/source/source_acquisition_coordinator.dart';
 import 'src/application/update/update_planner.dart';
+import 'src/composition/destructive_command_handlers.dart';
 import 'src/composition/destructive_recovery_entries.dart';
 import 'src/composition/destructive_recovery_maintenance.dart';
 import 'src/composition/materialization_inspection_worker_pool.dart';
+import 'src/composition/metadata_command_handlers.dart';
 import 'src/composition/operation_recovery_backup_maintenance.dart';
 import 'src/composition/operation_revision_reference_maintenance.dart';
 import 'src/composition/read_command_handlers.dart';
@@ -446,6 +448,14 @@ SkillsRepository createSkillsRepository(
     clock: () => DateTime.now().toUtc().microsecondsSinceEpoch,
   );
 
+  final library = LibraryMutationPlanner(
+    tagIds: identities.allocateActivationId,
+  );
+  const clock = SystemWorkspaceClock();
+  final destructiveState = DriftDestructivePlanningState(
+    database: database,
+    draftInspection: draftInspection,
+  );
   final dispatcher = RepositoryCommandComposition(
     snapshots: snapshots,
     materializations: materializations,
@@ -478,6 +488,23 @@ SkillsRepository createSkillsRepository(
       identities: identities,
       sourcePayloads: sourcePayloads,
       readPackHeads: pointers.readCurrentPackHeads,
+      handleLibrary: buildRemoteLibraryHandler(
+        snapshots: snapshots,
+        operations: operations,
+        plans: operationPlans,
+        library: library,
+        clock: clock,
+        states: draftUpdateState,
+      ),
+      handleRemoval: (request, context) => applyRemoteRemoval(
+        request: request,
+        context: context,
+        snapshots: snapshots,
+        operations: operations,
+        states: draftUpdateState,
+        state: destructiveState,
+        planner: destructivePlanner,
+      ),
     ),
     externalSkills: externalSkills,
     historyPort: WorkspaceHistoryReader(database),
@@ -512,8 +539,8 @@ SkillsRepository createSkillsRepository(
       idPort: const UuidProjectRootId(),
       clock: const SystemWorkspaceClock(),
     ),
-    library: LibraryMutationPlanner(tagIds: identities.allocateActivationId),
-    clock: const SystemWorkspaceClock(),
+    library: library,
+    clock: clock,
     initialImports: initialImports,
     initialImportPlans: revisionOperationPlans,
     drafts: DraftPlanner(
@@ -552,10 +579,7 @@ SkillsRepository createSkillsRepository(
     restoreAssembler: const RestorePlanAssembler(),
     restoreRevisions: revisionPreparation,
     restorePlans: revisionOperationPlans,
-    destructiveState: DriftDestructivePlanningState(
-      database: database,
-      draftInspection: draftInspection,
-    ),
+    destructiveState: destructiveState,
     destructivePlanner: destructivePlanner,
   ).buildDispatcher();
 

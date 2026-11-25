@@ -51,39 +51,33 @@ final class DriftUpdateDraftInspection
   Future<UpdateDraftInspectionResult> inspectForUpdate({
     required ManagedSkill skill,
     required CancellationToken cancellationToken,
-  }) async {
-    if (skill.draft == null) {
-      return const UpdateDraftInspectionSuccess(UpdateDraftInspection.absent());
-    }
-    final result = await inspectDraftDirtyState(
-      skill: skill,
-      cancellationToken: cancellationToken,
-    );
-    return switch (result) {
-      DraftDirtyStateInspectionSuccess(:final isDirty) =>
-        UpdateDraftInspectionSuccess(
-          isDirty
-              ? const UpdateDraftInspection.dirty()
-              : const UpdateDraftInspection.clean(),
-        ),
-      DraftDirtyStateInspectionFailure(:final reason) =>
-        UpdateDraftInspectionFailure(reason),
-    };
-  }
+  }) async => skill.draft == null
+      ? const UpdateDraftInspectionSuccess(UpdateDraftInspection.absent())
+      : _inspectDraft(skill, cancellationToken);
 
   @override
   Future<DraftDirtyStateInspectionResult> inspectDraftDirtyState({
     required ManagedSkill skill,
     required CancellationToken cancellationToken,
-  }) async {
+  }) async => switch (await _inspectDraft(skill, cancellationToken)) {
+    UpdateDraftInspectionSuccess(:final inspection) =>
+      DraftDirtyStateInspectionSuccess(isDirty: inspection.isDirty),
+    UpdateDraftInspectionFailure(:final reason) =>
+      DraftDirtyStateInspectionFailure(reason),
+  };
+
+  Future<UpdateDraftInspectionResult> _inspectDraft(
+    ManagedSkill skill,
+    CancellationToken cancellationToken,
+  ) async {
     if (cancellationToken.isCancelled) {
-      return const DraftDirtyStateInspectionFailure('operationCancelled');
+      return const UpdateDraftInspectionFailure('operationCancelled');
     }
     final selected = await _readSelection(skill.id);
     if (selected == null) {
       return skill.draft == null
-          ? const DraftDirtyStateInspectionSuccess(isDirty: false)
-          : const DraftDirtyStateInspectionFailure('draftStateUnavailable');
+          ? const UpdateDraftInspectionSuccess(UpdateDraftInspection.absent())
+          : const UpdateDraftInspectionFailure('draftStateUnavailable');
     }
     ManagedSkillRevisionAccessPermit permit;
     try {
@@ -92,53 +86,64 @@ final class DriftUpdateDraftInspection
         cancellationToken: cancellationToken,
       );
     } on ManagedSkillRevisionAccessCancelled {
-      return const DraftDirtyStateInspectionFailure('operationCancelled');
+      return const UpdateDraftInspectionFailure('operationCancelled');
     } on Object {
-      return const DraftDirtyStateInspectionFailure('revisionStoreUnavailable');
+      return const UpdateDraftInspectionFailure('revisionStoreUnavailable');
     }
     try {
       if (cancellationToken.isCancelled) {
-        return const DraftDirtyStateInspectionFailure('operationCancelled');
+        return const UpdateDraftInspectionFailure('operationCancelled');
       }
       if (await _readSelection(skill.id) != selected) {
-        return const DraftDirtyStateInspectionFailure('draftStateChanged');
+        return const UpdateDraftInspectionFailure('draftStateChanged');
       }
       final base = await _revisions.readTree(
         _storePath(skill.id),
         selected.baseObjectId,
       );
-      final result = await _snapshots.inspectDirty(
-        request: DraftCaptureRequest(
-          liveDraftPath: _layout.draftPath(skill.id),
-          stagingDestinationPath: path.join(
-            _layout.stagingRoot,
-            'draft-inspection-${skill.id.value}',
-          ),
-          capturePosixExecutableIntent: !Platform.isWindows,
-          executableIntentOverrides: <String, bool>{
-            for (final file in base.files) file.relativePath: file.isExecutable,
-          },
-          isCancelled: () => cancellationToken.isCancelled,
+      final request = DraftCaptureRequest(
+        liveDraftPath: _layout.draftPath(skill.id),
+        stagingDestinationPath: path.join(
+          _layout.stagingRoot,
+          'draft-inspection-${skill.id.value}',
         ),
+        capturePosixExecutableIntent: !Platform.isWindows,
+        executableIntentOverrides: <String, bool>{
+          for (final file in base.files) file.relativePath: file.isExecutable,
+        },
+        isCancelled: () => cancellationToken.isCancelled,
+      );
+      final result = await _snapshots.inspectForCleanup(
+        request: request,
         draftBase: base,
       );
-      final dirty = result.valueOrNull;
-      if (dirty == null) {
+      final inspection = result.valueOrNull;
+      if (inspection == null) {
         final code = result.failureOrNull!.code;
         if (code == DraftSnapshotFailureCode.invalidSkill ||
             code == DraftSnapshotFailureCode.skillContentLimitExceeded) {
           // A valid immutable Draft Base cannot normalize to either state.
           // Keep the Workspace readable and conservatively block Update until
           // the user repairs or discards these unpublished bytes.
-          return const DraftDirtyStateInspectionSuccess(isDirty: true);
+          return const UpdateDraftInspectionSuccess(
+            UpdateDraftInspection.dirty(),
+          );
         }
-        return DraftDirtyStateInspectionFailure(code.name);
+        return UpdateDraftInspectionFailure(code.name);
       }
-      return DraftDirtyStateInspectionSuccess(isDirty: dirty);
+      final fingerprint = inspection.cleanupFingerprint;
+      return UpdateDraftInspectionSuccess(
+        fingerprint == null
+            ? const UpdateDraftInspection.dirty()
+            : UpdateDraftInspection.clean(
+                verifyCleanDraft: () =>
+                    _snapshots.matchesFingerprint(request, fingerprint),
+              ),
+      );
     } on RevisionEngineException catch (error) {
-      return DraftDirtyStateInspectionFailure(error.code.name);
+      return UpdateDraftInspectionFailure(error.code.name);
     } on Object {
-      return const DraftDirtyStateInspectionFailure('ioFailure');
+      return const UpdateDraftInspectionFailure('ioFailure');
     } finally {
       await permit.release();
     }

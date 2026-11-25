@@ -4,7 +4,9 @@ import '../api/result.dart';
 import '../application/library/library_mutation_planner.dart';
 import '../application/operations/operation_coordinator.dart';
 import '../application/operations/operation_plan_assembler.dart';
+import '../application/operations/workspace_business_changes.dart';
 import '../application/ports/external_discovery_ports.dart';
+import '../application/ports/update_ports.dart';
 import '../application/project_roots/project_root_planner.dart';
 import '../application/runtime/workspace_snapshot_publisher.dart';
 import '../domain/identifiers.dart';
@@ -236,6 +238,154 @@ List<SkillsCommandHandler> buildMetadataCommandHandlers({
     ),
   ),
 ];
+
+typedef RemoteLibraryHandler =
+    TypedSkillsCommand<ApplyRemoteStateRequest, RemoteApplyResult>;
+
+RemoteLibraryHandler buildRemoteLibraryHandler({
+  required WorkspaceSnapshotPublisher snapshots,
+  required OperationCoordinator operations,
+  required OperationPlanAssembler plans,
+  required LibraryMutationPlanner library,
+  required WorkspaceClockPort clock,
+  required UpdateRevisionStatePort states,
+}) => (request, context) async {
+  final snapshot = snapshots.current;
+  late final RemoteApplyResult applied;
+  SkillsResult<RemoteApplyResult>? withoutCommit;
+
+  Never finishWithoutCommit(SkillsResult<RemoteApplyResult> result) {
+    withoutCommit = result;
+    throw const OperationPreparationUnchanged();
+  }
+
+  WorkspaceBusinessChangeSet changesOf<T>(
+    LibraryPlanningResult<T> result,
+    RemoteApplyResult Function(T value, bool changed) resultOf,
+  ) {
+    if (result is LibraryPlanningFailure<T>) {
+      finishWithoutCommit(_libraryFailure(result.code));
+    }
+    final planned = result as LibraryMutationPlan<T>;
+    final value = resultOf(planned.value, planned.changed);
+    if (!planned.changed) {
+      finishWithoutCommit(SkillsSuccess(value: value, changed: false));
+    }
+    applied = value;
+    return planned.changes;
+  }
+
+  final result = await executeMutation<RemoteApplyResult>(
+    context: context,
+    planningSnapshot: snapshot,
+    operations: operations,
+    snapshots: snapshots,
+    valueFromSnapshot: (_) => applied,
+    buildPlan: (operationId, revision) async {
+      final WorkspaceBusinessChangeSet changes;
+      final subjects = <ManagedSkillId>{};
+      switch (request) {
+        case RemoteSkillMetadata(
+          :final managedSkillId,
+          :final expectedEffective,
+          :final favorite,
+          :final note,
+          :final tagIds,
+        ):
+          if (snapshot.findSkill(managedSkillId) == null) {
+            finishWithoutCommit(
+              SkillsFailure(code: SkillsErrorCode.skillNotFound),
+            );
+          }
+          final state = await states.readUpdateState(managedSkillId);
+          if (state == null) {
+            finishWithoutCommit(
+              SkillsFailure(code: SkillsErrorCode.revisionStoreCorrupt),
+            );
+          }
+          if (state.currentEffective.value != expectedEffective.value) {
+            finishWithoutCommit(
+              SkillsFailure(
+                code: SkillsErrorCode.staleSnapshot,
+                context: const {'reason': 'effectiveRevisionChanged'},
+              ),
+            );
+          }
+          changes = changesOf<void>(
+            library.setMetadata(
+              snapshot: snapshot,
+              managedSkillId: managedSkillId,
+              favorite: favorite,
+              note: note,
+              tagIds: tagIds,
+              updatedAt: clock.now(),
+            ),
+            (_, changed) => changed
+                ? const RemoteApplyMetadataApplied()
+                : const RemoteApplyNoChange(),
+          );
+          subjects.add(managedSkillId);
+        case RemoteTagEnsure(:final name, :final color):
+          changes = changesOf(
+            library.ensureTag(
+              snapshot: snapshot,
+              name: name,
+              color: color,
+              updatedAt: clock.now(),
+            ),
+            (tag, _) => RemoteApplyTag(tag.id),
+          );
+        case RemoteTagUpdate(:final tagId, :final name, :final color):
+          changes = changesOf(
+            library.updateTagMerging(
+              snapshot: snapshot,
+              tagId: tagId,
+              name: name,
+              color: color,
+              updatedAt: clock.now(),
+            ),
+            (tag, _) => RemoteApplyTag(tag.id),
+          );
+        case RemoteTagDelete(:final tagId):
+          if (snapshot.findPersonalTag(tagId) == null) {
+            finishWithoutCommit(
+              SkillsSuccess(value: const RemoteApplyNoChange(), changed: false),
+            );
+          }
+          changes = changesOf<void>(
+            library.deleteTag(snapshot: snapshot, tagId: tagId),
+            (_, _) => const RemoteApplyRemoved(),
+          );
+        default:
+          throw StateError('Expected a remote library request.');
+      }
+      for (final mutation in changes.mutations) {
+        if (mutation case DeletePersonalTag(:final personalTagId)) {
+          subjects.addAll(
+            snapshot.managedSkills
+                .where((skill) => skill.personalTagIds.contains(personalTagId))
+                .map((skill) => skill.id),
+          );
+        }
+      }
+      return plans.sqliteOnly(
+        operationId: operationId,
+        expectedRepositoryRevision: revision,
+        kind: WorkspaceOperationKind.applyRemoteState,
+        businessChanges: changes,
+        subjects: [
+          for (final id in subjects) _subject(snapshot.findSkill(id)!),
+        ],
+        retainWithoutSubjects: subjects.isEmpty,
+      );
+    },
+  );
+  // Planning holds the writer lock and has not written a Prepared row yet.
+  if (withoutCommit != null && context.cancellationToken.isCancelled) {
+    return SkillsFailure(code: SkillsErrorCode.operationCancelled);
+  }
+  return withoutCommit ?? result;
+};
 
 typedef _LibraryPlan<T> =
     LibraryPlanningResult<T> Function(RepositorySnapshot snapshot);

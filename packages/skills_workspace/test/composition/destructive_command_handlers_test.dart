@@ -291,6 +291,8 @@ final class _RecoveryEntries
     required OperationId operationId,
     required DestructiveOperationRecoveryIntent intent,
     required CancellationToken cancellationToken,
+    Map<ManagedSkillId, Future<bool> Function()> draftCaptureVerifiers =
+        const {},
   }) async {
     await onPrepare?.call(
       operationId: operationId,

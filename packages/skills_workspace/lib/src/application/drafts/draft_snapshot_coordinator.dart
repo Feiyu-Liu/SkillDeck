@@ -118,6 +118,11 @@ final class DraftSnapshotCoordinator {
         );
   }
 
+  Future<bool> matchesFingerprint(
+    DraftCaptureRequest request,
+    DraftFingerprint expected,
+  ) async => (await _filesystem.fingerprint(request)).valueOrNull == expected;
+
   /// Freezes the post-commit Draft action for the operation journal.
   ///
   /// An unavailable or inconclusive revalidation always preserves user bytes.

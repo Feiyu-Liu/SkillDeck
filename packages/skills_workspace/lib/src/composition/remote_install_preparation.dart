@@ -95,7 +95,7 @@ extension WorkspaceRemoteInstallPreparation
 
       final encoded = sourcePayloads.encode(request.source);
       if (encoded is! SourcePayloadEncoded) {
-        return SkillsFailure(code: SkillsErrorCode.transportRejected);
+        return SkillsFailure(code: SkillsErrorCode.invalidSkill);
       }
       final timestamp = DateTime.now().toUtc().microsecondsSinceEpoch;
       PutRevisionMetadata metadata(

@@ -257,7 +257,11 @@ final class PersonalTag {
   }) {
     _requireNonEmpty(id, 'id');
     _requireNonEmpty(name, 'name');
-    if (color != null && !RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(color!)) {
+    validateColor(color);
+  }
+
+  static void validateColor(String? color) {
+    if (color != null && !RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(color)) {
       throw ArgumentError.value(
         color,
         'color',
@@ -1142,6 +1146,20 @@ final class RemoteApplySkillSlotOccupied extends RemoteApplyResult {
   const RemoteApplySkillSlotOccupied(this.occupant);
 
   final ManagedSkillId occupant;
+}
+
+final class RemoteApplyMetadataApplied extends RemoteApplyResult {
+  const RemoteApplyMetadataApplied();
+}
+
+final class RemoteApplyRemoved extends RemoteApplyResult {
+  const RemoteApplyRemoved();
+}
+
+final class RemoteApplyTag extends RemoteApplyResult {
+  const RemoteApplyTag(this.tagId);
+
+  final String tagId;
 }
 
 final class RemoteApplyNoChange extends RemoteApplyResult {

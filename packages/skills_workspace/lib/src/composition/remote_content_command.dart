@@ -26,12 +26,20 @@ SkillsCommandHandler buildRemoteContentCommand({
   required WorkspaceEntityIdentityPort identities,
   required SourcePayloadEncodingPort sourcePayloads,
   required ReadRemotePackHeads readPackHeads,
+  required TypedSkillsCommand<ApplyRemoteStateRequest, RemoteApplyResult>
+  handleLibrary,
+  required TypedSkillsCommand<RemoteSkillRemoval, RemoteApplyResult>
+  handleRemoval,
 }) => TypedSkillsCommandHandler<ApplyRemoteStateRequest, RemoteApplyResult>(
   kind: WorkspaceOperationKind.applyRemoteState,
   handle: (request, context) async {
     final snapshot = snapshots.current;
     context.reportProgress(OperationProgressPhase.inspecting);
     switch (request) {
+      case RemoteSkillMetadata() || RemoteTagVocabulary():
+        return handleLibrary(request, context);
+      case final RemoteSkillRemoval removal:
+        return handleRemoval(removal, context);
       case final RemoteSkillInstall install:
         if (context.cancellationToken.isCancelled) {
           return SkillsFailure(code: SkillsErrorCode.operationCancelled);

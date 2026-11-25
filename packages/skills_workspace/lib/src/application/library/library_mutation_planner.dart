@@ -43,6 +43,68 @@ final class LibraryMutationPlanner {
 
   final PersonalTagIdFactory _tagIds;
 
+  LibraryPlanningResult<void> setMetadata({
+    required RepositorySnapshot snapshot,
+    required ManagedSkillId managedSkillId,
+    required bool favorite,
+    required String? note,
+    required Set<String> tagIds,
+    required DateTime updatedAt,
+  }) {
+    final skill = snapshot.findSkill(managedSkillId);
+    if (skill == null) {
+      return const LibraryPlanningFailure<void>(
+        LibraryPlanningFailureCode.managedSkillNotFound,
+      );
+    }
+    final noteText = note == null ? null : _normalizeNote(note);
+    for (final tagId in tagIds) {
+      if (snapshot.findPersonalTag(tagId) == null) {
+        return const LibraryPlanningFailure<void>(
+          LibraryPlanningFailureCode.personalTagNotFound,
+        );
+      }
+    }
+    final favoriteChanged = skill.favorite.isFavorite != favorite;
+    final existingFavoriteTime = skill.favorite.changedAt;
+    final noteChanged = skill.note?.text != noteText;
+    final assigned = skill.personalTagIds.toSet();
+    final mutations = <WorkspaceBusinessMutation>[
+      if (favoriteChanged || noteChanged)
+        ..._userDataChange(
+          skill,
+          favorite: favorite,
+          favoriteChangedAtMicros: favorite
+              ? _micros(
+                  favoriteChanged
+                      ? updatedAt
+                      : existingFavoriteTime ?? updatedAt,
+                )
+              : null,
+          note: noteText,
+          noteUpdatedAtMicros: noteText == null
+              ? null
+              : _micros(noteChanged ? updatedAt : skill.note!.updatedAt),
+        ).mutations,
+      for (final tagId in assigned.difference(tagIds))
+        DeleteSkillTagAssignment(
+          managedSkillId: skill.id,
+          personalTagId: tagId,
+        ),
+      for (final tagId in tagIds.difference(assigned))
+        PutSkillTagAssignment(
+          managedSkillId: skill.id,
+          personalTagId: tagId,
+          createdAtMicros: _micros(updatedAt),
+        ),
+    ];
+    return LibraryMutationPlan<void>(
+      changes: WorkspaceBusinessChangeSet(mutations: mutations),
+      changed: mutations.isNotEmpty,
+      value: null,
+    );
+  }
+
   LibraryPlanningResult<void> setFavorite({
     required RepositorySnapshot snapshot,
     required ManagedSkillId managedSkillId,
@@ -89,10 +151,7 @@ final class LibraryMutationPlanner {
         LibraryPlanningFailureCode.managedSkillNotFound,
       );
     }
-    final value = text.trim();
-    if (value.isEmpty) {
-      throw ArgumentError.value(text, 'text', 'must not be empty');
-    }
+    final value = _normalizeNote(text);
     if (skill.note?.text == value) {
       return const LibraryMutationPlan<void>(
         changes: WorkspaceBusinessChangeSet.empty,
@@ -159,30 +218,7 @@ final class LibraryMutationPlanner {
         LibraryPlanningFailureCode.duplicatePersonalTag,
       );
     }
-    final id = _tagIds();
-    final tag = PersonalTag(
-      id: id,
-      name: normalized.displayName,
-      color: color,
-      createdAt: createdAt.toUtc(),
-      updatedAt: createdAt.toUtc(),
-    );
-    return LibraryMutationPlan<PersonalTag>(
-      changes: WorkspaceBusinessChangeSet(
-        mutations: [
-          PutPersonalTag(
-            personalTagId: id,
-            normalizedKey: normalized.key,
-            displayName: normalized.displayName,
-            color: color,
-            createdAtMicros: _micros(createdAt),
-            updatedAtMicros: _micros(createdAt),
-          ),
-        ],
-      ),
-      changed: true,
-      value: tag,
-    );
+    return _putTag(normalized: normalized, color: color, updatedAt: createdAt);
   }
 
   LibraryPlanningResult<PersonalTag> updateTag({
@@ -205,7 +241,81 @@ final class LibraryMutationPlanner {
         LibraryPlanningFailureCode.duplicatePersonalTag,
       );
     }
-    if (current.name == normalized.displayName && current.color == color) {
+    return _putTag(
+      normalized: normalized,
+      color: color,
+      updatedAt: updatedAt,
+      current: current,
+    );
+  }
+
+  LibraryMutationPlan<PersonalTag> ensureTag({
+    required RepositorySnapshot snapshot,
+    required String name,
+    required String? color,
+    required DateTime updatedAt,
+  }) {
+    final normalized = _normalizeTagName(name);
+    return _putTag(
+      normalized: normalized,
+      color: color,
+      updatedAt: updatedAt,
+      current: _findByKey(snapshot, normalized.key),
+    );
+  }
+
+  LibraryPlanningResult<PersonalTag> updateTagMerging({
+    required RepositorySnapshot snapshot,
+    required String tagId,
+    required String name,
+    required String? color,
+    required DateTime updatedAt,
+  }) {
+    final current = snapshot.findPersonalTag(tagId);
+    if (current == null) {
+      return const LibraryPlanningFailure<PersonalTag>(
+        LibraryPlanningFailureCode.personalTagNotFound,
+      );
+    }
+    final normalized = _normalizeTagName(name);
+    final survivor = _findByKey(snapshot, normalized.key) ?? current;
+    final put = _putTag(
+      normalized: normalized,
+      color: color,
+      updatedAt: updatedAt,
+      current: survivor,
+    );
+    if (survivor.id == current.id) return put;
+
+    return LibraryMutationPlan<PersonalTag>(
+      changes: WorkspaceBusinessChangeSet(
+        mutations: [
+          ...put.changes.mutations,
+          for (final skill in snapshot.managedSkills)
+            if (skill.personalTagIds.contains(current.id) &&
+                !skill.personalTagIds.contains(survivor.id))
+              PutSkillTagAssignment(
+                managedSkillId: skill.id,
+                personalTagId: survivor.id,
+                createdAtMicros: _micros(updatedAt),
+              ),
+          DeletePersonalTag(current.id),
+        ],
+      ),
+      changed: true,
+      value: put.value,
+    );
+  }
+
+  LibraryMutationPlan<PersonalTag> _putTag({
+    required _NormalizedTagName normalized,
+    required String? color,
+    required DateTime updatedAt,
+    PersonalTag? current,
+  }) {
+    if (current != null &&
+        current.name == normalized.displayName &&
+        current.color == color) {
       return LibraryMutationPlan<PersonalTag>(
         changes: WorkspaceBusinessChangeSet.empty,
         changed: false,
@@ -213,21 +323,21 @@ final class LibraryMutationPlanner {
       );
     }
     final updated = PersonalTag(
-      id: current.id,
+      id: current?.id ?? _tagIds(),
       name: normalized.displayName,
       color: color,
-      createdAt: current.createdAt,
+      createdAt: current?.createdAt ?? updatedAt.toUtc(),
       updatedAt: updatedAt.toUtc(),
     );
     return LibraryMutationPlan<PersonalTag>(
       changes: WorkspaceBusinessChangeSet(
         mutations: [
           PutPersonalTag(
-            personalTagId: current.id,
+            personalTagId: updated.id,
             normalizedKey: normalized.key,
             displayName: normalized.displayName,
             color: color,
-            createdAtMicros: _micros(current.createdAt),
+            createdAtMicros: _micros(updated.createdAt),
             updatedAtMicros: _micros(updatedAt),
           ),
         ],
@@ -354,6 +464,14 @@ PersonalTag? _findByKey(RepositorySnapshot snapshot, String key) {
     if (_normalizeTagName(tag.name).key == key) return tag;
   }
   return null;
+}
+
+String _normalizeNote(String text) {
+  final value = text.trim();
+  if (value.isEmpty) {
+    throw ArgumentError.value(text, 'text', 'must not be empty');
+  }
+  return value;
 }
 
 _NormalizedTagName _normalizeTagName(String value) {

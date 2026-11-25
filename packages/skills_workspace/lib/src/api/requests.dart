@@ -504,6 +504,87 @@ final class RemoteSkillContent extends ApplyRemoteStateRequest {
   final String? packPath;
 }
 
+/// Replaces the Skill's library metadata with the supplied final values.
+final class RemoteSkillMetadata extends ApplyRemoteStateRequest {
+  RemoteSkillMetadata({
+    required this.managedSkillId,
+    required this.expectedEffective,
+    required this.favorite,
+    required String? note,
+    required Iterable<String> tagIds,
+  }) : note = note?.trim(),
+       tagIds = Set.unmodifiable(tagIds) {
+    if (this.note?.isEmpty == true) {
+      throw ArgumentError('A non-null note must contain text.');
+    }
+  }
+
+  final ManagedSkillId managedSkillId;
+  final RevisionId expectedEffective;
+  final bool favorite;
+  final String? note;
+  final Set<String> tagIds;
+}
+
+final class RemoteSkillRemoval extends ApplyRemoteStateRequest {
+  const RemoteSkillRemoval({
+    required this.managedSkillId,
+    required this.expectedEffective,
+  });
+
+  final ManagedSkillId managedSkillId;
+  final RevisionId expectedEffective;
+}
+
+sealed class RemoteTagVocabulary extends ApplyRemoteStateRequest {
+  const RemoteTagVocabulary._();
+
+  factory RemoteTagVocabulary.ensure({
+    required String name,
+    required String? color,
+  }) = RemoteTagEnsure;
+  factory RemoteTagVocabulary.update({
+    required String tagId,
+    required String name,
+    required String? color,
+  }) = RemoteTagUpdate;
+  factory RemoteTagVocabulary.delete({required String tagId}) = RemoteTagDelete;
+}
+
+final class RemoteTagEnsure extends RemoteTagVocabulary {
+  RemoteTagEnsure({required this.name, required this.color}) : super._() {
+    _requireNonEmpty(name, 'name');
+    PersonalTag.validateColor(color);
+  }
+
+  final String name;
+  final String? color;
+}
+
+final class RemoteTagUpdate extends RemoteTagVocabulary {
+  RemoteTagUpdate({
+    required this.tagId,
+    required this.name,
+    required this.color,
+  }) : super._() {
+    _requireNonEmpty(tagId, 'tagId');
+    _requireNonEmpty(name, 'name');
+    PersonalTag.validateColor(color);
+  }
+
+  final String tagId;
+  final String name;
+  final String? color;
+}
+
+final class RemoteTagDelete extends RemoteTagVocabulary {
+  RemoteTagDelete({required this.tagId}) : super._() {
+    _requireNonEmpty(tagId, 'tagId');
+  }
+
+  final String tagId;
+}
+
 /// Installs a portable source directly from a downloaded Revision Pack.
 final class RemoteSkillInstall extends ApplyRemoteStateRequest {
   RemoteSkillInstall({

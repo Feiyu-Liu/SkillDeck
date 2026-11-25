@@ -108,15 +108,18 @@ enum UpdateDraftInspectionState { absent, clean, dirty }
 
 final class UpdateDraftInspection {
   const UpdateDraftInspection.absent()
-    : state = UpdateDraftInspectionState.absent;
+    : state = UpdateDraftInspectionState.absent,
+      verifyCleanDraft = null;
 
-  const UpdateDraftInspection.clean()
+  const UpdateDraftInspection.clean({this.verifyCleanDraft})
     : state = UpdateDraftInspectionState.clean;
 
   const UpdateDraftInspection.dirty()
-    : state = UpdateDraftInspectionState.dirty;
+    : state = UpdateDraftInspectionState.dirty,
+      verifyCleanDraft = null;
 
   final UpdateDraftInspectionState state;
+  final Future<bool> Function()? verifyCleanDraft;
 
   bool get isDirty => state == UpdateDraftInspectionState.dirty;
   bool get hasCleanDraft => state == UpdateDraftInspectionState.clean;

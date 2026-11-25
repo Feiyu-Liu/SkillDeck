@@ -15,9 +15,9 @@ typedef DestructivePlanningClock = int Function();
 /// Plans identity-preserving Source Replacement and complete aggregate Removal
 /// from one authoritative lock-held projection.
 ///
-/// Stale destructive intent is intentionally the first branch. Source
-/// acquisition, identity allocation, recovery registration and every write are
-/// unreachable until the reviewed Repository Revision matches.
+/// Local commands validate the reviewed Repository Revision. Guarded Removal
+/// validates its Effective Revision before handing the projection to the same
+/// deletion planner.
 final class DestructiveOperationPlanner {
   const DestructiveOperationPlanner({
     required WorkspaceEntityIdentityPort identities,
@@ -239,6 +239,22 @@ final class DestructiveOperationPlanner {
       destructiveIntent,
     );
     if (stale != null) return stale;
+    return planRemovalAtSnapshot(
+      operationId: operationId,
+      snapshot: snapshot,
+      managedSkillIds: managedSkillIds,
+      cancellationToken: cancellationToken,
+    );
+  }
+
+  /// Plans aggregate deletion after the caller validates its guard under the
+  /// Workspace Writer Lock.
+  Future<DestructivePlanningResult<OperationPlan>> planRemovalAtSnapshot({
+    required OperationId operationId,
+    required DestructivePlanningSnapshot snapshot,
+    required Set<ManagedSkillId> managedSkillIds,
+    required CancellationToken cancellationToken,
+  }) async {
     if (cancellationToken.isCancelled) return _cancelled();
     if (managedSkillIds.isEmpty) {
       throw ArgumentError.value(
@@ -271,6 +287,10 @@ final class DestructiveOperationPlanner {
         operationId: operationId,
         intent: recoveryIntent,
         cancellationToken: cancellationToken,
+        draftCaptureVerifiers: {
+          for (final skill in skills)
+            skill.managedSkillId: ?skill.verifyCleanDraft,
+        },
       );
     } on Object {
       return DestructivePlanningFailure<OperationPlan>(

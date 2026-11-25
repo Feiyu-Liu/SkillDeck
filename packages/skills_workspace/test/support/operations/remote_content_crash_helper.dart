@@ -143,6 +143,7 @@ Future<void> main(List<String> arguments) async {
           'objects',
         ),
         RemoteSkillInstall() => layout.revisionStoresRoot,
+        _ => throw UnsupportedError('Expected a revision pack request'),
       },
     );
     final recovery = FilesystemOperationRecovery(
@@ -197,6 +198,8 @@ Future<void> main(List<String> arguments) async {
       ),
     );
     final command = buildRemoteContentCommand(
+      handleLibrary: (_, _) => throw UnsupportedError('Content crash fixture'),
+      handleRemoval: (_, _) => throw UnsupportedError('Content crash fixture'),
       snapshots: snapshots,
       operations: operations,
       states: states,

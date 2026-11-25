@@ -110,6 +110,21 @@ void main() {
     return (result as RemoteApplyInstalled).managedSkillId;
   }
 
+  test('rejects unencodable source provenance before installing', () async {
+    final request = await fromDonor(
+      GitSourceDescriptor(
+        locator: 'https://user:password@example.invalid/skills.git',
+      ),
+    );
+    final before = receiver.snapshot.revision;
+    await driftFailure(
+      receiver.applyRemoteState(request),
+      SkillsErrorCode.invalidSkill,
+    );
+    expect(receiver.snapshot.revision, before);
+    expect(receiver.snapshot.managedSkills, isEmpty);
+  });
+
   test(
     'installs distinct heads, preserves Git provenance and history, and emits content',
     () async {

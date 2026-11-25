@@ -3,27 +3,43 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:path/path.dart' as path;
+import 'package:skills_workspace/src/api/composite_command_dispatcher.dart';
+import 'package:skills_workspace/src/api/requests.dart';
+import 'package:skills_workspace/src/api/result.dart';
 import 'package:skills_workspace/src/application/backup/control_plane_backup_codec.dart';
 import 'package:skills_workspace/src/application/backup/control_plane_backup_models.dart';
 import 'package:skills_workspace/src/application/backup/control_plane_backup_service.dart';
+import 'package:skills_workspace/src/application/destructive/destructive_operation_planner.dart';
+import 'package:skills_workspace/src/application/drafts/draft_snapshot_coordinator.dart';
 import 'package:skills_workspace/src/application/operations/destructive_recovery_intent.dart';
 import 'package:skills_workspace/src/application/operations/operation_coordinator.dart';
 import 'package:skills_workspace/src/application/operations/operation_models.dart';
 import 'package:skills_workspace/src/application/operations/operation_plan_assembler.dart';
 import 'package:skills_workspace/src/application/operations/workspace_business_changes.dart';
 import 'package:skills_workspace/src/application/ports/control_plane_backup_ports.dart';
+import 'package:skills_workspace/src/application/ports/destructive_operation_ports.dart';
 import 'package:skills_workspace/src/application/ports/operation_ports.dart';
 import 'package:skills_workspace/src/application/revision_store/managed_skill_revision_access_gate.dart';
 import 'package:skills_workspace/src/application/runtime/revision_engine_port.dart';
 import 'package:skills_workspace/src/application/runtime/workspace_journal_recovery_adapter.dart';
+import 'package:skills_workspace/src/application/runtime/workspace_snapshot_publisher.dart';
+import 'package:skills_workspace/src/composition/destructive_command_handlers.dart';
 import 'package:skills_workspace/src/composition/destructive_recovery_entries.dart';
 import 'package:skills_workspace/src/composition/destructive_recovery_maintenance.dart';
 import 'package:skills_workspace/src/composition/operation_recovery_backup_maintenance.dart';
+import 'package:skills_workspace/src/composition/revision_worker_task_executor.dart';
 import 'package:skills_workspace/src/domain/cancellation.dart';
 import 'package:skills_workspace/src/domain/identifiers.dart';
 import 'package:skills_workspace/src/domain/public_models.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_destructive_planning_state.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_draft_update_state.dart';
 import 'package:skills_workspace/src/infrastructure/database/drift_operation_control_plane.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_revision_pointer_reader.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_update_draft_inspection.dart';
 import 'package:skills_workspace/src/infrastructure/database/workspace_database.dart';
+import 'package:skills_workspace/src/infrastructure/database/workspace_snapshot_reader.dart';
+import 'package:skills_workspace/src/infrastructure/identity/uuid_workspace_identities.dart';
+import 'package:skills_workspace/src/infrastructure/revision_store_update_candidate_content.dart';
 import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
 import 'package:skills_workspace/src/native/revision_worker/revision_worker_runtime.dart';
 import 'package:skills_workspace/src/platform/filesystem/control_plane_backup_durability.dart';
@@ -241,6 +257,129 @@ Future<void> runDestructiveSqliteCrashChild({
   throw StateError(
     'Crash boundary ${crashPoint.name} was not reached; outcome=$outcome',
   );
+}
+
+Future<SkillsResult<RemoteApplyResult>> runRemoteRemovalAtCommitBoundary({
+  required String workspaceRoot,
+  required ManagedSkillId skillId,
+  required RevisionId expectedEffective,
+  bool? exitAfterCommit,
+  Future<void> Function()? afterPrepared,
+}) async {
+  final layout = WorkspaceLayout(workspaceRoot);
+  final filesystem = PlatformDurableWorkspaceFilesystem();
+  final database = WorkspaceDatabase.forFile(File(layout.databasePath));
+  final backups = _backups(
+    database: database,
+    durability: PlatformControlPlaneBackupDurability(filesystem),
+    layout: layout,
+  );
+  final access = ManagedSkillRevisionAccessGate();
+  final runtime = RevisionWorkerRuntime(
+    taskExecutor: executeComposedRevisionWorkerTask,
+  );
+  final snapshots = WorkspaceSnapshotPublisher(
+    reader: WorkspaceSnapshotReader(database: database, layout: layout),
+  );
+  final registry = OperationRecoverySpecRegistry();
+  final draftInspection = DriftUpdateDraftInspection(
+    database: database,
+    layout: layout,
+    accessGate: access,
+    storePath: layout.revisionStorePath,
+    revisions: runtime,
+    snapshots: DraftSnapshotCoordinator(filesystem: runtime, content: runtime),
+  );
+  final operations = OperationCoordinator(
+    writerLock: _writerLock(layout, filesystem),
+    controlPlane: _CrashControlPlane(
+      delegate: DriftOperationControlPlane(database: database),
+      layout: layout,
+      crashPoint: switch (exitAfterCommit) {
+        true => DestructiveSqliteCrashPoint.afterBusinessCommitBeforeBackup,
+        false => DestructiveSqliteCrashPoint.afterBarrierBeforeBusinessCommit,
+        null => null,
+      },
+      exitAtBusinessCommit: exitAfterCommit != null,
+      afterPrepared: afterPrepared,
+    ),
+    recovery: FilesystemOperationRecovery(
+      layout: layout,
+      filesystem: filesystem,
+      registry: registry,
+      backupMaintenance: WorkspaceOperationRecoveryBackupMaintenance(
+        backups: backups,
+        database: database,
+      ),
+      destructiveMaintenance: WorkspaceDestructiveRecoveryMaintenance(
+        accessGate: access,
+      ),
+    ),
+    referenceMaintenance: const _NoopReferenceMaintenance(),
+  );
+  await runtime.start();
+  try {
+    await snapshots.publishInitial(
+      await snapshots.readInitial(integrity: WorkspaceIntegrity()),
+    );
+    const identities = UuidWorkspaceIdentities();
+    return await applyRemoteRemoval(
+      request: RemoteSkillRemoval(
+        managedSkillId: skillId,
+        expectedEffective: expectedEffective,
+      ),
+      context: SkillsCommandContext(
+        operationId: OperationId(destructiveCrashOperationId),
+        cancellationToken: CancellationToken.none(),
+        lockWaitPolicy: null,
+        markBusinessCommitted: () {},
+        reportProgress: (_, {currentItem, completed = 0, total}) {},
+      ),
+      snapshots: snapshots,
+      operations: operations,
+      states: DriftDraftUpdateState(
+        database: database,
+        draftInspection: draftInspection,
+        candidateContent: RevisionStoreUpdateCandidateContent(
+          accessGate: access,
+          storePath: layout.revisionStorePath,
+          pointers: DriftRevisionPointerReader(database),
+          revisionEngine: runtime,
+        ),
+      ),
+      state: DriftDestructivePlanningState(
+        database: database,
+        draftInspection: draftInspection,
+      ),
+      planner: DestructiveOperationPlanner(
+        identities: identities,
+        replacementPreparation: _UnexpectedReplacementPreparation(),
+        recoveryEntries: WorkspaceDestructiveRecoveryEntries(
+          database: database,
+          layout: layout,
+          revisions: runtime,
+          filesystem: filesystem,
+          recoverySpecs: registry,
+        ),
+        operationPlans: OperationPlanAssembler(
+          subjectIdentities: identities,
+          recoveryPlans: OperationRecoveryPlanFactory(registry: registry),
+        ),
+        clock: () => DateTime.now().toUtc().microsecondsSinceEpoch,
+      ),
+    );
+  } finally {
+    await snapshots.close();
+    await runtime.close();
+    await database.close();
+  }
+}
+
+final class _UnexpectedReplacementPreparation
+    implements SourceReplacementPreparationPort {
+  @override
+  Never noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('Remote Removal cannot prepare a replacement.');
 }
 
 Future<void> runSourceReplacementSqliteCrashChild({
@@ -1064,28 +1203,42 @@ final class _CrashControlPlane implements OperationControlPlanePort {
   const _CrashControlPlane({
     required OperationControlPlanePort delegate,
     required WorkspaceLayout layout,
-    required DestructiveSqliteCrashPoint crashPoint,
+    required DestructiveSqliteCrashPoint? crashPoint,
+    bool exitAtBusinessCommit = false,
+    Future<void> Function()? afterPrepared,
   }) : _delegate = delegate,
        _layout = layout,
-       _crashPoint = crashPoint;
+       _crashPoint = crashPoint,
+       _exitAtBusinessCommit = exitAtBusinessCommit,
+       _afterPrepared = afterPrepared;
 
   final OperationControlPlanePort _delegate;
   final WorkspaceLayout _layout;
-  final DestructiveSqliteCrashPoint _crashPoint;
+  final DestructiveSqliteCrashPoint? _crashPoint;
+  final bool _exitAtBusinessCommit;
+  final Future<void> Function()? _afterPrepared;
 
   @override
   Future<void> commitBusinessState(OperationPlan plan) async {
+    if (_exitAtBusinessCommit &&
+        _crashPoint ==
+            DestructiveSqliteCrashPoint.afterBarrierBeforeBusinessCommit) {
+      exit(71);
+    }
     await _delegate.commitBusinessState(plan);
-    if (_crashPoint ==
-        DestructiveSqliteCrashPoint.afterBusinessCommitBeforeBackup) {
-      _blockAt(_layout, _crashPoint);
+    if (_crashPoint case final point?
+        when point ==
+            DestructiveSqliteCrashPoint.afterBusinessCommitBeforeBackup) {
+      if (_exitAtBusinessCommit) exit(72);
+      _blockAt(_layout, point);
     }
   }
 
   @override
   Future<void> complete(OperationPlan plan) async {
-    if (_crashPoint == DestructiveSqliteCrashPoint.beforeJournalCompletion) {
-      _blockAt(_layout, _crashPoint);
+    if (_crashPoint case final point?
+        when point == DestructiveSqliteCrashPoint.beforeJournalCompletion) {
+      _blockAt(_layout, point);
     }
     await _delegate.complete(plan);
   }
@@ -1138,8 +1291,10 @@ final class _CrashControlPlane implements OperationControlPlanePort {
       _delegate.markStepStarted(operationId, stepId);
 
   @override
-  Future<void> persistPrepared(OperationPlan plan) =>
-      _delegate.persistPrepared(plan);
+  Future<void> persistPrepared(OperationPlan plan) async {
+    await _delegate.persistPrepared(plan);
+    await _afterPrepared?.call();
+  }
 
   @override
   Future<void> persistPreparedEnvelope(PreparedOperationEnvelope envelope) =>

@@ -166,7 +166,12 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.applyRemoteState => switch (request
       as ApplyRemoteStateRequest) {
     RemoteSkillContent(:final managedSkillId) => {managedSkillId},
-    RemoteSkillInstall() => const <ManagedSkillId>{},
+    // Library metadata is independent of Store integrity. Removal uses the
+    // same destructive recovery path as the local remove command.
+    RemoteSkillInstall() ||
+    RemoteSkillMetadata() ||
+    RemoteSkillRemoval() ||
+    RemoteTagVocabulary() => const <ManagedSkillId>{},
   },
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,
   WorkspaceOperationKind.activate =>
