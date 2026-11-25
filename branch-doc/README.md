@@ -33,9 +33,10 @@ New development documents for this work go in this folder.
 | `tasks/T06-committed-change-feed.md` | Seam 4: committed-change feed, schema v5 | Implemented and verified locally |
 | `tasks/T07-apply-remote-content.md` | Seam 3, content: fast-forward, Sync Merge, conflict to Update Candidate Session | Implemented and verified locally |
 | `tasks/T10-adr-0105-amendment.md` | Append the revision and the 2026-11-24 decisions to the private ADR-0105 | Applied and verified locally |
-| `reviews/2026-11-24-m5-review.md` | Review of T06, T07, T10, and item 7 of the M1–M2 review | Items 1, 2, 4 (partly), and 6 fixed in T11. Item 3 decided: T12. T08 accepted. Item T08-1 (pre-existing Store recovery defect) decided: T13. T13 and T09 accepted; T09 left four Nits |
+| `reviews/2026-11-24-m5-review.md` | Review of T06, T07, T10, and item 7 of the M1–M2 review | Items 1, 2, 4 (partly), and 6 fixed in T11. Item 3 decided: T12. T08 accepted. Item T08-1 (pre-existing Store recovery defect) decided: T13. T13 and T09 accepted; T09 left four Nits. Item T13-1 decided: T14 |
 | `tasks/T11-m5-review-fixes.md` | Fixes for M5 review items 1, 2, 4 (optional), and 6 | Implemented and verified locally |
 | `tasks/T12-inspect-revision-selections.md` | Seam 4: read the current Effective and Upstream `RevisionId` of Skills | Implemented and verified locally |
 | `tasks/T08-apply-remote-install.md` | Seam 3, install: create a synced Skill on a new Device from a pack | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
-| `tasks/T13-recovery-bundle-roots.md` | Fix T08-1: Recovery Bundles keep every revision that reconciliation retains | Implemented, reviewed, and accepted. T13-1 (remote-only ancestors) awaits a decision |
+| `tasks/T13-recovery-bundle-roots.md` | Fix T08-1: Recovery Bundles keep every revision that reconciliation retains | Implemented, reviewed, and accepted. T13-1 (remote-only ancestors) decided: T14 |
 | `tasks/T09-apply-remote-metadata-removal-vocabulary.md` | Seam 3, the rest: metadata, Synced Removal, and tag vocabulary | Implemented, reviewed, and accepted (gates run by Codex on macOS). M5 complete |
+| `tasks/T14-recovery-bundle-history.md` | Fix T13-1: Recovery Bundles carry each retained revision's history, with a roots-only fallback | Ready |
