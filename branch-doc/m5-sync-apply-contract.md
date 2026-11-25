@@ -92,7 +92,7 @@ answering two questions raised while implementing T08).
 | `draftResolutionRequired` | A Dirty Draft or an Update Candidate Session blocks this Skill |
 | `skillSlotOccupied(occupant)` | Install only: a different local Skill holds the Skill Slot |
 | `installed(managedSkillId)` | Install succeeded |
-| `removed` | Removal succeeded |
+| `removed` | Removal succeeded, or Vocabulary `delete` removed the tag |
 | `tag(tagId)` | Vocabulary `ensure` and `rename` return the resulting local tag |
 
 **Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
@@ -162,6 +162,8 @@ Let L be the local Effective Revision and R the target `effective`.
 - **Removal:**
   - follows the existing Removal path, guarded by `expectedEffective` instead
     of a reviewed RepositoryRevision;
+  - an unknown or already removed Skill gives `skillNotFound`, which
+    `skills_cloud` treats as done on retry;
   - a Dirty Draft or an Update Candidate Session returns
     `draftResolutionRequired`. That becomes the R10 Attention Reason "Removed on
     another Device while a Draft exists here".
@@ -169,8 +171,12 @@ Let L be the local Effective Revision and R the target `effective`.
   - `ensure` returns the existing tag when the normalized name exists;
   - `rename` onto an existing normalized name moves the assignments into that
     tag and deletes the renamed one;
-  - `delete` removes the tag and its assignments.
+  - `delete` removes the tag and its assignments and gives `removed`. An
+    unknown tag gives `noChange`, so a retry is safe.
   - The local tags' existing normalization rules apply.
+  - Tag colors are local only: `rename` keeps the color, a merge keeps the
+    color of the tag it merges into, and `ensure` creates a tag with no color
+    (decided 2026-11-25, when writing T09).
 
 ## Where each R10 Attention Reason comes from
 
