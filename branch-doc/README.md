@@ -42,4 +42,4 @@ New development documents for this work go in this folder.
 | `tasks/T14-recovery-bundle-history.md` | Fix T13-1: Recovery Bundles carry each retained revision's history, with a roots-only fallback | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `tasks/T15-m5-nit-cleanup.md` | Clean up Nits T09-1, T09-2, T09-3, and T14-1 | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and Device Authorization sign-in. Library, pack, and feed endpoints come in v0.1 with M4 | Draft for the service repository |
-| `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Ready for Codex |
+| `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |

@@ -155,14 +155,84 @@ Each item is a test with a fake server, and `fake_async` where time passes.
   platform check.
 - The contract seems to need a field or endpoint it does not list.
 
-## Maintained by Codex
+## Maintained by the implementer
+
+Implemented by Claude, not Codex, at the maintainer's request on 2026-11-26.
 
 ### Progress
 
+- [x] Added `http` 1.6.0 to `skills_cloud`. The lockfile gained only that entry.
+- [x] Added `CloudServiceOrigin`, `CloudDevice`, `CloudSessionStore` with an
+  in-memory store, and `CloudSignIn` with start, complete, current session,
+  and sign out.
+- [x] Let `FeedCheckResult.failure` carry a delay (review item 5).
+- [x] Covered every Acceptance item with tests, using `MockClient` and
+  `fake_async`.
+- [x] Ran the gates on Linux x64 and recorded each exit code.
+
 ### Decision Log
+
+- **Expiry:** `PendingSignIn` exposes `expiresIn` as a `Duration`, not a
+  point in time. The poll deadline uses an injected monotonic clock, as
+  `FeedCheckScheduler` does, so a wall-clock change cannot end or extend a
+  sign-in.
+- **Account read after the token:** if `get-session` fails right after the
+  token endpoint succeeds, `complete` returns failed with that failure's code
+  and does not store the token. The server session is left to expire. This
+  keeps "only signed in writes the store" without a second recovery path.
+- **Interval:** a missing `interval` means 5 seconds (RFC 8628). A present one
+  must be a non-negative integer and is raised to at least 1 second.
+- **Origin helpers:** `resolve` and `owns` are in an extension that
+  `lib/skills_cloud.dart` hides, so they stay internal.
+- **Feed Check:** a failure with a delay still counts as a failure, so the
+  backoff doubles as usual; only that check's delay changes.
+- **`toString`:** only `CloudServiceOrigin` and `StoredCloudSession` override
+  it, and the latter prints only the origin. Every other type keeps Dart's
+  default, which prints no field.
+- **Network errors:** any `Exception` from the client is a network failure, and
+  its text is dropped, since it can hold the URL.
+- **Carry-over:** nothing came from the earlier prototype branch.
 
 ### Surprises
 
+- The first cancellation test did not catch a timer that stayed scheduled
+  after `cancel`: it checked for pending timers only after letting time pass.
+  A deliberate mutation showed this. The check now runs right after cancel.
+  Two other mutations, a zero `slow_down` step and a missing origin check on
+  the stored session, each failed tests as expected.
+
 ### Follow-ups
 
+- **Service:** accept `device_name` and `device_platform` on
+  `/api/auth/device/code` and show them on the approval page. The plugin
+  drops unknown fields by default.
+- **Timeouts:** there is no per-request timeout. The App's injected client sets
+  one in M7, and `cancel` already ends a hung poll.
+- **Platforms:** macOS and Windows run in CI on `main`; this run is Linux only.
+
 ### Outcome
+
+Linux x64 on the box, Dart 3.14.0, at `aa8b851`, from `packages/skills_cloud/`.
+13 files changed: 4 new library files, 3 new test files, and a test support
+file. No change outside `skills_cloud`.
+
+| Command | Exit | Result |
+|---|---:|---|
+| `dart pub get --enforce-lockfile` | 0 | Lockfile unchanged |
+| `dart format --output=none --set-exit-if-changed .` | 0 | Clean |
+| `dart analyze --fatal-infos` | 0 | No issues |
+| `dart test` | 0 | 55 passed: 11 scheduler, 44 sign-in |
+| `dart test --coverage=…` | 0 | Same 55 passed |
+| `dart run coverage:format_coverage --lcov … --report-on=lib` | 0 | LCOV written |
+
+Line coverage of the new files:
+
+| File | Lines |
+|---|---|
+| `cloud_sign_in.dart` | 184 / 184 |
+| `cloud_service_origin.dart` | 28 / 28 |
+| `cloud_device.dart` | 9 / 9 |
+| `cloud_session_store.dart` | 9 / 9 |
+| `feed_check_scheduler.dart` (changed) | 45 / 50 |
+
+`grep` finds no `dart:io`, `print`, or logging in `lib/`.
