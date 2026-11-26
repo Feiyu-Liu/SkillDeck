@@ -45,6 +45,10 @@ contract adds to them, it says so.
 
 ## Device Authorization
 
+Codes expire after 10 minutes, and the poll interval is 5 seconds (maintainer,
+2026-11-26). The client follows the `expires_in` and `interval` it receives,
+so these values can change without a client change.
+
 ### 1. Request a device code
 
 `POST /api/auth/device/code`
@@ -52,7 +56,7 @@ contract adds to them, it says so.
 | Field | Required | Value |
 |---|---|---|
 | `client_id` | yes | `skilldeck-desktop` |
-| `device_name` | yes | the name the person knows this Mac by, at most 64 characters. **Addition to Better Auth** |
+| `device_name` | yes | the name the person knows this Mac by: not empty after trimming, at most 64 Unicode code points. **Addition to Better Auth** |
 | `device_platform` | yes | `macos` in Phase 1. **Addition to Better Auth** |
 
 The service must show `device_name` and `device_platform` on the approval page
@@ -71,7 +75,8 @@ Success, HTTP 200:
 | `expires_in` | seconds until both codes expire |
 | `interval` | minimum seconds between polls |
 
-Failures: `invalid_request`, `invalid_client`; HTTP 500 `server_error`.
+Failures: `invalid_request`, also for a missing or invalid `device_name` or
+`device_platform`; `invalid_client`; HTTP 500 `server_error`.
 
 The client rejects a response whose verification URIs are not on the service
 origin, or not `https` (except a dev loopback origin).
@@ -141,6 +146,3 @@ turns the `Authorization` header into the session on every request.
   conditions in `packages/skills_cloud/CONTEXT.md`). Better Auth reports both
   as an ended session. v0 reports both as sign-in required. A later version may
   add a SkillDeck endpoint for it.
-- The code lifetime. Better Auth's default `expiresIn` is 30 minutes; R14 asks
-  for codes that "expire quickly". The service picks the value; the client
-  follows `expires_in`.
