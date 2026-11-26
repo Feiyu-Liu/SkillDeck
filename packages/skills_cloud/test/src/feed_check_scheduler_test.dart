@@ -152,6 +152,21 @@ void main() {
     },
   );
 
+  test('a failure delay replaces the backoff for the next check only', () {
+    fakeAsync((time) {
+      final fixture = _Fixture(time);
+      fixture.response = () async =>
+          const FeedCheckResult.failure(retryAfter: Duration(seconds: 10));
+      fixture.scheduler.start();
+      time.flushMicrotasks();
+
+      fixture.response = () async => _failure;
+      _expectNextCheck(fixture, time, const Duration(seconds: 10));
+      // The delayed failure still counted, so the backoff has doubled once.
+      _expectNextCheck(fixture, time, const Duration(minutes: 6));
+    });
+  });
+
   test('a thrown check failure uses backoff and allows later checks', () {
     fakeAsync((time) {
       final fixture = _Fixture(time);

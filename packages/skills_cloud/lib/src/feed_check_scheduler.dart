@@ -5,7 +5,9 @@ import 'dart:math';
 final class FeedCheckResult {
   const FeedCheckResult.success({this._retryAfter}) : _succeeded = true;
 
-  const FeedCheckResult.failure() : _succeeded = false, _retryAfter = null;
+  /// A failure. A service-requested delay, such as `Retry-After` on a 429 or
+  /// 503, replaces the jittered backoff for the next check.
+  const FeedCheckResult.failure({this._retryAfter}) : _succeeded = false;
 
   final bool _succeeded;
   final Duration? _retryAfter;
@@ -107,7 +109,7 @@ final class FeedCheckScheduler {
       _backoff = _backoffBase;
     } else {
       // Choose the upper half of the backoff window, including at the cap.
-      delay = _backoff * (0.5 + _random() * 0.5);
+      delay = retryAfter ?? _backoff * (0.5 + _random() * 0.5);
       final doubled = _backoff * 2;
       _backoff = doubled > _backoffCap ? _backoffCap : doubled;
     }
