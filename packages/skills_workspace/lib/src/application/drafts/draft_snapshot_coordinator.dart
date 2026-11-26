@@ -65,25 +65,6 @@ final class DraftSnapshotCoordinator {
     );
   }
 
-  /// Computes authoritative dirty state from a complete normalized comparison.
-  Future<DraftSnapshotResult<bool>> inspectDirty({
-    required DraftCaptureRequest request,
-    required NormalizedSkillTree draftBase,
-  }) async {
-    final stable = await _captureStable(request);
-    final failure = stable.failureOrNull;
-    if (failure != null) {
-      return DraftSnapshotFailure<bool>(
-        code: failure.code,
-        context: failure.context,
-      );
-    }
-    final captured = stable.valueOrNull!;
-    final isDirty = !_normalizedTreesEqual(captured.tree, draftBase);
-    final cleanupFailure = await _discard<bool>(captured.capture);
-    return cleanupFailure ?? DraftSnapshotSuccess<bool>(isDirty);
-  }
-
   /// Captures the exact generation that a later post-commit cleanup may
   /// compare-and-delete.
   ///

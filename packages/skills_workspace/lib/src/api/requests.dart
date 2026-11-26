@@ -4,6 +4,7 @@ import '../domain/activation_selection.dart';
 import '../domain/identifiers.dart';
 import '../domain/lock_wait_policy.dart';
 import '../domain/public_models.dart';
+import '../domain/personal_tag_color.dart';
 import '../domain/source_descriptor.dart';
 import 'destructive_intent.dart';
 
@@ -554,7 +555,7 @@ sealed class RemoteTagVocabulary extends ApplyRemoteStateRequest {
 final class RemoteTagEnsure extends RemoteTagVocabulary {
   RemoteTagEnsure({required this.name, required this.color}) : super._() {
     _requireNonEmpty(name, 'name');
-    PersonalTag.validateColor(color);
+    validateColor(color);
   }
 
   final String name;
@@ -569,7 +570,7 @@ final class RemoteTagUpdate extends RemoteTagVocabulary {
   }) : super._() {
     _requireNonEmpty(tagId, 'tagId');
     _requireNonEmpty(name, 'name');
-    PersonalTag.validateColor(color);
+    validateColor(color);
   }
 
   final String tagId;

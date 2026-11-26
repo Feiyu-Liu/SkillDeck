@@ -94,10 +94,57 @@ Where the shared check lives is your call. It must not be exported.
 
 ### Progress
 
+- [x] Moved shared color validation out of the exported model.
+- [x] Removed `inspectDirty` and migrated its byte-comparison regression.
+- [x] Added public unknown/removed Skill metadata rejection tests.
+- [x] Added direct-engine and worker non-fallback failure tests.
+- [x] Run the full T01 gates and record each exit code.
+
 ### Decision Log
+
+- Shared color validation lives in an unexported domain file, used by the model and requests. The rule and ArgumentError are unchanged.
+- Migrated the same-hash/different-bytes case to `inspectForCleanup`, also checking the absent dirty cleanup fingerprint and staging discard. No existing cleanup test covered this case.
+- Both bundle paths use existing constructor injection and small test-local fakes. Each non-objectUnavailable code must escape after exactly one history build.
 
 ### Surprises
 
+- Initial lockfile resolution used a configured mirror and exited 65. Retrying with `PUB_HOSTED_URL=https://pub.dev`, matching the lockfile, exited 0 without lockfile changes.
+
+- The initial single-process full suite exited 255 after the disk filled (errno 28). Removed only that run's abandoned kernel directory, then ran all 191 test files in ten batches of at most 20, preserving `-j 1`. This bounds temporary compiler storage. Coverage uses the same batches and one fresh output directory.
+
+- Coverage batch 9 exited 1 with two 30-second timeouts, in Workspace file-lock contention and Git-path independence tests. Its log also shows multi-minute scheduling gaps. Both files passed a separate coverage retry with the original timeout (exit 0, four tests in 13 seconds). No production or test timeout changes were made.
+
 ### Follow-ups
 
+- Windows and Linux gates have not been run for this card.
+
 ### Outcome
+
+Implemented on macOS arm64 with Dart 3.14.0. Seven package files changed,
+including two new files. Public color validation is removed, Draft inspection
+uses the existing cleanup path, and both missing-Skill cases and both bundle
+failure paths are covered. No native, schema, dependency, or runtime behavior
+change. `inspectDirty` has no remaining code or test references, and the
+internal color helper is not exported.
+
+| Command / run | Exit code | Result |
+| --- | --- | --- |
+| `dart pub get --enforce-lockfile` | 65 | Configured mirror disagreed with lockfile |
+| `PUB_HOSTED_URL=https://pub.dev dart pub get --enforce-lockfile` | 0 | Lockfile preserved |
+| `dart format --output=none --set-exit-if-changed .` | 0 | Passed |
+| `dart analyze --fatal-infos` | 0 | No issues |
+| Focused `dart test -j 1` on the three changed test files | 0 | 30 passed |
+| Initial `dart test -j 1` | 255 | Disk exhausted, not a passing run |
+| Full suite, `dart test -j 1` with explicit batches of 20 sorted test files | Each batch 1–10 exited 0 | 1,676 passed, one network suite skipped by default |
+| Coverage, same file batches with `--coverage=/tmp/t15-run/coverage` | Batches 1–8 and 10 each exited 0; batch 9 exited 1 | Two timeouts in batch 9 |
+| Coverage retry of both timed-out files | 0 | Four tests passed with original timeout |
+| `dart test -j 1 integration_test` | 0 | Two passed |
+| `dart run coverage:format_coverage --lcov --in=/tmp/t15-run/coverage --out=/tmp/t15-run/lcov.raw.info --package=. --report-on=lib` | 0 | Combined fresh batch coverage |
+| `dart run tool/filter_coverage.dart /tmp/t15-run/lcov.raw.info /tmp/t15-run/lcov.info` | 0 | 225 retained records, two generated records excluded |
+| `dart run tool/check_coverage.dart /tmp/t15-run/lcov.info 85` | 0 | 89.25%, 21,012 / 23,544 lines |
+| `git diff --check` | 0 | Passed |
+
+Raw gate logs and per-command statuses are in `/tmp/t15-run/`; focused output
+is `/tmp/t15-focused.log`. Regeneration was not required because neither
+native headers nor database definitions changed. Windows and Linux were not
+validated in this run.

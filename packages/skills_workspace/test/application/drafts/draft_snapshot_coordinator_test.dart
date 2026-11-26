@@ -153,12 +153,13 @@ void main() {
       );
       content.trees.add(_tree('dirty', byte: 2, hashSeed: 'a'));
 
-      final result = await coordinator.inspectDirty(
+      final result = await coordinator.inspectForCleanup(
         request: request,
         draftBase: _tree('base', byte: 1, hashSeed: 'a'),
       );
 
-      expect(result.valueOrNull, isTrue);
+      expect(result.valueOrNull!.isDirty, isTrue);
+      expect(result.valueOrNull!.cleanupFingerprint, isNull);
       expect(filesystem.discarded, [capture]);
     },
   );

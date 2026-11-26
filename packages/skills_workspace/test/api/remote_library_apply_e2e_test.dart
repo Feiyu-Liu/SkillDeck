@@ -94,7 +94,88 @@ void main() {
 
   ManagedSkill skill() => repository.snapshot.findSkill(skillId)!;
 
+  test('public tag constructors reject invalid colors', () {
+    final now = DateTime.utc(2026);
+    for (final color in ['', '#abc', '#1234567', '#gg1122', 'red']) {
+      expect(
+        () => PersonalTag(
+          id: 'tag',
+          name: 'Work',
+          color: color,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => RemoteTagVocabulary.ensure(name: 'Work', color: color),
+        throwsArgumentError,
+      );
+      expect(
+        () => RemoteTagVocabulary.update(
+          tagId: 'tag',
+          name: 'Work',
+          color: color,
+        ),
+        throwsArgumentError,
+      );
+    }
+  });
+
   group('remote metadata', () {
+    for (final removed in [false, true]) {
+      test(
+        'rejects metadata for ${removed ? 'a removed' : 'an unknown'} Skill without writes',
+        () async {
+          final tagId = await localTag('Work');
+          final expected = await effective();
+          await apply(
+            RemoteSkillMetadata(
+              managedSkillId: skillId,
+              expectedEffective: expected,
+              favorite: true,
+              note: 'Original note',
+              tagIds: {tagId},
+            ),
+          );
+          final targetId = removed
+              ? skillId
+              : ManagedSkillId('123e4567-e89b-42d3-a456-426614174099');
+          if (removed) {
+            expect(
+              await apply(
+                RemoteSkillRemoval(
+                  managedSkillId: skillId,
+                  expectedEffective: expected,
+                ),
+              ),
+              isA<RemoteApplyRemoved>(),
+            );
+          }
+          final before = repository.snapshot;
+          final history = await operationHistory();
+          await driftFailure(
+            repository.applyRemoteState(
+              RemoteSkillMetadata(
+                managedSkillId: targetId,
+                expectedEffective: expected,
+                favorite: false,
+                note: 'Replacement note',
+                tagIds: {},
+              ),
+            ),
+            SkillsErrorCode.skillNotFound,
+          );
+          await expectNoCommit(before, history);
+          expect(repository.snapshot.findSkill(targetId), isNull);
+          if (!removed) {
+            expect(skill().personalTagIds, [tagId]);
+            expect(skill().note?.text, 'Original note');
+          }
+        },
+      );
+    }
+
     test(
       'sets final values together and repeats without another commit',
       () async {
