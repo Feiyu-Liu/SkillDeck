@@ -43,4 +43,5 @@ New development documents for this work go in this folder.
 | `tasks/T15-m5-nit-cleanup.md` | Clean up Nits T09-1, T09-2, T09-3, and T14-1 | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and Device Authorization sign-in. Library, pack, and feed endpoints come in v0.1 with M4 | Draft; code lifetime decided 2026-11-26 (10 minutes). Service side: T17 |
 | `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |
-| `tasks/T17-service-device-sign-in.md` | M3, service side: contract v0 sign-in on `wrangler dev`. Runs in the private service repository | Ready for Codex in the service repository |
+| `tasks/T17-service-device-sign-in.md` | M3, service side: contract v0 sign-in on `wrangler dev`. Runs in the private service repository | Implemented in the service repository (`9de140b`), reviewed, and accepted; T17-1 and T17-2 open |
+| `reviews/2026-11-27-m3-review.md` | Review of T17, with T16 driven against the dev service | T17 accepted. T17-1 (approval page limit) and T17-2 (429 outside the contract) open |
