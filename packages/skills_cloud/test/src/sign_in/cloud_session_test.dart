@@ -65,6 +65,11 @@ void main() {
       ('a connection failure', networkFailure, CloudFailureCode.network),
       ('a 503', (_) => http.Response('', 503), CloudFailureCode.server),
       (
+        'a 429',
+        (_) => jsonResponse({'error': 'rate_limited'}, 429),
+        CloudFailureCode.server,
+      ),
+      (
         'a malformed body',
         (_) => jsonResponse({'user': 'x'}),
         CloudFailureCode.protocol,

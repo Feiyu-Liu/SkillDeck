@@ -75,6 +75,14 @@ void main() {
       });
     }
 
+    test('reports a rate limit as a server failure', () async {
+      final service = FakeCloudService()..deviceCode = (_) => _rateLimited();
+      final start = await service
+          .signIn(InMemoryCloudSessionStore())
+          .start(device);
+      expect((start as CloudSignInStartFailed).code, CloudFailureCode.server);
+    });
+
     test('maps a server error and a network failure', () async {
       final server = FakeCloudService()
         ..deviceCode = (_) => http.Response('', 500);
@@ -185,17 +193,18 @@ void main() {
       });
     });
 
-    test('keeps polling through a connection failure and a 503', () {
+    test('keeps polling through a connection failure, a 503, and a 429', () {
       fakeAsync((time) {
         final service = FakeCloudService(elapsed: () => time.elapsed)
           ..tokenReplies = [
             networkFailure,
             (_) => http.Response('', 503),
+            (_) => _rateLimited(),
             (_) => jsonResponse(tokenBody),
           ];
         final result = _signIn(time, service, InMemoryCloudSessionStore());
-        time.elapse(const Duration(seconds: 15));
-        expect(_pollTimes(service), hasLength(3));
+        time.elapse(const Duration(seconds: 20));
+        expect(_pollTimes(service), hasLength(4));
         expect(result.value, isA<CloudSignInSucceeded>());
       });
     });
@@ -334,6 +343,11 @@ void main() {
     });
   });
 }
+
+http.Response _rateLimited() => jsonResponse({
+  'error': 'rate_limited',
+  'error_description': 'rate_limited',
+}, 429);
 
 final class _Result {
   CloudSignInResult? value;

@@ -241,7 +241,9 @@ final class CloudSignIn {
           return const CloudSignInCancelled();
         case _NetworkFailure():
           continue;
-        case _Response(:final response) when response.statusCode >= 500:
+        case _Response(:final response)
+            when response.statusCode >= 500 || response.statusCode == 429:
+          // Server errors and rate limits mean "try again later".
           continue;
         case _Response(:final response) when response.statusCode == 200:
           return _finishSignIn(pending, response);
@@ -481,8 +483,11 @@ final class CloudSignIn {
     'Authorization': 'Bearer $token',
   };
 
+  /// HTTP 429 means "try again later", like a server error (contract v0).
   static CloudFailureCode _statusFailure(int status) =>
-      status >= 500 ? CloudFailureCode.server : CloudFailureCode.protocol;
+      status >= 500 || status == 429
+      ? CloudFailureCode.server
+      : CloudFailureCode.protocol;
 
   static Duration _max(Duration a, Duration b) => a > b ? a : b;
 
