@@ -36,6 +36,14 @@ contract adds to them, it says so.
   `application/x-www-form-urlencoded`, as RFC 8628 specifies. Responses are
   JSON. The client ignores response fields it does not know.
 - **Caching:** the device endpoints answer with `Cache-Control: no-store`.
+- **Too many requests** (added 2026-11-27, T19): any endpoint may answer
+  HTTP 429 with `{"error": "rate_limited", "error_description": "<text>"}`.
+  It means "try again later" and is not part of the RFC 8628 error table.
+  - While polling `/device/token`, the client keeps polling at the current
+    interval until the codes expire.
+  - On any other call, the client reports a server failure; the caller may
+    retry later.
+  - The service may send `Retry-After`. The v0 client ignores it.
 - **Errors:** the device endpoints answer an expected failure with HTTP 400
   and `{"error": "<code>", "error_description": "<text>"}`. The client acts
   only on `error`. It never shows or logs `error_description`.
