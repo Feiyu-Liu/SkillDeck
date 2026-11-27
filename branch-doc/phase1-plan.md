@@ -131,7 +131,7 @@ Codex never decides these. If a task reaches one, stop and ask.
 
 | Item | Blocks | Decided by |
 | --- | --- | --- |
-| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | Maintainer, from the prototype report. Codex runs `brief-revision-pack-prototype.md` in the service repository |
+| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | Maintainer, from the prototype report. **Results 2026-11-27** (`revision-pack-prototype-results-2026-11-27.md`): P2 and P4 pass; a pack size bound and D1 sharding are proposed. Awaiting the decision |
 | Production API hostname | Persisting any Cloud Session, Cloud Lineage mapping, or Cloud descriptor | **Decided 2026-11-24:** `cloud.skilldeck.cc`, one origin for the Cloud API, Better Auth, and `/device`. Staging is `cloud-staging.skilldeck.cc` |
 | Email OTP provider; owner and callback domain of the GitHub OAuth app | M3 end-to-end | **Decided 2026-11-24:** Resend for email OTP. A GitHub organization owns one OAuth App per environment, with callbacks on that environment's origin |
 | Private service repository and the Cloudflare dev and staging account | M3 | **Resolved 2026-11-24:** both exist |

@@ -16,7 +16,9 @@ New development documents for this work go in this folder.
 | --- | --- | --- |
 | `0105-revision-2026-11-23-proposal.md` | ADR-0105 revision, R1–R17: Distribution model, state-based Personal Sync, Revision Packs, macOS first | Accepted 2026-11-23; ADR-0105 amendment applied in the private docs |
 | `cloud-build-vs-adopt-survey.md` | Build-vs-adopt survey for the client and the Cloudflare service | Reference; its Artifacts and WebSocket verdicts are superseded by R8 and R15 |
-| `brief-revision-pack-prototype.md` | Brief for the Revision Pack prototype (tests P1–P10) | Handed over; results pending |
+| `brief-revision-pack-prototype.md` | Brief for the Revision Pack prototype (tests P1–P10) | Run 2026-11-27; see the results report |
+| `revision-pack-prototype-results-2026-11-27.md` | Revision Pack prototype results: P1–P10, reader budget, libgit2 calls, cost sketch | P2 and P4 pass; awaiting the maintainer's R16 decision |
+| `prototype/revision-pack/device.py` | Device CLI for the prototype, over `skills_workspace`'s private native library. Harness only, not product code | Used by the 2026-11-27 run |
 | `handover-phase1-git-hosting.md` | Handover for the Artifacts vs self-hosted Git comparison | Superseded by R15; kept for the record |
 | `git-hosting-local-test-results-2026-11-23.md` | Local Git hosting test results | Input to R15 |
 | `windows-http-test-plan.md` | Windows HTTP qualification plan | Paused (R17) |
