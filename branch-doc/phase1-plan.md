@@ -125,9 +125,9 @@ Ordered by dependency. Dates are not part of this plan.
 | M3 | Cloud API contract v0 and Device Authorization sign-in. Contract: `cloud-api-contract-v0.md`; cards T16 (client) and T17 (service) | Now: the contract is drafted here and the service implements it |
 | M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | Now: the prototype decision is made (2026-11-27). Contract: `cloud-api-contract-v0.1.md`; cards T20, T21 (service), T22–T24 and T26 (client), T25 (Workspace: remote Source Replacement, decided 2026-11-27) |
 | M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, T11 (review fixes), T12 (current-revision read), T08, T13 (Recovery Bundle fix), T09, then T14 (Recovery Bundle history) | After M1 |
-| M6 | Metadata, tag vocabulary, and Note Conflict | Now: T28 drafts contract v0.2; T33 (service) and T34 (client) follow its acceptance |
-| M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | Content parts start now, in parallel with M6 (2026-11-27): T29–T32. Metadata UI and Note Conflict follow M6 |
-| M8 | macOS qualification, including two Devices updating the same Git Source while offline (R3) | After M7, with staging up |
+| M6 | Metadata, tag vocabulary, and Note Conflict | v0.2 accepted 2026-11-27; T33 service and T34 client/App implemented and verified locally (2026-11-28) |
+| M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | T29–T32 content and T34 metadata/Note UI implemented and verified locally (2026-11-28) |
+| M8 | macOS qualification, including two Devices updating the same Git Source while offline (R3) | Next: deploy v0.2 to staging, then real dual-Device App qualification |
 
 Task cards for M3 onward are written when their milestone is next.
 

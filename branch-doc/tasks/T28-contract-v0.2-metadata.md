@@ -120,9 +120,13 @@ The draft must define, in the style of v0.1:
 
 ### Follow-ups
 
-- Maintainer acceptance of wire shapes and open questions before T33/T34.
+- The maintainer accepted the revised contract and current-value Note policy on
+  2026-11-27. T33/T34 implementation and validation completed on 2026-11-28.
 
 ### Outcome
 
 - Design draft ready for review. v0 and v0.1 are untouched, with no
   service, client, Workspace or App implementation in this task.
+
+The earlier retention proposal above was superseded by the accepted v0.2
+revision; current behavior and evidence are recorded under T33/T34.

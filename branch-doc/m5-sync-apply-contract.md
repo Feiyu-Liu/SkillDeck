@@ -260,3 +260,30 @@ Decided by the maintainer, 2026-11-24 (M5 review item 3, option C).
   - to refresh its guard after a `staleSnapshot`.
 - It reads SQLite only and never the revision Store, so it is cheap enough to
   call on every Reconciliation.
+
+## M6 local metadata guard (approved 2026-11-27)
+
+RemoteSkillMetadata and all RemoteTagVocabulary requests accept optional
+`expectedRepositoryRevision`, taken from the local metadata/vocabulary read.
+Cloud always supplies it. Reject a mismatch with `staleSnapshot` before any
+mutation, including an apparent no-op. The normal transaction revision check
+protects the subsequent lock/commit window. Existing callers that omit the
+guard retain their previous behavior. This local revision is not a server
+Field Version, and no cloud identifier is introduced into Workspace.
+
+### M6 vocabulary rename permutations
+
+Applying a compacted vocabulary can reveal two existing tags that swapped
+names while this Device was offline. `RemoteTagVocabulary.renameMany` accepts
+a map of existing local tag IDs to final names and the same local revision
+guard. All final normalized names must be distinct and must not collide with
+an untouched tag. It preserves IDs, colors and assignments and returns
+`metadataApplied` or `noChange`. A duplicate destination or absent tag uses the
+existing typed tag error. Unlike `update`, it does not merge tags.
+
+The implementation uses existing `PutPersonalTag` mutations inside one
+SQLite transaction: reserved unique keys are vacated before the final names
+are written. No intermediate name/key is committed, no schema or recovery
+codec changes are needed, and an abort restores the old names and assignments.
+This is an implementation refinement needed to preserve the approved global
+vocabulary semantics when intermediate cloud names have been compacted away.
