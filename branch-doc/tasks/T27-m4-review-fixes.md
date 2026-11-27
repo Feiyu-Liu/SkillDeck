@@ -104,10 +104,37 @@ Each item is a test with the fakes.
 
 ### Progress
 
+- [x] Confirm when Workspace emits a committed-change entry for Draft and conflict actions.
+- [x] Recover pending Lineages, settle Attention Reasons and account conditions, and handle feed and library edge cases.
+- [x] Verify all five review items with the fakes and run the package gates.
+
 ### Decision Log
+
+- Publishing a Draft and publishing a Sync Merge conflict resolution change the Effective revision and appear in the feed. `DriftCommittedChangeFeed.recordSelection` stamps the selection changes. Discarding a Draft or abandoning a conflict without publishing only deletes Draft or candidate state, which `recordMutation` ignores.
+- `SyncLink.attentionAttempt` records the last blocked Lineage version, the local Effective, and the typed reason in `SyncStateStore`. The existing link version and Effective still mean the last synced head. A Feed Check can inspect a blocked Skill again without fetching its pack for an unchanged pair.
+- Successful Draft discard and conflict abandonment must call `reconcileSkill` explicitly. That path retries the same pair. Successful conflict publish triggers `checkLocalChanges` through the committed-change feed. The existing Draft regression now uses explicit reconciliation after discard.
+- `Reconciler.accountCondition` reports the existing typed account condition from a check even when no Skill is linked, so the App can handle sign-in expiry after a feed or library response.
+- An account quota rejection records `SyncLink.uploadBlockedByQuota`. It settles the Workspace cursor and retries on a later scheduled check, including after restart. Success clears the observation.
 
 ### Surprises
 
+- With the shell's default package mirror, `dart pub get --enforce-lockfile` exited 65. All locked dependencies use `pub.dev`, and the same gate with that registry exited 0.
+
 ### Follow-ups
 
+- T29 persists `SyncLink.attentionAttempt`. T32 routes resolving actions that leave the Effective unchanged through `reconcileSkill`.
+
 ### Outcome
+
+The fake tests cover cleanup before read, upload and Head Advance, 404s after a first head, conflict isolation and a normal scheduler interval, unlinked 404s, a single library retry, and Lineage IDs on all request paths.
+
+On macOS arm64 with Dart 3.14.0, all gates ran from `packages/skills_cloud/`.
+
+| Command | Exit | Result |
+|---|---:|---|
+| `PUB_HOSTED_URL=https://pub.dev dart pub get --enforce-lockfile` | 0 | Lockfile unchanged |
+| `dart format --output=none --set-exit-if-changed .` | 0 | Clean |
+| `dart analyze --fatal-infos` | 0 | No issues |
+| `dart test --reporter expanded` | 0 | 92 passed in the integrated worktree |
+| `dart test --coverage=coverage --reporter expanded` | 0 | 92 passed |
+| `dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --package=. --report-on=lib` | 0 | `reconciler.dart` 431/489 lines (88.14%) |

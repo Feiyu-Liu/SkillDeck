@@ -112,10 +112,79 @@ survives a restart, is kept per account, and holds no credentials.
 
 ### Progress
 
+- [x] Extend the App repository seam and its package, diagnostics and
+  ownership implementations.
+- [x] Add the Workspace sync adapter and an account- and Device-scoped file
+  store.
+- [x] Run the opt-in M4-7 pack round trip against a local Worker.
+- [x] Verify source mappings, the ownership gate, and durable state in App
+  tests.
+
 ### Decision Log
+
+- The maintainer approved representing local Git paths as Device-Bound
+  `local` sources. Their absolute paths stay on the Origin Device.
+- Device-Bound labels use the common Cloud and Workspace domain of 256
+  Unicode scalar values and exclude path separators, colon and C0/C1
+  controls. The Cloud parser enforces the common domain.
+- The maintainer approved an optional opaque `originSourceId` for
+  Device-Bound provenance. The App derives it with HMAC-SHA-256 over the
+  local Source Descriptor and a random seed held by that App installation.
+  The recipient round-trips the ID and display labels in Synced Origin
+  provenance. Older values without an ID remain readable.
+- The maintainer approved the local `sourceEpoch` for detecting explicit
+  Source Replacement when the entire Source Descriptor stays equal. A
+  successful install or replacement returns the epoch it committed.
+  Reconciliation remembers it on the local link. An incoming replacement
+  guards the old epoch so it can safely replace identical revisions.
+- The test fake can carry real pack bytes while retaining the protocol
+  checks. The opt-in Worker test exercises actual verification.
+- When a restored Workspace invalidates the local cursor, rescan the
+  retained committed changes and current Skill IDs. Missing IDs alone
+  provide no evidence of an intentional local Removal.
 
 ### Surprises
 
+- The public Workspace Skill exposes its Source Descriptor but no
+  Source Lineage identity. The portable Device-Bound display label can
+  match for distinct absolute paths with the same basename. A macOS
+  reproduction replacing one local Source with a same-basename directory
+  accepted the local replacement, then hit `cloud_workspace_contract`
+  while the Reconciler tried the old Generation's content path.
+- Workspace permits Source Replacement at the exact same address. The
+  initial commit is deterministic. Replacing identical bytes can produce
+  the same revision ID even though Workspace created a new Source Lineage.
+
 ### Follow-ups
 
+- Check experimental Lineages created on the Origin Device before
+  `originSourceId` when moving an existing development Workspace forward.
+  The first reconciliation can advance a Generation to record the new ID.
+
 ### Outcome
+
+- The focused App adapter, store and repository suites passed 35 tests,
+  with one opt-in skip, exit 0. This covered local Git, ownership refusal,
+  Draft blocking and resolution, Source Replacement, and durable state
+  recovery.
+- After the source identity fix, the focused App adapter and store suites
+  passed 8 tests with one opt-in skip. The two real Workspaces converged on
+  Generation 2 after replacing a Source with another of the same basename.
+  The Workspace codec and Cloud parser suites passed 5 and 2 tests.
+- After adding the local Source Epoch, the App adapter, state store and
+  runtime suites passed 14 tests with one opt-in skip, exit 0. Two real
+  Workspaces converged after same-address replacement with changed bytes and
+  with identical bytes. Both peers advanced their Source Epochs, and Cloud
+  advanced through Generations 3 and 4.
+- The Cloud package's enforced dependency resolution using
+  `PUB_HOSTED_URL=https://pub.dev dart pub get --enforce-lockfile`,
+  format check, strict analyzer, and 88-test suite passed with exit 0
+  before the final M7 changes. The integrated App and Cloud gates are
+  recorded with the batch.
+- M4-7 passed on macOS using two temporary Workspaces and the local
+  service's workerd test fixture with D1 and R2. The test sent and
+  downloaded native Revision Packs through the real Cloud API. The
+  test needs `SKILLDECK_CLOUD_TEST_ORIGIN` and an ephemeral
+  `SKILLDECK_CLOUD_TEST_TOKEN` in the test process environment.
+
+Final integrated gates and limits: [M7 validation report](../validation/m7-app-personal-sync-2026-11-27.md).

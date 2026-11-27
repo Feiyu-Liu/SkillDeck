@@ -88,10 +88,23 @@ Skill's Sync Status. Content only; metadata waits for M6.
 
 ### Progress
 
+- [x] Wire the account-scoped runtime, serialized checks and actions, and Workspace shutdown.
+- [x] Connect foreground, network reconnect, native macOS wake, and the two-minute scheduler.
+- [x] Add per-Skill statuses, the detail toggle, and localized account notices.
+
 ### Decision Log
+
+- Use the existing Workspace snapshot revision stream to debounce local changes. The scheduled run retries the Workspace cursor before checking the account feed. `FeedCheckResult.followedBy` preserves both outcomes and the longer `Retry-After`.
+- Reconnect uses the approved `connectivity_plus` plugin. An AppKit wake notification uses the existing Runner window to signal Dart. The lifecycle listeners also cover a saved session that is still offline at App launch.
+- A 401 from the active runtime clears its saved session through the sign-in owner. A draining runtime cannot read or delete another account's credentials.
+- The adapter reports Applying during the Workspace transaction for the affected Skill. Other Skills keep their own status.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Focused App verification passed 14 tests with one opt-in service test skipped. It covers trigger coalescence, expired sessions, an account switch during a late 401, a protocol error, quota status, and English and Chinese rendering. A test with two real Workspaces verifies the debounce and cross-Device publication.
+
+Final integrated gates and limits: [M7 validation report](../validation/m7-app-personal-sync-2026-11-27.md).

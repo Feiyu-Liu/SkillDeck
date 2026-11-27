@@ -45,6 +45,7 @@ New development documents for this work go in this folder.
 | `tasks/T15-m5-nit-cleanup.md` | Clean up Nits T09-1, T09-2, T09-3, and T14-1 | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and Device Authorization sign-in. Library, pack, and feed endpoints come in v0.1 with M4 | Draft; code lifetime decided 2026-11-26 (10 minutes); HTTP 429 added 2026-11-27 (T19). Service side: T17 |
 | `cloud-api-contract-v0.1.md` | M4: Personal Sync data API: Cloud Library, Lineages and Generations, Head Packs, Head Advance, Removal and Stop Syncing, Account Change Feed | Accepted 2026-11-27, open points decided |
+| `cloud-api-contract-v0.2.md` | M6: Personal Sync metadata, Synced Tag Vocabulary, and Note Conflict | Draft, awaiting the maintainer |
 | `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |
 | `tasks/T17-service-device-sign-in.md` | M3, service side: contract v0 sign-in on `wrangler dev`. Runs in the private service repository | Implemented in the service repository (`9de140b`), reviewed, and accepted; follow-ups T18 and T19 |
 | `reviews/2026-11-27-m3-review.md` | Review of T17, with T16 driven against the dev service | T17 accepted. T17-1 and T17-3: T18. T17-2 fixed in T19 |
@@ -59,9 +60,10 @@ New development documents for this work go in this folder.
 | `tasks/T26-client-generation-change.md` | M4 client: Generation change in both directions. After T23; needs T25's contract only | Implemented, reviewed, and accepted |
 | `validation/m4-client-workspace-2026-11-27.md` | Codex's gate results and coverage for T22–T26 | Record |
 | `reviews/2026-11-27-m4-review.md` | Review of T18 and T20–T26 | Accepted. M4-1 to M4-5: T27. M4-6 for the M7 adapter. M4-7 for the maintainer |
-| `tasks/T27-m4-review-fixes.md` | Fix M4-1 to M4-5 in the Reconciler | Ready for Codex |
-| `tasks/T28-contract-v0.2-metadata.md` | M6: Codex drafts contract v0.2 for metadata, tags, and Note Conflict. Design only | Ready for Codex; the draft then awaits the maintainer, and T33 (service) and T34 (client) follow |
-| `tasks/T29-app-sync-workspace-adapter.md` | M7 1/4: the real `SyncWorkspace` adapter through the App seam, and durable per-account sync state. Covers M4-6 and an opt-in M4-7 | Ready for Codex, after T27 |
-| `tasks/T30-app-cloud-sign-in.md` | M7 2/4: Cloud sign-in in Settings, secure session storage, `cupertino_http`, Cloud off without an origin or off macOS | Ready for Codex; can run in parallel with T29 |
-| `tasks/T31-app-sync-runtime-and-status.md` | M7 3/4: the serialized sync runtime, Feed Check triggers, per-Skill Sync Status, Start and Stop Syncing | Ready for Codex, after T27, T29, and T30 |
-| `tasks/T32-app-attention-actions-and-bootstrap.md` | M7 4/4: actions for every content Attention Reason, Device Exclusions in Settings, the new-Device activation step | Ready for Codex, after T31 |
+| `tasks/T27-m4-review-fixes.md` | Fix M4-1 to M4-5 in the Reconciler | Implemented and verified locally; see the M7 validation report |
+| `tasks/T28-contract-v0.2-metadata.md` | M6: Codex drafts contract v0.2 for metadata, tags, and Note Conflict. Design only | Draft completed; awaiting maintainer acceptance before T33/T34 |
+| `tasks/T29-app-sync-workspace-adapter.md` | M7 1/4: the real `SyncWorkspace` adapter through the App seam, and durable per-account sync state. Covers M4-6 and an opt-in M4-7 | Implemented and verified locally, including real Worker pack round trip |
+| `tasks/T30-app-cloud-sign-in.md` | M7 2/4: Cloud sign-in in Settings, secure session storage, `cupertino_http`, Cloud off without an origin or off macOS | Implemented and verified locally; manual staging sign-in not run |
+| `tasks/T31-app-sync-runtime-and-status.md` | M7 3/4: the serialized sync runtime, Feed Check triggers, per-Skill Sync Status, Start and Stop Syncing | Implemented and verified locally |
+| `tasks/T32-app-attention-actions-and-bootstrap.md` | M7 4/4: actions for every content Attention Reason, Device Exclusions in Settings, the new-Device activation step | Implemented and verified locally, including approved Workspace review extensions |
+| `validation/m7-app-personal-sync-2026-11-27.md` | Final T27–T32 scope, approvals, gates, coverage and acceptance limits | Record |

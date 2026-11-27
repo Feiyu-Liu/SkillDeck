@@ -84,10 +84,26 @@ signed-in Mac shows what bootstrap installed and offers to activate it.
 
 ### Progress
 
+- The maintainer approved the [Workspace review interfaces](../t32-review-seams-contract.md)
+  for a pending Revision Pack diff and an Update Candidate side selection. The
+  Workspace implements both through the public repository.
+- The App connects those reads and actions to the same per-account queue as automatic sync.
+- The Settings Cloud section shows Device Exclusions. The first completed bootstrap offers the existing Activation flow for the Skills it installed.
+
 ### Decision Log
+
+- Read the incoming Head Pack into temporary storage and compare it using the guarded Workspace read. Choosing a conflict side leaves a resolved Draft. The review offers a separate Publish action and can reveal that Draft in Finder.
+- Guard destructive actions with the Workspace revision and the observed Lineage version. A linked Source replacement that needs an occupied slot uses the real Lineage ID and a confirmed local removal before reconciling the original Skill.
+- Store a per-origin, per-account offer flag on the Device. This keeps the activation sheet one-time without adding activation state to Workspace or Cloud.
 
 ### Surprises
 
 ### Follow-ups
 
+- If the App quits abruptly before the first activation offer is shown, the installed Skill IDs from that bootstrap can be lost from the offer. The Skills remain in Workspace and can be activated from their details.
+
 ### Outcome
+
+Widget tests cover the attention actions, destructive confirmations, choosing only the requested Skill and Agent, and dismissing without Activation. A test with two real Workspaces verifies that selecting a conflict side leaves the Effective unchanged, and that the two Devices converge after a separate Publish action. The Workspace pack preview and conflict choices use the typed App repository seam across both decorators.
+
+Final integrated gates and limits: [M7 validation report](../validation/m7-app-personal-sync-2026-11-27.md).

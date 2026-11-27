@@ -94,10 +94,49 @@ out. A build without an origin, and every Windows build, shows no Cloud UI.
 
 ### Progress
 
+- [x] Gate Cloud providers and the Settings section on an origin on macOS.
+- [x] Wire Device Authorization, browser approval, cancellation, and sign-out.
+- [x] Store sessions in Keychain and display the last verified account when offline.
+- [x] Cover the flow with App widget tests and focused Cloud sign-in tests.
+- [ ] Run the complete App gate set after integrating the remaining M7 cards.
+
 ### Decision Log
+
+- `cupertino_http` 3.1.0 is the newest stable release that resolves with
+  Flutter 3.50.0 and this Workspace. Version 3.1.1 requires `code_assets` 2.x,
+  while Workspace's native asset hook uses 1.x.
+- The maintainer approved storing the last verified account ID, email, and
+  expiry alongside the token in the origin's secure storage entry and showing
+  the email. The cached account can be shown on an offline cold start. Online
+  verification is required before activating the sync runtime.
+- Use the system computer name from macOS `scutil`. Reading it succeeded on
+  the development Mac without an added entitlement.
+- The ephemeral URLSession avoids durable HTTP state and the Cloud client
+  disables redirects so credentials stay at the configured origin.
 
 ### Surprises
 
+- The v0 session response consumed by the client includes email and omits
+  display name. The previous token-only storage could not show an account on
+  an offline cold start. A token-only entry remains readable and acquires
+  account fields after successful revalidation.
+
 ### Follow-ups
 
+- T31 attaches app lifecycle checks so a cold offline session can be verified
+  when connectivity returns.
+
 ### Outcome
+
+The focused App tests passed (11, exit 0), including platform and origin
+gating, browser URL, polling and cancellation, sign-in outcomes, offline
+cold start, sign-out, Keychain serialization through the plugin test double,
+and the absence of account email and token in captured diagnostics, analytics,
+and the App settings file. The focused App analyzer passed (exit 0).
+The Cloud sign-in suite passed (47, exit 0). Dependency resolution and
+localization generation passed (exit 0).
+
+Manual staging sign-in on macOS was not run. Complete App gates are recorded
+after the M7 integration.
+
+Final integrated gates and limits: [M7 validation report](../validation/m7-app-personal-sync-2026-11-27.md).

@@ -66,12 +66,12 @@ coordinator, with the usual journal, recovery, and finalization.
 
 | Variant | Fields | Card |
 | --- | --- | --- |
-| `RemoteSkillContent` | `managedSkillId`, `expectedEffective`, target `effective` and optional `upstream`, optional `packPath` | T07, T08 |
+| `RemoteSkillContent` | `managedSkillId`, `expectedEffective`, optional `expectedSourceEpoch`, target `effective` and optional `upstream`, optional `packPath` | T07, T08, T29 |
 | `RemoteSkillInstall` | `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T08 |
 | `RemoteSkillMetadata` | `managedSkillId`, `expectedEffective`, `favorite`, `note` (null clears it), `tagIds` (the complete set of local tag IDs) | T09 |
-| `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective` | T09 |
+| `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective`, optional `expectedSourceEpoch` | T09, T29 |
 | `RemoteTagVocabulary` | one of `ensure(name, color)`, `update(tagId, name, color)`, or `delete(tagId)`; `color` is `#RRGGBB` or null | T09 |
-| `RemoteSkillSourceReplacement` | `managedSkillId`, `expectedEffective`, `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T25 (added 2026-11-27) |
+| `RemoteSkillSourceReplacement` | `managedSkillId`, `expectedEffective`, optional `expectedSourceEpoch`, `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T25, with the local epoch added in T29 |
 
 `expectedEffective`, `effective`, and `upstream` are `RevisionId`s.
 
@@ -93,11 +93,11 @@ answering two questions raised while implementing T08).
 | `conflicted` | The Sync Merge conflicted. An Update Candidate Session now exists |
 | `draftResolutionRequired` | A Dirty Draft or an Update Candidate Session blocks this Skill |
 | `skillSlotOccupied(occupant)` | Install only: a different local Skill holds the Skill Slot |
-| `installed(managedSkillId)` | Install succeeded |
+| `installed(managedSkillId, sourceEpoch)` | Install succeeded and returns the exact installed epoch |
 | `metadataApplied` | Metadata changed the Favorite, Note, or Tag Assignments (added 2026-11-25) |
 | `removed` | Removal succeeded, or Vocabulary `delete` removed the tag |
 | `tag(tagId)` | Vocabulary `ensure` and `update` return the resulting local tag |
-| `sourceReplaced` | Source Replacement from a remote Generation change succeeded (added 2026-11-27, T25) |
+| `sourceReplaced(sourceEpoch)` | Source Replacement from a remote Generation change succeeded and returns the epoch committed by this operation |
 
 **Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
 `removed`, and `tag` are added, because their callers need the resulting
@@ -107,6 +107,10 @@ same reason.
 **Expected failures**, all as typed failures with existing codes:
 - the `expectedEffective` guard fails: `staleSnapshot` with
   `reason: effectiveRevisionChanged`;
+- the optional `expectedSourceEpoch` in a content, removal or Source
+  Replacement request does not match: `staleSnapshot` with
+  `reason: sourceLineageChanged`. The Source Epoch protects a request
+  prepared before an identical-content Source Replacement.
 - unknown Skill: `skillNotFound`;
 - missing or incomplete objects: `revisionStoreCorrupt`, or the T02 import
   outcomes when `packPath` is given;
@@ -189,8 +193,15 @@ Let L be the local Effective Revision and R the target `effective`.
     `draftResolutionRequired`.
   - A changed Declared Skill Name whose Skill Slot holds a different Skill
     returns `skillSlotOccupied(occupant)`.
-  - On retry, it returns `noChange` when the Skill already has the requested
-    Source Descriptor, Effective, and Upstream.
+  - A caller can supply the opaque `expectedSourceEpoch` from the local
+    selection read. It must match the active Source Lineage even when the
+    Effective revision still matches. With that guard, an explicit
+    replacement advances the local Source Lineage even when the requested
+    descriptor and both revisions are identical. A repeat with the old epoch
+    returns `staleSnapshot` with `reason: sourceLineageChanged`.
+  - A caller that omits the epoch keeps the original retry behavior.
+    An identical descriptor and pair of revisions returns `noChange` with
+    the observed epoch.
   - The Workspace does not decide whether this Device has unsynced revisions;
     `skills_cloud` does, before it calls (see the table below).
 - **Vocabulary:**
@@ -229,11 +240,17 @@ Decided by the maintainer, 2026-11-24 (M5 review item 3, option C).
 
 - `inspectRevisionSelections(managedSkillIds)` is a read operation. It returns
   the RepositoryRevision it read at and, for each requested Skill that exists,
-  its current Effective and Upstream `RevisionId`.
+  its current Effective and Upstream `RevisionId` and its opaque local
+  `sourceEpoch` (T29, approved by the maintainer).
   - A Skill that does not exist, including a removed one, is left out of the
     result. It is not an error.
   - Upstream is absent exactly when `exportRevisionPack` would omit it: an
     Adopted Snapshot Source, or a Synced Origin of one.
+  - `sourceEpoch` is stable across ordinary publishes and changes when
+    Source Replacement creates a different active Source Lineage. Compare
+    epochs for equality. The value is scoped to one local Workspace.
+    `skills_cloud` may keep its last reconciled value in the local link.
+    The service and Portable Source never receive the epoch.
 - Everything is read in one SQLite transaction. The revision is comparable with
   the committed-change feed's `current`.
 - `skills_cloud` uses it:

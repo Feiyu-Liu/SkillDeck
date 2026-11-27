@@ -94,10 +94,35 @@ The draft must define, in the style of v0.1:
 
 ### Progress
 
+- [x] Read the binding decisions, v0 and v0.1, and Workspace apply contract.
+- [x] Verify the Workspace normalization helper and the v0.1 feed filter.
+- [x] Draft v0.2 and add its draft row to the README.
+
 ### Decision Log
+
+- Proposed two metadata feed kinds and a bootstrap projection with the
+  existing v0.1 replay cursor.
+- Proposed independent name and color Field Versions and a tag version for
+  deletion. Merge redirects let offline Devices transfer local assignments.
+- Proposed a Note conflict write guarded by the current Field Version and
+  tied to the original base. The original accepted edit is retained so
+  delayed Devices can present the exact pair.
 
 ### Surprises
 
+- The local normalization helper is shared across create, update, lookup
+  and remote vocabulary apply. Its Dart case and trim behavior needs
+  equivalent service behavior.
+- A late Note edit can arrive after several other edits. The draft calls
+  out the retention cost of accurately recovering its competing edit.
+- M5 guards metadata apply with the Effective Revision. It cannot detect
+  a concurrent local edit that changes only metadata.
+
 ### Follow-ups
 
+- Maintainer acceptance of wire shapes and open questions before T33/T34.
+
 ### Outcome
+
+- Design draft ready for review. v0 and v0.1 are untouched, with no
+  service, client, Workspace or App implementation in this task.
