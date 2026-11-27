@@ -280,6 +280,9 @@ Risks to carry into M4:
 
 ## Decisions for the maintainer
 
+**Decided by the maintainer on 2026-11-27:** items 1–3 as recommended, and
+item 4 not for Phase 1.
+
 1. **R16 rule:** P2 and P4 pass, so build R15 as written. Recommended.
 2. **Head Pack size bound** for Phase 1. Suggested: 16 MB packed and 64 MB
    inflated, rejected at upload with a typed error. The App then shows an

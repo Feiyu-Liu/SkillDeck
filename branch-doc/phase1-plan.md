@@ -68,6 +68,12 @@ Each line is binding. The R number points to the full text.
 - **Revision Packs (R15):** each Upload sends one Head Pack with the full
   closure of the new head's Effective and Upstream commits, addressed by
   SHA-256. The service verifies a pack before any Head Advance may use it.
+  Built as written: the prototype passed P2 and P4 (maintainer, 2026-11-27).
+- **Head Pack size bound (decided 2026-11-27):** at most 16 MB packed and
+  64 MB inflated. The service rejects a larger upload with a typed error. The
+  client checks the packed size before uploading.
+- **D1 layout (decided 2026-11-27):** the Commit Graph and Lineages are
+  sharded by account from the start.
 - **Change delivery (R8):** Devices learn of changes only through Feed Checks
   of the Account Change Feed, on launch, foreground, reconnect, wake, and every
   2 minutes. Pack storage is never polled.
@@ -117,7 +123,7 @@ Ordered by dependency. Dates are not part of this plan.
 | M1 | Workspace seams 1, 2, and 5 with the revision identifier: T01–T03 | Now |
 | M2 | `skills_cloud` package and Feed Check scheduling: T04 | Now |
 | M3 | Cloud API contract v0 and Device Authorization sign-in. Contract: `cloud-api-contract-v0.md`; cards T16 (client) and T17 (service) | Now: the contract is drafted here and the service implements it |
-| M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | After the prototype decision and M3 |
+| M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | Now: the prototype decision is made (2026-11-27). Contract v0.1 first |
 | M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, T11 (review fixes), T12 (current-revision read), T08, T13 (Recovery Bundle fix), T09, then T14 (Recovery Bundle history) | After M1 |
 | M6 | Metadata, tag vocabulary, and Note Conflict | After M4 and M5 |
 | M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | After M6 |
@@ -131,7 +137,7 @@ Codex never decides these. If a task reaches one, stop and ask.
 
 | Item | Blocks | Decided by |
 | --- | --- | --- |
-| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | Maintainer, from the prototype report. **Results 2026-11-27** (`revision-pack-prototype-results-2026-11-27.md`): P2 and P4 pass; a pack size bound and D1 sharding are proposed. Awaiting the decision |
+| Revision Pack prototype, P2 and P4: R15 as written, or its fallback (R16 rule) | M4 | **Decided 2026-11-27:** R15 as written, a 16 MB / 64 MB Head Pack bound, and D1 sharded by account (`revision-pack-prototype-results-2026-11-27.md`) |
 | Production API hostname | Persisting any Cloud Session, Cloud Lineage mapping, or Cloud descriptor | **Decided 2026-11-24:** `cloud.skilldeck.cc`, one origin for the Cloud API, Better Auth, and `/device`. Staging is `cloud-staging.skilldeck.cc` |
 | Email OTP provider; owner and callback domain of the GitHub OAuth app | M3 end-to-end | **Decided 2026-11-24:** Resend for email OTP. A GitHub organization owns one OAuth App per environment, with callbacks on that environment's origin |
 | Private service repository and the Cloudflare dev and staging account | M3 | **Resolved 2026-11-24:** both exist |
