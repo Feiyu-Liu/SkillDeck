@@ -126,10 +126,27 @@ Tests through the public API with real Stores, unless noted.
 
 ### Progress
 
+- [x] Add RemoteSkillSourceReplacement and sourceReplaced.
+- [x] Reuse remote pack preparation and local replacement transaction/recovery.
+- [x] Preserve identity, Activations and metadata while replacing history.
+- [x] Cover validation, guard order, slots and real before/after-commit crashes.
+
 ### Decision Log
+
+- Split the existing planner's prepared-candidate assembly into a shared method. Local acquisition still supplies its original single-root candidate; remote preparation supplies separately selected Effective/Upstream metadata.
+- The plan alignment guard now accepts exactly the selected one or two revision records in the new lineage. Local replacement behavior is unchanged.
+- Remote expected guard failures finish as unchanged preparation: operation-owned staging is rolled back without a retained Operation Record. No generic coordinator/control-plane changes, new journal phase, recovery kind or schema migration.
+- Installation's adopted-snapshot rule remains the current card's rule: a null external Upstream uses Effective as the receiver's private recovery baseline, omitted from outward inspection/export.
 
 ### Surprises
 
+- Durable publish only accepts direct siblings. Remote preparation moves its verified Store/Bundle between operation-owned staging directories and flushes both parent directories before sealing the existing destructive plan.
+- The shared crash helper needed the same destructive/backup maintenance collaborators as production; its content/install paths remain covered by the full suite.
+
 ### Follow-ups
 
+No native code or local replaceSource behavior was changed. Cross-platform release acceptance remains separate from these macOS tests.
+
 ### Outcome
+
+Six real Workspace scenarios pass, including both crash boundaries. Full gates and coverage are recorded in ../validation/m4-client-workspace-2026-11-27.md.

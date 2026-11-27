@@ -303,7 +303,7 @@ void _validateDestructiveAlignment({
           .toSet();
       if (intendedUpstream == null ||
           intendedEffective == null ||
-          intendedUpstream != intendedEffective ||
+          intendedUpstream.sourceLineage != intendedEffective.sourceLineage ||
           intendedUpstream.sourceLineage != replacement.intendedSourceLineage ||
           intendedEffective.objectId != replacement.intendedObjectId ||
           subject.sourceLineage != replacement.intendedSourceLineage ||
@@ -322,11 +322,21 @@ void _validateDestructiveAlignment({
           lineages.single.sourceLineageId !=
               replacement.intendedSourceLineage.encoded ||
           lineages.single.objectFormat != replacement.intendedObjectFormat ||
-          revisions.length != 1 ||
-          revisions.single.sourceLineageId !=
-              replacement.intendedSourceLineage.encoded ||
-          revisions.single.objectId != intendedEffective.objectId.value ||
-          revisions.single.contentHash != replacement.intendedContentHash ||
+          revisions.length !=
+              {intendedUpstream.objectId, intendedEffective.objectId}.length ||
+          revisions.any(
+            (revision) =>
+                revision.sourceLineageId !=
+                replacement.intendedSourceLineage.encoded,
+          ) ||
+          !revisions.any(
+            (revision) => revision.objectId == intendedUpstream.objectId.value,
+          ) ||
+          !revisions.any(
+            (revision) =>
+                revision.objectId == intendedEffective.objectId.value &&
+                revision.contentHash == replacement.intendedContentHash,
+          ) ||
           !_sameStrings(formerLineages, deletedLineages) ||
           businessChanges.mutations.any(
             (mutation) => mutation is DeleteManagedSkill,

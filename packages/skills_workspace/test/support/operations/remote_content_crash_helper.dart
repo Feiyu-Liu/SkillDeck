@@ -1,3 +1,14 @@
+import 'package:skills_workspace/src/application/backup/control_plane_backup_service.dart';
+import 'package:skills_workspace/src/composition/destructive_recovery_maintenance.dart';
+import 'package:skills_workspace/src/composition/operation_recovery_backup_maintenance.dart';
+import 'package:skills_workspace/src/platform/filesystem/control_plane_backup_durability.dart';
+import 'package:skills_workspace/src/application/destructive/destructive_operation_planner.dart';
+import 'package:skills_workspace/src/application/destructive/destructive_operation_models.dart';
+import 'package:skills_workspace/src/application/operations/operation_models.dart';
+import 'package:skills_workspace/src/application/ports/destructive_operation_ports.dart';
+import 'package:skills_workspace/src/composition/destructive_recovery_entries.dart';
+import 'package:skills_workspace/src/composition/remote_source_replacement_command.dart';
+import 'package:skills_workspace/src/infrastructure/database/drift_destructive_planning_state.dart';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
@@ -43,6 +54,34 @@ import 'package:skills_workspace/src/platform/operations/operation_recovery_bund
 
 Future<void> main(List<String> arguments) async {
   final (workspace, operation, crashPoint, request) = switch (arguments) {
+    [
+      final workspace,
+      'replace',
+      final skill,
+      final expected,
+      final pack,
+      final effective,
+      final upstream,
+      final operation,
+      final crashPoint,
+    ] =>
+      (
+        workspace,
+        operation,
+        crashPoint,
+        RemoteSkillSourceReplacement(
+          managedSkillId: ManagedSkillId(skill),
+          expectedEffective: RevisionId(expected),
+          packPath: pack,
+          effective: RevisionId(effective),
+          upstream: RevisionId(upstream),
+          source: SyncedOriginSourceDescriptor(
+            originSourceType: SyncedOriginSourceType.local,
+            originDeviceLabel: 'Donor Device',
+            displayLabel: 'Donor folder',
+          ),
+        ),
+      ),
     [
       final workspace,
       'install',
@@ -142,11 +181,28 @@ Future<void> main(List<String> arguments) async {
           layout.revisionStorePath(managedSkillId),
           'objects',
         ),
-        RemoteSkillInstall() => layout.revisionStoresRoot,
+        RemoteSkillInstall() ||
+        RemoteSkillSourceReplacement() => layout.revisionStoresRoot,
         _ => throw UnsupportedError('Expected a revision pack request'),
       },
     );
     final recovery = FilesystemOperationRecovery(
+      destructiveMaintenance: WorkspaceDestructiveRecoveryMaintenance(
+        accessGate: access,
+      ),
+      backupMaintenance: WorkspaceOperationRecoveryBackupMaintenance(
+        database: database,
+        backups: ControlPlaneBackupService(
+          database: database,
+          durability: PlatformControlPlaneBackupDurability(filesystem),
+          paths: ControlPlaneBackupPaths(
+            workspaceRoot: layout.rootPath,
+            primaryDatabasePath: layout.databasePath,
+            backupRoot: layout.controlPlaneBackupsRoot,
+            eligibilityPath: layout.backupEligibilityPath,
+          ),
+        ),
+      ),
       layout: layout,
       filesystem: filesystem,
       registry: registry,
@@ -200,6 +256,57 @@ Future<void> main(List<String> arguments) async {
     final command = buildRemoteContentCommand(
       handleLibrary: (_, _) => throw UnsupportedError('Content crash fixture'),
       handleRemoval: (_, _) => throw UnsupportedError('Content crash fixture'),
+      handleReplacement: (request, context) => applyRemoteSourceReplacement(
+        request: request,
+        context: context,
+        snapshots: snapshots,
+        operations: operations,
+        operationPlans: OperationPlanAssembler(
+          subjectIdentities: const UuidWorkspaceIdentities(),
+          recoveryPlans: OperationRecoveryPlanFactory(registry: registry),
+        ),
+        states: states,
+        state: DriftDestructivePlanningState(
+          database: database,
+          draftInspection: DriftUpdateDraftInspection(
+            database: database,
+            layout: layout,
+            accessGate: access,
+            storePath: layout.revisionStorePath,
+            revisions: runtime,
+            snapshots: drafts,
+          ),
+        ),
+        planner: DestructiveOperationPlanner(
+          identities: const UuidWorkspaceIdentities(),
+          replacementPreparation: _UnusedLocalReplacement(),
+          recoveryEntries: WorkspaceDestructiveRecoveryEntries(
+            database: database,
+            layout: layout,
+            revisions: runtime,
+            filesystem: filesystem,
+            recoverySpecs: registry,
+          ),
+          operationPlans: OperationPlanAssembler(
+            subjectIdentities: const UuidWorkspaceIdentities(),
+            recoveryPlans: OperationRecoveryPlanFactory(registry: registry),
+          ),
+          clock: () => DateTime.now().toUtc().microsecondsSinceEpoch,
+        ),
+        preparation: WorkspaceRevisionPreparationService(
+          readCommittedRoots: DriftCommittedRevisionRoots(
+            database,
+          ).readForBundle,
+          revisions: runtime,
+          layout: layout,
+          filesystem: filesystem,
+          drafts: drafts,
+        ),
+        identities: const UuidWorkspaceIdentities(),
+        sourcePayloads: const ApplicationSourcePayloadAdapter(),
+        readPackHeads: pointers.readCurrentPackHeads,
+        runtime: runtime,
+      ),
       snapshots: snapshots,
       operations: operations,
       states: states,
@@ -239,4 +346,14 @@ Future<void> main(List<String> arguments) async {
     await database.close();
     await owner.release();
   }
+}
+
+final class _UnusedLocalReplacement
+    implements SourceReplacementPreparationPort {
+  @override
+  Future<SourceReplacementPreparationResult> prepareSourceReplacement(
+    SourceReplacementPreparationIntent intent, {
+    required PreparedOperationEnvelope envelope,
+    required CancellationToken cancellationToken,
+  }) => throw UnsupportedError('Remote replacement must use the pack');
 }

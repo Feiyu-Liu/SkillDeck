@@ -142,6 +142,8 @@ tombstone is retained (90 days, R6). After that, it answers 404 `notFound`.
 - The client then uploads a Head Pack and advances from `expected: null`.
 - A created Lineage that is never advanced is deleted after 24 hours, with its
   packs. It never appears in the library or the feed.
+  Its `clientKey` is released at the same time: retrying may create a new
+  Lineage. This is the exception to the 30-day key retention rule.
 - Failures: `invalidRequest` (400); `storageLimitReached` (403).
 
 ## Head Packs
@@ -351,6 +353,10 @@ apply only when `expected` is not `null`.
   reconciled needs nothing.
 - **Interval:** the service may send `Retry-After` on a 200 to lengthen the
   next periodic Feed Check, and on 429 or 503. T04's scheduler honors both.
+- **Invalid cursor syntax:** HTTP 400 `invalidRequest` when the cursor cannot
+  be parsed. A parseable cursor from another account or beyond the server's
+  issued range answers HTTP 410 `cursorExpired`, allowing account switches
+  and recovery after a server rollback without exposing account data.
 - **Expired cursor:** HTTP 410 `cursorExpired`, when the cursor is older than
   the oldest change the feed still holds, for example after tombstones expired.
   The Device then resets: it lists the library, and treats each linked Skill

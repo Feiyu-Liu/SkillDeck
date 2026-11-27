@@ -30,6 +30,8 @@ SkillsCommandHandler buildRemoteContentCommand({
   handleLibrary,
   required TypedSkillsCommand<RemoteSkillRemoval, RemoteApplyResult>
   handleRemoval,
+  required TypedSkillsCommand<RemoteSkillSourceReplacement, RemoteApplyResult>
+  handleReplacement,
 }) => TypedSkillsCommandHandler<ApplyRemoteStateRequest, RemoteApplyResult>(
   kind: WorkspaceOperationKind.applyRemoteState,
   handle: (request, context) async {
@@ -38,6 +40,8 @@ SkillsCommandHandler buildRemoteContentCommand({
     switch (request) {
       case RemoteSkillMetadata() || RemoteTagVocabulary():
         return handleLibrary(request, context);
+      case final RemoteSkillSourceReplacement replacement:
+        return handleReplacement(replacement, context);
       case final RemoteSkillRemoval removal:
         return handleRemoval(removal, context);
       case final RemoteSkillInstall install:

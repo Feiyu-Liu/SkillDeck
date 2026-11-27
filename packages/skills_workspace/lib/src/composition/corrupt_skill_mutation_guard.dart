@@ -171,6 +171,7 @@ Set<ManagedSkillId> _affectedSkillIds(
     RemoteSkillInstall() ||
     RemoteSkillMetadata() ||
     RemoteSkillRemoval() ||
+    RemoteSkillSourceReplacement() ||
     RemoteTagVocabulary() => const <ManagedSkillId>{},
   },
   WorkspaceOperationKind.update => (request as UpdateRequest).managedSkillIds,

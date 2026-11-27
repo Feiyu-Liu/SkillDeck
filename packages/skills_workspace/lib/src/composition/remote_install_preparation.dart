@@ -31,6 +31,7 @@ extension WorkspaceRemoteInstallPreparation
     required ReadRemotePackHeads readPackHeads,
     required RevisionWorkerRuntime runtime,
     required CancellationToken token,
+    ManagedSkillId? replacing,
   }) async {
     final effective = RevisionObjectId(request.effective.value);
     final upstream = RevisionObjectId(
@@ -74,7 +75,7 @@ extension WorkspaceRemoteInstallPreparation
       }
 
       final occupant = snapshot.findSkillBySlotKey(slot);
-      if (occupant != null) {
+      if (occupant != null && occupant.id != replacing) {
         final heads = occupant.source == request.source
             ? await readPackHeads(occupant.id)
             : null;

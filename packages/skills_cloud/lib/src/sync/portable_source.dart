@@ -1,0 +1,114 @@
+import 'dart:convert';
+
+import '../api/cloud_values.dart';
+
+/// Versioned, credential-free provenance. Device-bound sources contain labels only.
+final class PortableSource {
+  PortableSource.git({
+    required String locator,
+    String? ref,
+    String repositorySubpath = '',
+    String skillPath = '',
+  }) : _json = {
+         'version': 1,
+         'type': 'git',
+         'locator': locator,
+         'ref': ref,
+         'repositorySubpath': repositorySubpath,
+         'skillPath': skillPath,
+       } {
+    _remote(locator);
+    _relative(repositorySubpath);
+    _relative(skillPath);
+  }
+  PortableSource.wellKnown({required String locator, String skillPath = ''})
+    : _json = {
+        'version': 1,
+        'type': 'wellKnown',
+        'locator': locator,
+        'skillPath': skillPath,
+      } {
+    _remote(locator);
+    _relative(skillPath);
+  }
+  PortableSource.deviceBound({
+    required String originSourceType,
+    required String originDeviceLabel,
+    required String displayLabel,
+  }) : _json = {
+         'version': 1,
+         'type': 'deviceBound',
+         'originSourceType': originSourceType,
+         'originDeviceLabel': originDeviceLabel,
+         'displayLabel': displayLabel,
+       } {
+    if (!['local', 'adoptedSnapshot'].contains(originSourceType)) {
+      throw ArgumentError('Invalid origin source type');
+    }
+    _label(originDeviceLabel);
+    _label(displayLabel);
+  }
+  final Map<String, Object?> _json;
+  bool get isDeviceBound => _json['type'] == 'deviceBound';
+  bool get isAdoptedSnapshot => _json['originSourceType'] == 'adoptedSnapshot';
+  Map<String, Object?> toJson() => Map.unmodifiable(_json);
+  factory PortableSource.fromJson(Map<String, Object?> m) {
+    if (m['version'] != 1) throw const FormatException('source_version');
+    return switch (m['type']) {
+      'git' => PortableSource.git(
+        locator: jsonString(m['locator']),
+        ref: nullableString(m['ref']),
+        repositorySubpath: jsonString(m['repositorySubpath']),
+        skillPath: jsonString(m['skillPath']),
+      ),
+      'wellKnown' => PortableSource.wellKnown(
+        locator: jsonString(m['locator']),
+        skillPath: jsonString(m['skillPath']),
+      ),
+      'deviceBound' => PortableSource.deviceBound(
+        originSourceType: jsonString(m['originSourceType']),
+        originDeviceLabel: jsonString(m['originDeviceLabel']),
+        displayLabel: jsonString(m['displayLabel']),
+      ),
+      _ => throw const FormatException('source_type'),
+    };
+  }
+  @override
+  bool operator ==(Object other) =>
+      other is PortableSource && jsonEncode(_json) == jsonEncode(other._json);
+  @override
+  int get hashCode => jsonEncode(_json).hashCode;
+}
+
+void _label(String value) {
+  if (value.trim().isEmpty ||
+      value.contains('/') ||
+      value.contains(r'\') ||
+      value.contains(':') ||
+      RegExp(r'[\x00-\x1f]').hasMatch(value)) {
+    throw ArgumentError('Source labels must not contain paths');
+  }
+}
+
+void _relative(String value) {
+  if (value.startsWith('/') ||
+      value.contains(r'\') ||
+      value.split('/').contains('..') ||
+      RegExp(r'^[A-Za-z]:').hasMatch(value)) {
+    throw ArgumentError('Source path must be relative');
+  }
+}
+
+void _remote(String value) {
+  if (RegExp(r'^[^@/:\s]+@[^/:\s]+:[^\s]+$').hasMatch(value)) return;
+  final uri = Uri.tryParse(value);
+  if (uri == null ||
+      !['https', 'http', 'ssh', 'git'].contains(uri.scheme) ||
+      uri.host.isEmpty ||
+      uri.userInfo.contains(':') ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.scheme != 'ssh' && uri.userInfo.isNotEmpty)) {
+    throw ArgumentError('Source locator must be portable and credential-free');
+  }
+}

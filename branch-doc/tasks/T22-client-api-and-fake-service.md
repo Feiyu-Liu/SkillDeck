@@ -120,10 +120,26 @@ Log.
 
 ### Progress
 
+- [x] Add typed v0.1 API calls, values and stable error variants.
+- [x] Stream pack files and validate download SHA-256.
+- [x] Add FakeCloudService and the shared test-only pack encoding under testing.dart.
+- [x] Cover request shape, error mapping, origin/token bounds, streaming and fake contract flows.
+
 ### Decision Log
+
+- Shared CloudApiResult<T> and code-specific sealed error variants avoid duplicating the same account/transport cases for every endpoint. Error text is never retained.
+- A private BaseRequest exposes File.openRead directly when finalized. It preserves backpressure and avoids a producer hanging if a client refuses before consuming the body.
+- crypto is pinned to 3.0.7, matching skills_workspace. All unrelated lockfile versions and public registry origins were preserved.
+- Fake packs are JSON commits/parents, file digests and digest-checked blobs. Only the fake Workspace interprets their ancestry; no real Git parser entered skills_cloud.
 
 ### Surprises
 
+- MockClient represents Content-Length as Request.contentLength, not necessarily a raw header. The fake validates that property.
+
 ### Follow-ups
 
+Platform timeout/cancellation and App injection remain M7; this package never constructs a platform HTTP client.
+
 ### Outcome
+
+Implementation and targeted tests pass. Final gates and per-file coverage: see ../validation/m4-client-workspace-2026-11-27.md.

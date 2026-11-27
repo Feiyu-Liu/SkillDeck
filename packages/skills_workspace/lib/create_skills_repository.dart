@@ -48,6 +48,7 @@ import 'src/composition/repository_command_composition.dart';
 import 'src/composition/revision_pack_export_command.dart';
 import 'src/composition/revision_pack_import_command.dart';
 import 'src/composition/remote_content_command.dart';
+import 'src/composition/remote_source_replacement_command.dart';
 import 'src/composition/revision_operation_plans.dart';
 import 'src/composition/revision_preparation_service.dart';
 import 'src/composition/revision_worker_task_executor.dart';
@@ -495,6 +496,21 @@ SkillsRepository createSkillsRepository(
         library: library,
         clock: clock,
         states: draftUpdateState,
+      ),
+      handleReplacement: (request, context) => applyRemoteSourceReplacement(
+        request: request,
+        context: context,
+        snapshots: snapshots,
+        operations: operations,
+        operationPlans: operationPlans,
+        states: draftUpdateState,
+        state: destructiveState,
+        planner: destructivePlanner,
+        preparation: revisionPreparation,
+        identities: identities,
+        sourcePayloads: sourcePayloads,
+        readPackHeads: pointers.readCurrentPackHeads,
+        runtime: revisionRuntime,
       ),
       handleRemoval: (request, context) => applyRemoteRemoval(
         request: request,

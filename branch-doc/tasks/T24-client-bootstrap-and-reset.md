@@ -95,10 +95,26 @@ Each item is a test with the fakes.
 
 ### Progress
 
+- [x] Bootstrap through paged Library reads, exact matching and pack installs.
+- [x] Reset expired cursors without automatically re-uploading missing Skills.
+- [x] Implement exclusions and explicit slot/missing-copy resolution actions.
+- [x] Cover lost reads and repeat bootstrap without duplicate installs.
+
 ### Decision Log
+
+- Linking compares PortableSource, the Workspace-derived Slot Key, and Effective. Existing links to a different Lineage are not silently reassigned.
+- Removing a Device Exclusion clears the feed cursor. The next check re-lists, even without a newer remote version, and can recover after a network failure.
+- Replacing an unlinked bootstrap occupant uses T25's now-available replacement seam. If it replaces a copy linked elsewhere, that previous Lineage is excluded locally after success. A Generation-change slot collision on an already linked Skill must first be resolved locally, preserving the original managed identity.
+- Bootstrap reports installed IDs and creates no Activations. Lost list/download responses leave its cursor unadvanced.
 
 ### Surprises
 
+None.
+
 ### Follow-ups
 
+Activation prompts and durable Device Exclusions remain M7.
+
 ### Outcome
+
+Bootstrap/reset/exclusion tests pass. Final gates and coverage: ../validation/m4-client-workspace-2026-11-27.md.

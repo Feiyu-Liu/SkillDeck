@@ -612,6 +612,32 @@ final class RemoteSkillInstall extends ApplyRemoteStateRequest {
   final SourceDescriptor source;
 }
 
+/// Replaces a managed Skill's Source and history with a verified remote pack.
+final class RemoteSkillSourceReplacement extends ApplyRemoteStateRequest {
+  RemoteSkillSourceReplacement({
+    required this.managedSkillId,
+    required this.expectedEffective,
+    required this.packPath,
+    required this.effective,
+    this.upstream,
+    required this.source,
+  }) {
+    // Keep remote installation and replacement provenance rules identical.
+    RemoteSkillInstall(
+      packPath: packPath,
+      effective: effective,
+      upstream: upstream,
+      source: source,
+    );
+  }
+  final ManagedSkillId managedSkillId;
+  final RevisionId expectedEffective;
+  final String packPath;
+  final RevisionId effective;
+  final RevisionId? upstream;
+  final SourceDescriptor source;
+}
+
 /// Stages the requested revisions from a caller-supplied pack file.
 final class ImportRevisionPackRequest {
   ImportRevisionPackRequest({

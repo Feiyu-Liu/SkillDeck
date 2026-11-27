@@ -99,10 +99,25 @@ Each item is a test with T22's fake service and T23's fake Workspace.
 
 ### Progress
 
+- [x] Track last reconciled Generation and Effective.
+- [x] Upload local Source Replacement to the next Generation.
+- [x] Apply incoming replacement or expose the required Attention Reason.
+- [x] Implement accept/keep-local actions and test concurrent/lost-response cases.
+
 ### Decision Log
+
+- Before declaring local revisions unsynced, recognize an already matching remote Source/Effective/Upstream. This settles a lost successful Generation-change response without a third Generation.
+- Both-Device replacement races leave one new Generation; the loser keeps its local history behind the source-replaced Attention Reason.
+- Accept documents the loss of revisions not uploaded from this Device. Keep-as-Device-Only unlinks and excludes the Lineage; subsequent checks cannot reinstall it.
 
 ### Surprises
 
+None.
+
 ### Follow-ups
 
+App confirmation/prompts and durable state remain M7.
+
 ### Outcome
+
+Concurrent replacement, lost response, Draft, slot and resolution tests pass. Final gates and coverage: ../validation/m4-client-workspace-2026-11-27.md.

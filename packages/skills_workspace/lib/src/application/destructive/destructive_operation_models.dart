@@ -200,6 +200,8 @@ final class PreparedSourceReplacement {
     required this.sourceLineage,
     required this.objectId,
     required this.objectFormat,
+    this.upstreamObjectId,
+    this.additionalRevisionMetadata = const [],
     required this.persistedSourceKind,
     required this.sourcePayloadSchemaVersion,
     required this.sourcePayloadJson,
@@ -228,6 +230,8 @@ final class PreparedSourceReplacement {
   final ManagedSkillId managedSkillId;
   final SourceLineageReference sourceLineage;
   final RevisionObjectId objectId;
+  final RevisionObjectId? upstreamObjectId;
+  final List<PutRevisionMetadata> additionalRevisionMetadata;
   final WorkspaceObjectFormat objectFormat;
   final WorkspaceSourceKind persistedSourceKind;
   final int sourcePayloadSchemaVersion;

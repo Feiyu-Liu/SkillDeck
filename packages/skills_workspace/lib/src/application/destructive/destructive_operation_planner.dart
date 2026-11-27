@@ -113,6 +113,27 @@ final class DestructiveOperationPlanner {
         code: DestructivePlanningFailureCode.invalidReplacementCandidate,
       );
     }
+    return planPreparedSourceReplacement(
+      operationId: operationId,
+      snapshot: snapshot,
+      candidate: candidate,
+      cancellationToken: token,
+    );
+  }
+
+  /// Uses the existing replacement transaction after either local acquisition
+  /// or verified-pack preparation. The caller owns guards under the Writer Lock.
+  Future<DestructivePlanningResult<OperationPlan>>
+  planPreparedSourceReplacement({
+    required OperationId operationId,
+    required DestructivePlanningSnapshot snapshot,
+    required PreparedSourceReplacement candidate,
+    required CancellationToken cancellationToken,
+  }) async {
+    final token = cancellationToken;
+    final managedSkillId = candidate.managedSkillId;
+    final skill = snapshot.findSkill(managedSkillId)!;
+    final intendedLineage = candidate.sourceLineage;
     final occupied = snapshot.managedSkills.any(
       (other) =>
           other.managedSkillId != managedSkillId &&
@@ -156,6 +177,7 @@ final class DestructiveOperationPlanner {
         validationCode: null,
         createdAtMicros: now,
       ),
+      ...candidate.additionalRevisionMetadata,
       PutManagedSkill(
         managedSkillId: managedSkillId,
         slotKey: candidate.slotKey,
@@ -209,7 +231,10 @@ final class DestructiveOperationPlanner {
           managedSkillId: managedSkillId,
           previousUpstream: skill.currentUpstream,
           previousEffective: skill.currentEffective,
-          intendedUpstream: intendedAddress,
+          intendedUpstream: RevisionAddress(
+            sourceLineage: intendedLineage,
+            objectId: candidate.upstreamObjectId ?? candidate.objectId,
+          ),
           intendedEffective: intendedAddress,
         ),
       ],

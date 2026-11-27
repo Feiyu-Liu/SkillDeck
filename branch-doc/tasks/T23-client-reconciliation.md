@@ -174,10 +174,27 @@ Each item is a test with T22's fake service and the fake Workspace.
 
 ### Progress
 
+- [x] Add Workspace/state ports, PortableSource and typed per-Skill outcomes.
+- [x] Reconcile linked Skills and propagate upload, removal and Stop Syncing.
+- [x] Recover lost create/upload/advance/removal responses by reading state.
+- [x] Test clean divergence, conflicting divergence, Drafts and size limits.
+
 ### Decision Log
+
+- Workspace methods mirror the existing operations; a stateless slotKeyForName port delegates to the Workspace's existing public derivation. This prevents a second production Slot Key algorithm.
+- SyncStateStore is scoped to one account/device. It retains mappings, observed versions, pending create keys and cursors, never an outbox. M7 must switch stores with accounts.
+- A check makes at most three reconciliation attempts. Unsettled feed/local pages keep their old cursor so the next check revisits them; settled versions skip repeat application.
+- Upstream after a merge is always read back from the Workspace. Protocol/Workspace-contract defects fail explicitly with stable StateError codes rather than appearing as a perpetually retrying Sync Status.
+- Added Too large to sync to CONTEXT with the accepted actions.
 
 ### Surprises
 
+None.
+
 ### Follow-ups
 
+The real SkillsRepository adapter, durable state and status presentation are M7.
+
 ### Outcome
+
+Fake two-Device scenarios pass. Final gates and coverage: ../validation/m4-client-workspace-2026-11-27.md.

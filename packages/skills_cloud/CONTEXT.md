@@ -413,6 +413,7 @@ state with neither is a defect.
 | Skill Slot occupied by a different local Skill | Replace the local Skill with the synced one; keep the local Skill and add a Device Exclusion |
 | Removed on another Device while a Draft exists here | Remove here too; keep it here as Device Only |
 | Source replaced on another Device while this Device has unsynced revisions | Accept the replacement; keep this Device's copy as Device Only |
+| Too large to sync | Keep this Device's copy as Device Only; Stop Syncing |
 | Missing from the Cloud Library after a reset | Remove here; keep it here as Device Only; Upload it as a new Cloud Lineage |
 
 Account-level conditions are separate from Attention Reasons and are shown once

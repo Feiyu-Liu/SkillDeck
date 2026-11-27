@@ -4,6 +4,7 @@ import 'dart:io';
 import '../api/requests.dart';
 import '../api/result.dart';
 import '../application/drift/drift_models.dart';
+import '../application/destructive/destructive_operation_models.dart';
 import '../application/drafts/draft_models.dart';
 import '../application/drafts/draft_ports.dart';
 import '../application/drafts/draft_snapshot_coordinator.dart';
@@ -36,6 +37,7 @@ import 'remote_revision_store.dart';
 
 part 'remote_content_preparation.dart';
 part 'remote_install_preparation.dart';
+part 'remote_source_replacement_preparation.dart';
 
 /// Shared Revision preparation adapter for Install, Draft, Update and Restore.
 ///
