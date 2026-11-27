@@ -132,6 +132,7 @@ void main() {
         final stored = _stored(time, store);
         expect(stored?.token, sessionToken);
         expect(stored?.origin, origin);
+        expect(stored?.account, same(account));
         _expectSecretsOnlyInBodiesAndHeaders(service);
       });
     });

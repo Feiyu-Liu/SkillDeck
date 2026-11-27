@@ -160,6 +160,408 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
+  /// No description provided for @cloudSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SkillDeck Cloud'**
+  String get cloudSettingsTitle;
+
+  /// No description provided for @cloudAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud account'**
+  String get cloudAccount;
+
+  /// No description provided for @cloudCheckingSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your session…'**
+  String get cloudCheckingSession;
+
+  /// No description provided for @cloudSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get cloudSignIn;
+
+  /// No description provided for @cloudSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to your SkillDeck Cloud account.'**
+  String get cloudSignedOut;
+
+  /// No description provided for @cloudRequestingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting a verification code…'**
+  String get cloudRequestingCode;
+
+  /// No description provided for @cloudVerificationCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code: {code}'**
+  String cloudVerificationCode(String code);
+
+  /// No description provided for @cloudVerifyInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify that this code matches the one in your browser before approving this device.'**
+  String get cloudVerifyInBrowser;
+
+  /// No description provided for @cloudOpenBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open browser'**
+  String get cloudOpenBrowser;
+
+  /// No description provided for @cloudBrowserOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the browser. Try again.'**
+  String get cloudBrowserOpenFailed;
+
+  /// No description provided for @cloudSignInDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in was denied in the browser.'**
+  String get cloudSignInDenied;
+
+  /// No description provided for @cloudSignInExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The verification code expired.'**
+  String get cloudSignInExpired;
+
+  /// No description provided for @cloudSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sign in.'**
+  String get cloudSignInFailed;
+
+  /// No description provided for @cloudSessionCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read your saved session.'**
+  String get cloudSessionCheckFailed;
+
+  /// No description provided for @cloudTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get cloudTryAgain;
+
+  /// No description provided for @cloudOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Your session could not be checked.'**
+  String get cloudOffline;
+
+  /// No description provided for @cloudSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get cloudSignOut;
+
+  /// No description provided for @cloudSigningOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out…'**
+  String get cloudSigningOut;
+
+  /// No description provided for @cloudSignOutFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not remove the saved session. Try again.'**
+  String get cloudSignOutFailed;
+
+  /// No description provided for @cloudSyncToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync to Cloud'**
+  String get cloudSyncToggle;
+
+  /// No description provided for @cloudSyncDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Only'**
+  String get cloudSyncDeviceOnly;
+
+  /// No description provided for @cloudSyncSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced'**
+  String get cloudSyncSynced;
+
+  /// No description provided for @cloudSyncWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to Upload'**
+  String get cloudSyncWaiting;
+
+  /// No description provided for @cloudSyncApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying Cloud changes…'**
+  String get cloudSyncApplying;
+
+  /// No description provided for @cloudSyncIncomingDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'An incoming change is waiting for this Draft.'**
+  String get cloudSyncIncomingDraft;
+
+  /// No description provided for @cloudSyncMergeConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes from two Devices need to be merged.'**
+  String get cloudSyncMergeConflict;
+
+  /// No description provided for @cloudSyncRemovedWithDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'This Skill was removed on another Device while a Draft exists here.'**
+  String get cloudSyncRemovedWithDraft;
+
+  /// No description provided for @cloudSyncTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This Skill is too large to sync.'**
+  String get cloudSyncTooLarge;
+
+  /// No description provided for @cloudSyncSlotOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'A different local Skill occupies this slot.'**
+  String get cloudSyncSlotOccupied;
+
+  /// No description provided for @cloudSyncMissingAfterReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing from the Cloud Library after a reset.'**
+  String get cloudSyncMissingAfterReset;
+
+  /// No description provided for @cloudSyncSourceReplaced.
+  ///
+  /// In en, this message translates to:
+  /// **'The Source was replaced on another Device while this Device has unsynced changes.'**
+  String get cloudSyncSourceReplaced;
+
+  /// No description provided for @cloudSyncStorageLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Cloud account reached its storage limit.'**
+  String get cloudSyncStorageLimit;
+
+  /// No description provided for @cloudSyncStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync stopped because of an error.'**
+  String get cloudSyncStopped;
+
+  /// No description provided for @cloudPublishDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish Draft'**
+  String get cloudPublishDraft;
+
+  /// No description provided for @cloudDiscardDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Draft'**
+  String get cloudDiscardDraft;
+
+  /// No description provided for @cloudReviewIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Review incoming changes'**
+  String get cloudReviewIncoming;
+
+  /// No description provided for @cloudReviewConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Review sync conflict'**
+  String get cloudReviewConflict;
+
+  /// No description provided for @cloudRemoveHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove here'**
+  String get cloudRemoveHere;
+
+  /// No description provided for @cloudKeepDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep on this Device only'**
+  String get cloudKeepDeviceOnly;
+
+  /// No description provided for @cloudAcceptReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept replacement'**
+  String get cloudAcceptReplacement;
+
+  /// No description provided for @cloudReplaceLocalSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace local Skill'**
+  String get cloudReplaceLocalSkill;
+
+  /// No description provided for @cloudKeepAndHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local Skill and hide synced copy'**
+  String get cloudKeepAndHide;
+
+  /// No description provided for @cloudStopSyncingAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Syncing'**
+  String get cloudStopSyncingAction;
+
+  /// No description provided for @cloudUploadAsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload as new Cloud Lineage'**
+  String get cloudUploadAsNew;
+
+  /// No description provided for @cloudOccupiedLocalSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'A Cloud Skill needs the slot occupied by this local Skill.'**
+  String get cloudOccupiedLocalSlot;
+
+  /// No description provided for @cloudAttentionActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish this action. Try again.'**
+  String get cloudAttentionActionFailed;
+
+  /// No description provided for @cloudConfirmDiscardDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard your unpublished changes?'**
+  String get cloudConfirmDiscardDraft;
+
+  /// No description provided for @cloudConfirmRemoveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this Skill from this Device and discard its unpublished changes?'**
+  String get cloudConfirmRemoveDraft;
+
+  /// No description provided for @cloudConfirmRemoveSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this Skill and its local history from this Device?'**
+  String get cloudConfirmRemoveSkill;
+
+  /// No description provided for @cloudConfirmReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the Cloud Source and discard this Device’s unsynced revisions?'**
+  String get cloudConfirmReplacement;
+
+  /// No description provided for @cloudConfirmReplaceSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace this local Skill with the synced copy?'**
+  String get cloudConfirmReplaceSlot;
+
+  /// No description provided for @cloudIncomingNoFileChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No file changes.'**
+  String get cloudIncomingNoFileChanges;
+
+  /// No description provided for @cloudIncomingBinaryFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Binary file changed.'**
+  String get cloudIncomingBinaryFile;
+
+  /// No description provided for @cloudConflictChooseVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which Device’s version to use for the files in conflict.'**
+  String get cloudConflictChooseVersion;
+
+  /// No description provided for @cloudConflictReviewDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the resolved Draft before publishing it.'**
+  String get cloudConflictReviewDraft;
+
+  /// No description provided for @cloudRevealDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Draft in Finder'**
+  String get cloudRevealDraft;
+
+  /// No description provided for @cloudPublishResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish resolved Draft'**
+  String get cloudPublishResolved;
+
+  /// No description provided for @cloudConflictKeepThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this Device’s version'**
+  String get cloudConflictKeepThis;
+
+  /// No description provided for @cloudConflictKeepOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the other Device’s version'**
+  String get cloudConflictKeepOther;
+
+  /// No description provided for @cloudHiddenSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden from this Mac'**
+  String get cloudHiddenSkills;
+
+  /// No description provided for @cloudHiddenUnnamedSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden Skill'**
+  String get cloudHiddenUnnamedSkill;
+
+  /// No description provided for @cloudShowAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Show again'**
+  String get cloudShowAgain;
+
+  /// No description provided for @cloudNewDeviceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your synced Skills are ready'**
+  String get cloudNewDeviceTitle;
+
+  /// No description provided for @cloudNewDeviceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which Skills to activate and where to use them.'**
+  String get cloudNewDeviceSubtitle;
+
+  /// No description provided for @cloudActivationLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading Agents…'**
+  String get cloudActivationLoading;
+
+  /// No description provided for @cloudActivateLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get cloudActivateLater;
+
+  /// No description provided for @cloudActivateSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate selected Skills'**
+  String get cloudActivateSelected;
+
   /// No description provided for @commonClose.
   ///
   /// In en, this message translates to:

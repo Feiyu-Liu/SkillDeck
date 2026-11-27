@@ -31,6 +31,71 @@ Map<String, Object?> lineageJson() => {
   'updatedAt': '2026-11-27T00:00:00Z',
 };
 void main() {
+  test('every Lineage path rejects invalid IDs before doing I/O', () async {
+    final requests = <http.Request>[];
+    final client = await api(
+      MockClient((request) async {
+        requests.add(request);
+        return http.Response(jsonEncode(lineageJson()), 200);
+      }),
+    );
+    final digest = PackDigest('a' * 64);
+    final head = LineageHead(
+      effective: commit(1),
+      upstream: null,
+      pack: digest,
+      declaredName: 'fixture',
+    );
+    final dir = await Directory.systemTemp.createTemp('bad-lineage-');
+    addTearDown(() => dir.delete(recursive: true));
+    for (final id in [
+      '',
+      'a' * 65,
+      'a/',
+      '.',
+      '..',
+      'a?x',
+      '#',
+      '%2F',
+      'a b',
+      'a\n',
+      '好',
+    ]) {
+      for (final request in <Future<Object?> Function()>[
+        () => client.readLineage(id),
+        () => client.advanceHead(id, generation: 1, expected: null, next: head),
+        () => client.changeGeneration(
+          id,
+          expectedGeneration: 1,
+          source: {},
+          next: head,
+        ),
+        () => client.stop(id),
+        () => client.remove(id),
+        () => client.uploadPack(
+          id,
+          generation: 1,
+          path: '${dir.path}/missing.pack',
+          digest: digest,
+          effective: head.effective,
+          upstream: null,
+        ),
+        () => client.downloadPack(
+          id,
+          generation: 1,
+          path: '${dir.path}/new.pack',
+          digest: digest,
+        ),
+      ]) {
+        await expectLater(request, throwsArgumentError);
+      }
+    }
+    expect(requests, isEmpty);
+    expect(await dir.list().toList(), isEmpty);
+    final valid = 'A_-' * 21 + '9';
+    expect(await client.readLineage(valid), isA<CloudApiSuccess<Lineage>>());
+    expect(requests.single.url.path, '/v0/lineages/$valid');
+  });
   test('request methods, headers, bodies and query encoding stay on the authenticated origin', () async {
     final requests = <http.Request>[];
     final client = await api(

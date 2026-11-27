@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skills_manager/features/cloud/cloud_providers.dart';
+import 'package:skills_manager/features/cloud/presentation/widgets/cloud_sign_in_settings.dart';
 import 'package:skills_manager/features/settings/presentation/widgets/command_line_settings.dart';
 import 'package:skills_manager/features/settings/presentation/settings_section.dart';
 import 'package:skills_manager/features/settings/presentation/widgets/about_settings.dart';
@@ -95,6 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cloudAvailable = ref.watch(cloudOriginProvider) != null;
     final translation = ref.watch(skillTranslationViewModelProvider);
     final profile = translation.profile;
     if (profile != null && _profileFingerprint != _fingerprint(profile)) {
@@ -108,7 +111,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // A wide window always shows a section; the list alone is only the
         // narrow window's landing page.
         final section =
-            widget.selectedSection ??
+            (widget.selectedSection == SettingsSection.cloud && !cloudAvailable
+                ? null
+                : widget.selectedSection) ??
             (wide ? SettingsSection.appearance : null);
         return AppPageTemplate(
           controller: _scrollController,
@@ -147,6 +152,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             SizedBox(
                               width: 184,
                               child: _SettingsSectionList(
+                                cloudAvailable: cloudAvailable,
                                 selectedSection: section,
                                 onSectionSelected: (value) =>
                                     context.go(settingsLocation(value)),
@@ -166,6 +172,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         )
                       : section == null
                       ? _SettingsSectionList(
+                          cloudAvailable: cloudAvailable,
                           selectedSection: null,
                           onSectionSelected: (value) =>
                               context.go(settingsLocation(value)),
@@ -194,6 +201,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required bool showSectionHeader,
   }) => switch (section) {
     SettingsSection.general => GeneralSettings(
+      showSectionHeader: showSectionHeader,
+    ),
+    SettingsSection.cloud => CloudSignInSettings(
       showSectionHeader: showSectionHeader,
     ),
     SettingsSection.appearance => AppearanceSettings(
@@ -456,6 +466,7 @@ String _sectionTitle(BuildContext context, SettingsSection section) =>
       SettingsSection.appearance => context.l10n.settingsAppearanceTitle,
       SettingsSection.agents => context.l10n.settingsAgentsTitle,
       SettingsSection.translation => context.l10n.translationSettingsTitle,
+      SettingsSection.cloud => context.l10n.cloudSettingsTitle,
       SettingsSection.commandLine => context.l10n.settingsCommandLineTitle,
       SettingsSection.maintenance => context.l10n.settingsMaintenanceTitle,
       SettingsSection.about => context.l10n.settingsAboutSectionTitle,
@@ -466,6 +477,7 @@ IconData _sectionIcon(SettingsSection section) => switch (section) {
   SettingsSection.appearance => LucideIcons.palette,
   SettingsSection.agents => LucideIcons.bot,
   SettingsSection.translation => LucideIcons.languages,
+  SettingsSection.cloud => LucideIcons.cloud,
   SettingsSection.commandLine => LucideIcons.terminal,
   SettingsSection.maintenance => LucideIcons.wrench,
   SettingsSection.about => LucideIcons.info,
@@ -473,10 +485,12 @@ IconData _sectionIcon(SettingsSection section) => switch (section) {
 
 class _SettingsSectionList extends StatelessWidget {
   const _SettingsSectionList({
+    required this.cloudAvailable,
     required this.selectedSection,
     required this.onSectionSelected,
   });
 
+  final bool cloudAvailable;
   final SettingsSection? selectedSection;
   final ValueChanged<SettingsSection> onSectionSelected;
 
@@ -501,6 +515,7 @@ class _SettingsSectionList extends StatelessWidget {
           _item(context, SettingsSection.general),
           _item(context, SettingsSection.agents),
           _item(context, SettingsSection.translation),
+          if (cloudAvailable) _item(context, SettingsSection.cloud),
           _item(context, SettingsSection.commandLine),
         ],
       ),

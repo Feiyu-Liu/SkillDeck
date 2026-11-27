@@ -1,3 +1,5 @@
+import 'sync_outcome.dart';
+
 /// Local mapping and observation cursors only; never an operation outbox.
 abstract interface class SyncStateStore {
   Future<List<SyncLink>> links();
@@ -19,10 +21,21 @@ final class SyncLink {
     this.version = 0,
     this.generation = 1,
     this.effective,
+    this.sourceEpoch,
+    this.attentionAttempt,
+    this.uploadBlockedByQuota = false,
   });
   final String managedSkillId;
   final String? lineageId, clientKey, effective;
+  final String? sourceEpoch;
   final int version, generation;
+
+  /// Last blocked comparison. [effective] above remains the last synced head.
+  final ({int version, String? effective, SyncNeedsAttention outcome})?
+  attentionAttempt;
+
+  /// The latest upload was rejected by the account storage limit.
+  final bool uploadBlockedByQuota;
 }
 
 /// One account/device scope. The App must supply a different store when accounts change.

@@ -25,7 +25,8 @@ import '../infrastructure/workspace_layout.dart';
 import '../platform/operations/operation_recovery_bundle.dart';
 
 import 'remote_revision_store.dart';
-import 'revision_preparation_service.dart' show RemoteInstallEvidence;
+import 'revision_preparation_service.dart'
+    show PreparedCandidateResolution, RemoteInstallEvidence;
 
 /// Binds revision-backed mutations to one recoverable filesystem transaction.
 ///
@@ -610,6 +611,57 @@ final class WorkspaceRevisionOperationPlans
       ),
     ],
   );
+
+  PreparedOperationEnvelope createCandidateResolutionEnvelope({
+    required OperationId operationId,
+    required RepositoryRevision revision,
+    required ManagedSkillId skillId,
+  }) => _revisionEnvelope(
+    operationId: operationId,
+    expectedRepositoryRevision: revision,
+    kind: WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+    managedSkillIds: [skillId],
+  );
+
+  OperationPlan sealCandidateResolutionPlan({
+    required PreparedOperationEnvelope envelope,
+    required ManagedSkill skill,
+    required PreparedCandidateResolution prepared,
+  }) {
+    final operationId = envelope.operationId;
+    final id = skill.id;
+    final builder = _RecoveryPlanBuilder(
+      envelope: envelope,
+      registry: _recoverySpecs,
+    );
+    for (final addition in prepared.additions) {
+      builder.addRevisionObjects(addition);
+    }
+    _addExistingLineageBundle(builder, operationId, id);
+    builder.addDirectory(
+      targetPath: _layout.draftPath(id),
+      intendedSourcePath: _candidateMaterializationPath(operationId, id),
+      makeReadOnly: false,
+      verifyBeforeCapture: prepared.verifyDraft,
+    );
+    final recovery = builder.finish();
+    final operation = _assembler.assemble(
+      operationId: operationId,
+      expectedRepositoryRevision: envelope.expectedRepositoryRevision,
+      kind: WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+      businessChanges: prepared.changes,
+      recoverySteps: recovery.steps,
+      subjects: [
+        OperationSubjectIntent(
+          managedSkillId: id,
+          displayName: skill.displayName,
+        ),
+      ],
+    );
+    _requireSealed(envelope, operation);
+    recovery.register();
+    return operation;
+  }
 
   @override
   PreparedOperationEnvelope createRestoreEnvelope({

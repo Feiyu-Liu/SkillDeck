@@ -1,5 +1,6 @@
 import 'package:skills_manager/features/skills/presentation/widgets/repository_group_transition.dart';
 import 'package:skills_manager/features/command_host/presentation/command_line_activity.dart';
+import 'package:skills_manager/features/cloud/presentation/widgets/cloud_skill_sync.dart';
 import 'package:skills_manager/features/library/personal_tag_providers.dart';
 import 'package:skills_manager/features/library/presentation/widgets/personal_tag_controls.dart';
 import 'package:skills_manager/features/library/presentation/widgets/personal_tag_filter_panel.dart';
@@ -1054,6 +1055,7 @@ class _SkillStatusIcons extends ConsumerWidget {
             color: AppPalette.of(context).success,
             label: context.l10n.workspaceUpdateAvailableAction,
           ),
+        CloudSkillSyncMark(skillId: skill.id),
       ],
     );
   }

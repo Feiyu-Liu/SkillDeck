@@ -14,6 +14,7 @@ abstract interface class SyncWorkspace {
   Future<WorkspaceApply> applyContent({
     required String managedSkillId,
     required String expectedEffective,
+    String? expectedSourceEpoch,
     required String effective,
     required String? upstream,
     required String packPath,
@@ -27,10 +28,12 @@ abstract interface class SyncWorkspace {
   Future<WorkspaceApply> remove({
     required String managedSkillId,
     required String expectedEffective,
+    String? expectedSourceEpoch,
   });
   Future<WorkspaceApply> replaceSource({
     required String managedSkillId,
     required String expectedEffective,
+    String? expectedSourceEpoch,
     required String packPath,
     required String effective,
     required String? upstream,
@@ -46,9 +49,11 @@ final class WorkspaceSkill {
     required this.source,
     required this.declaredName,
     required this.slotKey,
+    this.sourceEpoch,
   });
   final String id, effective, declaredName, slotKey;
   final String? upstream;
+  final String? sourceEpoch;
   final PortableSource source;
 }
 
@@ -91,7 +96,9 @@ sealed class WorkspaceApply {
 }
 
 final class WorkspaceNoChange extends WorkspaceApply {
-  const WorkspaceNoChange();
+  const WorkspaceNoChange({this.sourceEpoch});
+
+  final String? sourceEpoch;
 }
 
 final class WorkspaceFastForwarded extends WorkspaceApply {
@@ -117,8 +124,9 @@ final class WorkspaceSlotOccupied extends WorkspaceApply {
 }
 
 final class WorkspaceInstalled extends WorkspaceApply {
-  const WorkspaceInstalled(this.managedSkillId);
+  const WorkspaceInstalled(this.managedSkillId, {this.sourceEpoch});
   final String managedSkillId;
+  final String? sourceEpoch;
 }
 
 final class WorkspaceRemoved extends WorkspaceApply {
@@ -126,7 +134,9 @@ final class WorkspaceRemoved extends WorkspaceApply {
 }
 
 final class WorkspaceSourceReplaced extends WorkspaceApply {
-  const WorkspaceSourceReplaced();
+  const WorkspaceSourceReplaced({this.sourceEpoch});
+
+  final String? sourceEpoch;
 }
 
 final class WorkspaceApplyFailed extends WorkspaceApply {

@@ -93,6 +93,9 @@ enum WorkspaceOperationKind {
   applyRemoteState,
   inspectCommittedChanges,
   inspectRevisionSelections,
+  inspectRevisionPackDiff,
+  inspectUpdateCandidateResolution,
+  resolveUpdateCandidateConflicts,
 }
 
 enum OperationProgressPhase {
@@ -542,6 +545,19 @@ final class UpdateCandidateSummary {
   @override
   int get hashCode =>
       Object.hash(status, Object.hashAll(conflicts), validationCode, createdAt);
+}
+
+enum UpdateCandidateSide { current, incoming }
+
+/// A snapshot of an Update Candidate and its Workspace-issued review token.
+final class UpdateCandidateResolutionReview {
+  const UpdateCandidateResolutionReview({
+    required this.summary,
+    required this.token,
+  });
+
+  final UpdateCandidateSummary summary;
+  final Object token;
 }
 
 final class ManagedSkill {
@@ -1128,13 +1144,16 @@ sealed class RemoteApplyResult {
 }
 
 final class RemoteApplySourceReplaced extends RemoteApplyResult {
-  const RemoteApplySourceReplaced();
+  const RemoteApplySourceReplaced({this.sourceEpoch});
+
+  final String? sourceEpoch;
 }
 
 final class RemoteApplyInstalled extends RemoteApplyResult {
-  const RemoteApplyInstalled(this.managedSkillId);
+  const RemoteApplyInstalled(this.managedSkillId, {this.sourceEpoch});
 
   final ManagedSkillId managedSkillId;
+  final String? sourceEpoch;
 }
 
 final class RemoteApplySkillSlotOccupied extends RemoteApplyResult {
@@ -1158,7 +1177,9 @@ final class RemoteApplyTag extends RemoteApplyResult {
 }
 
 final class RemoteApplyNoChange extends RemoteApplyResult {
-  const RemoteApplyNoChange();
+  const RemoteApplyNoChange({this.sourceEpoch});
+
+  final String? sourceEpoch;
 }
 
 final class RemoteApplyFastForwarded extends RemoteApplyResult {
@@ -1244,10 +1265,17 @@ final class RevisionSelections {
 
 /// The current published revisions for a Skill's active Source Lineage.
 final class RevisionSelection {
-  const RevisionSelection({required this.effective, required this.upstream});
+  const RevisionSelection({
+    required this.effective,
+    required this.upstream,
+    this.sourceEpoch,
+  });
 
   final RevisionId effective;
   final RevisionId? upstream;
+
+  /// Opaque local comparison value that changes when the Source Lineage changes.
+  final String? sourceEpoch;
 }
 
 sealed class ActivationAttempt {
@@ -1675,6 +1703,21 @@ final class SkillDiff {
   final ManagedSkillId managedSkillId;
   final OperationSubjectReference? from;
   final OperationSubjectReference to;
+  final List<SkillFileDiff> files;
+}
+
+/// A comparison of the reviewed local and incoming Effective Revisions.
+final class RevisionPackDiff {
+  RevisionPackDiff({
+    required this.managedSkillId,
+    required this.from,
+    required this.to,
+    required List<SkillFileDiff> files,
+  }) : files = List.unmodifiable(files);
+
+  final ManagedSkillId managedSkillId;
+  final RevisionId from;
+  final RevisionId to;
   final List<SkillFileDiff> files;
 }
 

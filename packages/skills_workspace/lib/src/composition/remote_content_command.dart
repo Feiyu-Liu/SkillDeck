@@ -94,6 +94,13 @@ SkillsCommandHandler buildRemoteContentCommand({
             context: const {'reason': 'effectiveRevisionChanged'},
           );
         }
+        if (content.expectedSourceEpoch case final expected?
+            when expected != state.sourceLineage.localEpoch) {
+          return SkillsFailure(
+            code: SkillsErrorCode.staleSnapshot,
+            context: const {'reason': 'sourceLineageChanged'},
+          );
+        }
         return _executeRemoteApply<PreparedRemoteContent>(
           snapshots: snapshots,
           operations: operations,

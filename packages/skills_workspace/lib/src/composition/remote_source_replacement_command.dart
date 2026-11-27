@@ -32,6 +32,7 @@ Future<SkillsResult<RemoteApplyResult>> applyRemoteSourceReplacement({
 }) async {
   final snapshot = snapshots.current, id = request.managedSkillId;
   SkillsResult<RemoteApplyResult>? rejection;
+  late String committedSourceEpoch;
   Never reject(SkillsResult<RemoteApplyResult> result) {
     rejection = result;
     // Expected guards are unchanged operations, including failed pack validation:
@@ -68,11 +69,28 @@ Future<SkillsResult<RemoteApplyResult>> applyRemoteSourceReplacement({
           ),
         );
       }
+      if (request.expectedSourceEpoch case final expected?
+          when expected != selection.sourceLineage.localEpoch) {
+        reject(
+          SkillsFailure(
+            code: SkillsErrorCode.staleSnapshot,
+            context: const {'reason': 'sourceLineageChanged'},
+          ),
+        );
+      }
       final heads = await readPackHeads(id);
-      if (skill.source == request.source &&
+      if (request.expectedSourceEpoch == null &&
+          skill.source == request.source &&
           heads?.effective.value == request.effective.value &&
           heads?.upstream?.value == request.upstream?.value) {
-        reject(SkillsSuccess(value: RemoteApplyNoChange(), changed: false));
+        reject(
+          SkillsSuccess(
+            value: RemoteApplyNoChange(
+              sourceEpoch: selection.sourceLineage.localEpoch,
+            ),
+            changed: false,
+          ),
+        );
       }
       final planning = await state.readPlanningSnapshot(
         publicSnapshot: snapshot,
@@ -115,6 +133,7 @@ Future<SkillsResult<RemoteApplyResult>> applyRemoteSourceReplacement({
       if (candidate.candidate == null) {
         reject(SkillsSuccess(value: candidate.result, changed: false));
       }
+      committedSourceEpoch = candidate.candidate!.sourceLineage.localEpoch;
       final planned = await planner.planPreparedSourceReplacement(
         operationId: envelope.operationId,
         snapshot: planning,
@@ -148,6 +167,7 @@ Future<SkillsResult<RemoteApplyResult>> applyRemoteSourceReplacement({
     outcome: outcome,
     context: context,
     snapshots: snapshots,
-    valueFromSnapshot: (_) => const RemoteApplySourceReplaced(),
+    valueFromSnapshot: (_) =>
+        RemoteApplySourceReplaced(sourceEpoch: committedSourceEpoch),
   );
 }

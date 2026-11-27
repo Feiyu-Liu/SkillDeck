@@ -42,6 +42,227 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get cloudSettingsTitle => 'SkillDeck Cloud';
+
+  @override
+  String get cloudAccount => 'Cloud account';
+
+  @override
+  String get cloudCheckingSession => 'Checking your session…';
+
+  @override
+  String get cloudSignIn => 'Sign in';
+
+  @override
+  String get cloudSignedOut => 'Sign in to your SkillDeck Cloud account.';
+
+  @override
+  String get cloudRequestingCode => 'Requesting a verification code…';
+
+  @override
+  String cloudVerificationCode(String code) {
+    return 'Verification code: $code';
+  }
+
+  @override
+  String get cloudVerifyInBrowser =>
+      'Verify that this code matches the one in your browser before approving this device.';
+
+  @override
+  String get cloudOpenBrowser => 'Open browser';
+
+  @override
+  String get cloudBrowserOpenFailed => 'Could not open the browser. Try again.';
+
+  @override
+  String get cloudSignInDenied => 'Sign-in was denied in the browser.';
+
+  @override
+  String get cloudSignInExpired => 'The verification code expired.';
+
+  @override
+  String get cloudSignInFailed => 'Could not sign in.';
+
+  @override
+  String get cloudSessionCheckFailed => 'Could not read your saved session.';
+
+  @override
+  String get cloudTryAgain => 'Try again';
+
+  @override
+  String get cloudOffline => 'Offline. Your session could not be checked.';
+
+  @override
+  String get cloudSignOut => 'Sign out';
+
+  @override
+  String get cloudSigningOut => 'Signing out…';
+
+  @override
+  String get cloudSignOutFailed =>
+      'Could not remove the saved session. Try again.';
+
+  @override
+  String get cloudSyncToggle => 'Sync to Cloud';
+
+  @override
+  String get cloudSyncDeviceOnly => 'Device Only';
+
+  @override
+  String get cloudSyncSynced => 'Synced';
+
+  @override
+  String get cloudSyncWaiting => 'Waiting to Upload';
+
+  @override
+  String get cloudSyncApplying => 'Applying Cloud changes…';
+
+  @override
+  String get cloudSyncIncomingDraft =>
+      'An incoming change is waiting for this Draft.';
+
+  @override
+  String get cloudSyncMergeConflict =>
+      'Changes from two Devices need to be merged.';
+
+  @override
+  String get cloudSyncRemovedWithDraft =>
+      'This Skill was removed on another Device while a Draft exists here.';
+
+  @override
+  String get cloudSyncTooLarge => 'This Skill is too large to sync.';
+
+  @override
+  String get cloudSyncSlotOccupied =>
+      'A different local Skill occupies this slot.';
+
+  @override
+  String get cloudSyncMissingAfterReset =>
+      'Missing from the Cloud Library after a reset.';
+
+  @override
+  String get cloudSyncSourceReplaced =>
+      'The Source was replaced on another Device while this Device has unsynced changes.';
+
+  @override
+  String get cloudSyncStorageLimit =>
+      'Your Cloud account reached its storage limit.';
+
+  @override
+  String get cloudSyncStopped => 'Sync stopped because of an error.';
+
+  @override
+  String get cloudPublishDraft => 'Publish Draft';
+
+  @override
+  String get cloudDiscardDraft => 'Discard Draft';
+
+  @override
+  String get cloudReviewIncoming => 'Review incoming changes';
+
+  @override
+  String get cloudReviewConflict => 'Review sync conflict';
+
+  @override
+  String get cloudRemoveHere => 'Remove here';
+
+  @override
+  String get cloudKeepDeviceOnly => 'Keep on this Device only';
+
+  @override
+  String get cloudAcceptReplacement => 'Accept replacement';
+
+  @override
+  String get cloudReplaceLocalSkill => 'Replace local Skill';
+
+  @override
+  String get cloudKeepAndHide => 'Keep local Skill and hide synced copy';
+
+  @override
+  String get cloudStopSyncingAction => 'Stop Syncing';
+
+  @override
+  String get cloudUploadAsNew => 'Upload as new Cloud Lineage';
+
+  @override
+  String get cloudOccupiedLocalSlot =>
+      'A Cloud Skill needs the slot occupied by this local Skill.';
+
+  @override
+  String get cloudAttentionActionFailed =>
+      'Could not finish this action. Try again.';
+
+  @override
+  String get cloudConfirmDiscardDraft => 'Discard your unpublished changes?';
+
+  @override
+  String get cloudConfirmRemoveDraft =>
+      'Remove this Skill from this Device and discard its unpublished changes?';
+
+  @override
+  String get cloudConfirmRemoveSkill =>
+      'Remove this Skill and its local history from this Device?';
+
+  @override
+  String get cloudConfirmReplacement =>
+      'Apply the Cloud Source and discard this Device’s unsynced revisions?';
+
+  @override
+  String get cloudConfirmReplaceSlot =>
+      'Replace this local Skill with the synced copy?';
+
+  @override
+  String get cloudIncomingNoFileChanges => 'No file changes.';
+
+  @override
+  String get cloudIncomingBinaryFile => 'Binary file changed.';
+
+  @override
+  String get cloudConflictChooseVersion =>
+      'Choose which Device’s version to use for the files in conflict.';
+
+  @override
+  String get cloudConflictReviewDraft =>
+      'Review the resolved Draft before publishing it.';
+
+  @override
+  String get cloudRevealDraft => 'Show Draft in Finder';
+
+  @override
+  String get cloudPublishResolved => 'Publish resolved Draft';
+
+  @override
+  String get cloudConflictKeepThis => 'Keep this Device’s version';
+
+  @override
+  String get cloudConflictKeepOther => 'Keep the other Device’s version';
+
+  @override
+  String get cloudHiddenSkills => 'Hidden from this Mac';
+
+  @override
+  String get cloudHiddenUnnamedSkill => 'Hidden Skill';
+
+  @override
+  String get cloudShowAgain => 'Show again';
+
+  @override
+  String get cloudNewDeviceTitle => 'Your synced Skills are ready';
+
+  @override
+  String get cloudNewDeviceSubtitle =>
+      'Choose which Skills to activate and where to use them.';
+
+  @override
+  String get cloudActivationLoading => 'Loading Agents…';
+
+  @override
+  String get cloudActivateLater => 'Later';
+
+  @override
+  String get cloudActivateSelected => 'Activate selected Skills';
+
+  @override
   String get commonClose => 'Close';
 
   @override

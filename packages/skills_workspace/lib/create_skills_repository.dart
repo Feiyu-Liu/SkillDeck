@@ -47,6 +47,8 @@ import 'src/composition/read_command_handlers.dart';
 import 'src/composition/repository_command_composition.dart';
 import 'src/composition/revision_pack_export_command.dart';
 import 'src/composition/revision_pack_import_command.dart';
+import 'src/composition/revision_pack_diff_command.dart';
+import 'src/composition/candidate_conflict_commands.dart';
 import 'src/composition/remote_content_command.dart';
 import 'src/composition/remote_source_replacement_command.dart';
 import 'src/composition/revision_operation_plans.dart';
@@ -477,6 +479,22 @@ SkillsRepository createSkillsRepository(
       layout: layout,
       stagePack: revisionRuntime.stageRevisionPack,
     ),
+    revisionPackDiff: buildRevisionPackDiffCommand(
+      readCurrentEffective: pointers.readCurrentEffective,
+      accessGate: revisionAccessGate,
+      layout: layout,
+      revisions: revisionRuntime,
+      compare: historyContent.compareRevisions,
+    ),
+    candidateConflictCommands: buildCandidateConflictCommands(
+      snapshots: snapshots,
+      states: draftUpdateState,
+      access: revisionAccessGate,
+      operations: operations,
+      preparation: revisionPreparation,
+      plans: revisionOperationPlans,
+      runtime: revisionRuntime,
+    ),
     remoteApply: buildRemoteContentCommand(
       snapshots: snapshots,
       operations: operations,
@@ -488,7 +506,7 @@ SkillsRepository createSkillsRepository(
       access: revisionAccessGate,
       identities: identities,
       sourcePayloads: sourcePayloads,
-      readPackHeads: pointers.readCurrentPackHeads,
+      readPackHeads: pointers.readCurrentPackHeadsWithEpoch,
       handleLibrary: buildRemoteLibraryHandler(
         snapshots: snapshots,
         operations: operations,
@@ -509,7 +527,7 @@ SkillsRepository createSkillsRepository(
         preparation: revisionPreparation,
         identities: identities,
         sourcePayloads: sourcePayloads,
-        readPackHeads: pointers.readCurrentPackHeads,
+        readPackHeads: pointers.readCurrentPackHeadsWithEpoch,
         runtime: revisionRuntime,
       ),
       handleRemoval: (request, context) => applyRemoteRemoval(

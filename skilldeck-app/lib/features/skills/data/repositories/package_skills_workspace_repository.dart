@@ -6,6 +6,8 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 import 'package:skills_workspace/skills_workspace.dart' as workspace;
 
 /// Production adapter for the unified `skills_workspace` bounded context.
@@ -29,6 +31,7 @@ final class PackageSkillsWorkspaceRepository
 
   final workspace.SkillsRepository _backend;
   final Object _driftReviewOwner = Object();
+  final Object _candidateReviewOwner = Object();
   final StreamController<SkillsWorkspaceSnapshot> _snapshots =
       StreamController<SkillsWorkspaceSnapshot>.broadcast();
   StreamSubscription<workspace.RepositorySnapshot>? _subscription;
@@ -77,6 +80,218 @@ final class PackageSkillsWorkspaceRepository
 
   @override
   SkillsWorkspaceSnapshot? get current => _current;
+
+  @override
+  String? deriveSlotKey(String declaredName) => workspace
+      .deriveSlotKey(declaredName)
+      .fold(
+        onSuccess: (result) => result.value,
+        onFailure: (_) => null,
+        onCommittedFinalizationPending: (_) => null,
+      );
+
+  @override
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> skillIds,
+  ) => _task(
+    _backend.inspectRevisionSelections(
+      workspace.InspectRevisionSelectionsRequest(
+        managedSkillIds: _backendIds(skillIds),
+      ),
+    ),
+    WorkspaceOperationKind.inspectRevisionSelections,
+    (result) => (
+      revision: result.current.value,
+      heads: Map.unmodifiable({
+        for (final entry in result.selections.entries)
+          WorkspaceSkillId(entry.key.value): (
+            effective: entry.value.effective.value,
+            upstream: entry.value.upstream?.value,
+            sourceEpoch: entry.value.sourceEpoch,
+          ),
+      }),
+    ),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceCommittedChanges> inspectCommittedChanges(
+    int since,
+  ) => _task(
+    _backend.inspectCommittedChanges(
+      workspace.InspectCommittedChangesRequest(
+        since: workspace.RepositoryRevision(since),
+      ),
+    ),
+    WorkspaceOperationKind.inspectCommittedChanges,
+    (result) => (
+      revision: result.current.value,
+      skillIds: switch (result) {
+        workspace.CommittedChangesAvailable(:final entries) => Set.unmodifiable(
+          entries.map((entry) => WorkspaceSkillId(entry.managedSkillId.value)),
+        ),
+        workspace.CommittedChangesResetRequired() => const <WorkspaceSkillId>{},
+      },
+      resetRequired: result is workspace.CommittedChangesResetRequired,
+    ),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceRevisionHeads> exportRevisionPack(
+    WorkspaceSkillId skillId,
+    String destination,
+  ) {
+    const kind = WorkspaceOperationKind.exportRevisionPack;
+    try {
+      return _task(
+        _backend.exportRevisionPack(
+          workspace.ExportRevisionPackRequest(
+            managedSkillId: _backendId(skillId),
+            destinationPath: destination,
+          ),
+        ),
+        kind,
+        (pack) =>
+            (effective: pack.effective.value, upstream: pack.upstream?.value),
+      );
+    } on ArgumentError {
+      return _failedTask(kind, WorkspaceErrorCode.invalidSkill);
+    }
+  }
+
+  @override
+  WorkspaceTask<WorkspaceRemoteResult> applyRemoteState(
+    WorkspaceRemoteChange change,
+  ) {
+    const kind = WorkspaceOperationKind.applyRemoteState;
+    try {
+      final request = switch (change) {
+        WorkspaceRemoteContent() => workspace.RemoteSkillContent(
+          managedSkillId: _backendId(change.skillId),
+          expectedEffective: workspace.RevisionId(change.expectedEffective),
+          expectedSourceEpoch: change.expectedSourceEpoch,
+          effective: workspace.RevisionId(change.heads.effective),
+          upstream: _backendRevision(change.heads.upstream),
+          packPath: change.packPath,
+        ),
+        WorkspaceRemoteInstall() => workspace.RemoteSkillInstall(
+          packPath: change.packPath,
+          effective: workspace.RevisionId(change.heads.effective),
+          upstream: _backendRevision(change.heads.upstream),
+          source: _remoteInstallSource(change.source),
+        ),
+        WorkspaceRemoteRemoval() => workspace.RemoteSkillRemoval(
+          managedSkillId: _backendId(change.skillId),
+          expectedEffective: workspace.RevisionId(change.expectedEffective),
+          expectedSourceEpoch: change.expectedSourceEpoch,
+        ),
+        WorkspaceRemoteSourceReplacement() =>
+          workspace.RemoteSkillSourceReplacement(
+            managedSkillId: _backendId(change.skillId),
+            expectedEffective: workspace.RevisionId(change.expectedEffective),
+            expectedSourceEpoch: change.expectedSourceEpoch,
+            packPath: change.packPath,
+            effective: workspace.RevisionId(change.heads.effective),
+            upstream: _backendRevision(change.heads.upstream),
+            source: _remoteInstallSource(change.source),
+          ),
+      };
+      return _task(
+        _backend.applyRemoteState(request),
+        kind,
+        _remoteApplyResult,
+      );
+    } on ArgumentError {
+      return _failedTask(kind, WorkspaceErrorCode.invalidSkill);
+    }
+  }
+
+  @override
+  WorkspaceTask<WorkspaceRevisionPackDiff> inspectRevisionPackDiff({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  }) {
+    const kind = WorkspaceOperationKind.inspectRevisionPackDiff;
+    try {
+      return _task(
+        _backend.inspectRevisionPackDiff(
+          workspace.InspectRevisionPackDiffRequest(
+            managedSkillId: _backendId(skillId),
+            expectedEffective: workspace.RevisionId(expectedEffective),
+            incomingEffective: workspace.RevisionId(incomingEffective),
+            incomingUpstream: _backendRevision(incomingUpstream),
+            packPath: packPath,
+          ),
+        ),
+        kind,
+        _revisionPackDiff,
+      );
+    } on ArgumentError {
+      return _failedTask(kind, WorkspaceErrorCode.invalidSkill);
+    }
+  }
+
+  @override
+  WorkspaceTask<WorkspaceUpdateCandidateReview?>
+  inspectUpdateCandidateResolution(WorkspaceSkillId skillId) => _task(
+    _backend.inspectUpdateCandidateResolution(_backendId(skillId)),
+    WorkspaceOperationKind.inspectUpdateCandidateResolution,
+    (review) => review == null
+        ? null
+        : _PackageUpdateCandidateReview(
+            skillId: skillId,
+            summary: _updateCandidate(review.summary),
+            hasUnresolvedConflicts: review.summary.conflicts.any(
+              (conflict) =>
+                  conflict.resolutionState ==
+                  workspace.UpdateConflictResolutionState.unresolved,
+            ),
+            owner: _candidateReviewOwner,
+            token: review.token,
+          ),
+  );
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> resolveUpdateCandidateConflicts({
+    required WorkspaceUpdateCandidateReview review,
+    required WorkspaceUpdateCandidateSide side,
+  }) {
+    const kind = WorkspaceOperationKind.resolveUpdateCandidateConflicts;
+    if (review is! _PackageUpdateCandidateReview ||
+        !identical(review.owner, _candidateReviewOwner)) {
+      return _failedTask(kind, WorkspaceErrorCode.staleSnapshot);
+    }
+    return _task(
+      _backend.resolveUpdateCandidateConflicts(
+        workspace.ResolveUpdateCandidateConflictsRequest(
+          managedSkillId: _backendId(review.skillId),
+          reviewToken: review.token,
+          side: switch (side) {
+            WorkspaceUpdateCandidateSide.current =>
+              workspace.UpdateCandidateSide.current,
+            WorkspaceUpdateCandidateSide.incoming =>
+              workspace.UpdateCandidateSide.incoming,
+          },
+        ),
+      ),
+      kind,
+      _publish,
+    );
+  }
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishUpdateCandidate(
+    WorkspaceSkillId skillId,
+  ) => _mutationTask(
+    _backend.publishUpdateCandidate(
+      workspace.PublishUpdateCandidateRequest(
+        managedSkillId: _backendId(skillId),
+      ),
+    ),
+    WorkspaceOperationKind.publishUpdateCandidate,
+  );
 
   @override
   WorkspaceTask<WorkspaceSkillDriftReview> inspectSkillDrift(
@@ -925,6 +1140,27 @@ final class PackageSkillsWorkspaceRepository
       );
 
   @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> discardDraft(
+    WorkspaceSkillId skillId,
+  ) => _task(
+    _backend.discardDraft(
+      workspace.DiscardDraftRequest(managedSkillId: _backendId(skillId)),
+    ),
+    WorkspaceOperationKind.discardDraft,
+    _publish,
+  );
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishDraft(
+    WorkspaceSkillId skillId,
+  ) => _mutationTask(
+    _backend.publishDraft(
+      workspace.PublishDraftRequest(managedSkillId: _backendId(skillId)),
+    ),
+    WorkspaceOperationKind.publishDraft,
+  );
+
+  @override
   WorkspaceTask<SkillsWorkspaceSnapshot> abandonUpdateCandidate(
     WorkspaceSkillId skillId,
   ) => _task(
@@ -1594,12 +1830,174 @@ SkillSourceProvenance _sourceProvenance(workspace.SourceDescriptor source) =>
       workspace.AdoptedSnapshotSourceDescriptor() => SkillSourceProvenance(
         kind: WorkspaceSourceKind.adoptedSnapshot,
         locator: source.authoritativeLocation,
+        adoptedContentHash: source.contentHash,
       ),
-      workspace.SyncedOriginSourceDescriptor() => const SkillSourceProvenance(
+      workspace.SyncedOriginSourceDescriptor() => SkillSourceProvenance(
         kind: WorkspaceSourceKind.syncedOrigin,
         locator: '',
+        syncedOrigin: (
+          originKind: switch (source.originSourceType) {
+            workspace.SyncedOriginSourceType.local => WorkspaceSourceKind.local,
+            workspace.SyncedOriginSourceType.adoptedSnapshot =>
+              WorkspaceSourceKind.adoptedSnapshot,
+          },
+          deviceLabel: source.originDeviceLabel,
+          displayLabel: source.displayLabel,
+          sourceId: source.originSourceId,
+        ),
       ),
     };
+
+workspace.RevisionId? _backendRevision(String? revision) =>
+    revision == null ? null : workspace.RevisionId(revision);
+
+final class _PackageUpdateCandidateReview
+    implements WorkspaceUpdateCandidateReview {
+  const _PackageUpdateCandidateReview({
+    required this.skillId,
+    required this.summary,
+    required this.hasUnresolvedConflicts,
+    required this.owner,
+    required this.token,
+  });
+
+  @override
+  final WorkspaceSkillId skillId;
+  @override
+  final WorkspaceUpdateCandidateSummary summary;
+  @override
+  final bool hasUnresolvedConflicts;
+  final Object owner;
+  final Object token;
+}
+
+WorkspaceRevisionPackDiff _revisionPackDiff(workspace.RevisionPackDiff diff) =>
+    WorkspaceRevisionPackDiff(
+      skillId: WorkspaceSkillId(diff.managedSkillId.value),
+      from: diff.from.value,
+      to: diff.to.value,
+      files: [
+        for (final file in diff.files)
+          (
+            path: file.path,
+            previousPath: file.previousPath,
+            status: WorkspaceDiffFileStatus.values.byName(file.status.name),
+            isBinary: file.isBinary,
+            additions: file.additions,
+            deletions: file.deletions,
+            hunks: List<WorkspaceDiffHunk>.unmodifiable([
+              for (final hunk in file.hunks)
+                (
+                  header: hunk.header,
+                  lines: List<WorkspaceDiffLine>.unmodifiable([
+                    for (final line in hunk.lines)
+                      (
+                        kind: WorkspaceDiffLineKind.values.byName(
+                          line.kind.name,
+                        ),
+                        text: line.text,
+                        oldLineNumber: line.oldLineNumber,
+                        newLineNumber: line.newLineNumber,
+                      ),
+                  ]),
+                ),
+            ]),
+          ),
+      ],
+    );
+
+workspace.SourceDescriptor _remoteInstallSource(SkillSourceProvenance source) =>
+    switch (source.kind) {
+      WorkspaceSourceKind.git => workspace.GitSourceDescriptor(
+        locator: source.locator,
+        ref: source.ref,
+        repositorySubpath: source.repositorySubpath,
+        skillPath: source.skillPath,
+      ),
+      WorkspaceSourceKind.wellKnown => workspace.WellKnownSourceDescriptor(
+        locator: source.locator,
+        skillPath: source.skillPath,
+      ),
+      WorkspaceSourceKind.syncedOrigin when source.syncedOrigin != null =>
+        workspace.SyncedOriginSourceDescriptor(
+          originSourceType: switch (source.syncedOrigin!.originKind) {
+            WorkspaceSourceKind.local => workspace.SyncedOriginSourceType.local,
+            WorkspaceSourceKind.adoptedSnapshot =>
+              workspace.SyncedOriginSourceType.adoptedSnapshot,
+            _ => throw ArgumentError('Invalid synced origin type'),
+          },
+          originDeviceLabel: source.syncedOrigin!.deviceLabel,
+          displayLabel: source.syncedOrigin!.displayLabel,
+          originSourceId: source.syncedOrigin!.sourceId,
+        ),
+      _ => throw ArgumentError('Invalid remote install provenance'),
+    };
+
+WorkspaceRemoteResult _remoteApplyResult(workspace.RemoteApplyResult result) {
+  final (kind, id, effective) = switch (result) {
+    workspace.RemoteApplyNoChange() => (
+      WorkspaceRemoteResultKind.noChange,
+      null,
+      null,
+    ),
+    workspace.RemoteApplyFastForwarded() => (
+      WorkspaceRemoteResultKind.fastForwarded,
+      null,
+      null,
+    ),
+    workspace.RemoteApplyMerged(:final newEffective) => (
+      WorkspaceRemoteResultKind.merged,
+      null,
+      newEffective.value,
+    ),
+    workspace.RemoteApplyConflicted() => (
+      WorkspaceRemoteResultKind.conflicted,
+      null,
+      null,
+    ),
+    workspace.RemoteApplyDraftResolutionRequired() => (
+      WorkspaceRemoteResultKind.draftResolutionRequired,
+      null,
+      null,
+    ),
+    workspace.RemoteApplySkillSlotOccupied(:final occupant) => (
+      WorkspaceRemoteResultKind.slotOccupied,
+      occupant.value,
+      null,
+    ),
+    workspace.RemoteApplyInstalled(:final managedSkillId) => (
+      WorkspaceRemoteResultKind.installed,
+      managedSkillId.value,
+      null,
+    ),
+    workspace.RemoteApplyRemoved() => (
+      WorkspaceRemoteResultKind.removed,
+      null,
+      null,
+    ),
+    workspace.RemoteApplySourceReplaced() => (
+      WorkspaceRemoteResultKind.sourceReplaced,
+      null,
+      null,
+    ),
+    workspace.RemoteApplyMetadataApplied() || workspace.RemoteApplyTag() => (
+      WorkspaceRemoteResultKind.unsupported,
+      null,
+      null,
+    ),
+  };
+  return (
+    kind: kind,
+    skillId: id == null ? null : WorkspaceSkillId(id),
+    effective: effective,
+    sourceEpoch: switch (result) {
+      workspace.RemoteApplyInstalled(:final sourceEpoch) ||
+      workspace.RemoteApplySourceReplaced(:final sourceEpoch) ||
+      workspace.RemoteApplyNoChange(:final sourceEpoch) => sourceEpoch,
+      _ => null,
+    },
+  );
+}
 
 WorkspaceErrorCode _errorCode(
   workspace.SkillsErrorCode source,

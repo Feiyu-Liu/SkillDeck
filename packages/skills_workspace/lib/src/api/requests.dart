@@ -383,6 +383,19 @@ final class ResolveUpdateConflictRequest {
   final UpdateConflictResolutionState resolutionState;
 }
 
+/// Resolves all unresolved paths using one reviewed merge input.
+final class ResolveUpdateCandidateConflictsRequest {
+  const ResolveUpdateCandidateConflictsRequest({
+    required this.managedSkillId,
+    required this.reviewToken,
+    required this.side,
+  });
+
+  final ManagedSkillId managedSkillId;
+  final Object reviewToken;
+  final UpdateCandidateSide side;
+}
+
 final class PublishUpdateCandidateRequest {
   const PublishUpdateCandidateRequest({required this.managedSkillId});
   final ManagedSkillId managedSkillId;
@@ -445,6 +458,23 @@ final class InspectDiffRequest {
   final OperationSubjectReference to;
 }
 
+/// Compares the current Effective Revision to one supplied in a local pack.
+final class InspectRevisionPackDiffRequest {
+  const InspectRevisionPackDiffRequest({
+    required this.managedSkillId,
+    required this.expectedEffective,
+    required this.incomingEffective,
+    required this.packPath,
+    this.incomingUpstream,
+  });
+
+  final ManagedSkillId managedSkillId;
+  final RevisionId expectedEffective;
+  final RevisionId incomingEffective;
+  final RevisionId? incomingUpstream;
+  final String packPath;
+}
+
 final class RestorePublishRequest {
   const RestorePublishRequest({
     required this.managedSkillId,
@@ -493,6 +523,7 @@ final class RemoteSkillContent extends ApplyRemoteStateRequest {
   const RemoteSkillContent({
     required this.managedSkillId,
     required this.expectedEffective,
+    this.expectedSourceEpoch,
     required this.effective,
     this.upstream,
     this.packPath,
@@ -500,6 +531,7 @@ final class RemoteSkillContent extends ApplyRemoteStateRequest {
 
   final ManagedSkillId managedSkillId;
   final RevisionId expectedEffective;
+  final String? expectedSourceEpoch;
   final RevisionId effective;
   final RevisionId? upstream;
   final String? packPath;
@@ -531,10 +563,12 @@ final class RemoteSkillRemoval extends ApplyRemoteStateRequest {
   const RemoteSkillRemoval({
     required this.managedSkillId,
     required this.expectedEffective,
+    this.expectedSourceEpoch,
   });
 
   final ManagedSkillId managedSkillId;
   final RevisionId expectedEffective;
+  final String? expectedSourceEpoch;
 }
 
 sealed class RemoteTagVocabulary extends ApplyRemoteStateRequest {
@@ -617,6 +651,7 @@ final class RemoteSkillSourceReplacement extends ApplyRemoteStateRequest {
   RemoteSkillSourceReplacement({
     required this.managedSkillId,
     required this.expectedEffective,
+    this.expectedSourceEpoch,
     required this.packPath,
     required this.effective,
     this.upstream,
@@ -632,6 +667,9 @@ final class RemoteSkillSourceReplacement extends ApplyRemoteStateRequest {
   }
   final ManagedSkillId managedSkillId;
   final RevisionId expectedEffective;
+
+  /// Guards an explicit Source Lineage change, even when revision IDs match.
+  final String? expectedSourceEpoch;
   final String packPath;
   final RevisionId effective;
   final RevisionId? upstream;

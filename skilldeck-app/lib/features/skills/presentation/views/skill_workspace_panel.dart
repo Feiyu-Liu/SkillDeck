@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:skills_manager/features/skills/presentation/widgets/skill_source_link.dart';
 
 import 'package:skills_manager/features/command_host/presentation/command_line_activity.dart';
+import 'package:skills_manager/features/cloud/presentation/widgets/cloud_skill_sync.dart';
+import 'package:skills_manager/features/cloud/presentation/widgets/cloud_attention_actions.dart';
 import 'package:skills_manager/features/library/presentation/widgets/skill_tag_editor.dart';
 import 'package:skills_manager/features/skills/presentation/widgets/skill_scope_menu.dart';
 import 'package:skills_manager/features/skills/device_agents_providers.dart';
@@ -246,8 +248,12 @@ class _SkillWorkspacePanelState extends ConsumerState<SkillWorkspacePanel> {
           breadcrumb: context.l10n.workspaceBreadcrumb,
           breadcrumbIcon: NavSection.installed.icon,
           title: skill.displayName,
-          titleAccessory: _SkillIntegrityLabel(
-            status: workspaceSkill?.integrity,
+          titleAccessory: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SkillIntegrityLabel(status: workspaceSkill?.integrity),
+              CloudSkillSyncMark(skillId: skill.id),
+            ],
           ),
           headerKey: const Key('skill-detail-header-column'),
           breadcrumbKey: const Key('skill-detail-breadcrumb'),
@@ -1813,6 +1819,12 @@ class _ActivationsBodyState extends ConsumerState<_ActivationsBody> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _DetailHeader(skill: skill),
+          CloudSkillSyncTile(
+            skillId: skill.id,
+            enabled: !widget.mutationsBlocked,
+          ),
+          if (!widget.mutationsBlocked)
+            CloudAttentionActions(skillId: skill.id),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [

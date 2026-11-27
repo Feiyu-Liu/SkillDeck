@@ -280,6 +280,15 @@ Future<SkillsResult<RemoteApplyResult>> applyRemoteRemoval({
           ),
         );
       }
+      if (request.expectedSourceEpoch case final expected?
+          when expected != selection.sourceLineage.localEpoch) {
+        reject(
+          SkillsFailure(
+            code: SkillsErrorCode.staleSnapshot,
+            context: const {'reason': 'sourceLineageChanged'},
+          ),
+        );
+      }
 
       final token = context.cancellationToken;
       final DestructivePlanningSnapshot lockHeldSnapshot;

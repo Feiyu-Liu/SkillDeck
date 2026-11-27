@@ -48,6 +48,9 @@ dependencies:
   go_router: ^17.3.0
   path: ^1.9.1
   crypto: ^3.0.7
+  http: ^1.6.0
+  cupertino_http: 3.1.0
+  connectivity_plus: 7.3.2
   path_provider: ^2.1.5
   url_launcher: ^6.3.2
   file_selector: ^1.0.4
@@ -61,6 +64,8 @@ dependencies:
       path: packages/auto_updater
   skilldeck_cli:
     path: ../packages/skilldeck_cli
+  skills_cloud:
+    path: ../packages/skills_cloud
   skills_workspace:
     path: ../packages/skills_workspace
   skills_translation:

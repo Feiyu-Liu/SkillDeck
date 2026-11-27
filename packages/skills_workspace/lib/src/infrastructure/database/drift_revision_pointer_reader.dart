@@ -36,6 +36,25 @@ final class DriftRevisionPointerReader implements RevisionPointerReaderPort {
     return _packHeads(row);
   }
 
+  Future<
+    ({
+      RevisionObjectId effective,
+      RevisionObjectId? upstream,
+      String sourceEpoch,
+    })?
+  >
+  readCurrentPackHeadsWithEpoch(ManagedSkillId managedSkillId) async {
+    final row = await _selectCurrent(managedSkillId, includeSource: true);
+    if (row == null) return null;
+    final heads = _packHeads(row);
+    final lineage = row.readTable(_database.currentRevisionSelection);
+    return (
+      effective: heads.effective,
+      upstream: heads.upstream,
+      sourceEpoch: SourceLineageReference(lineage.sourceLineageId).localEpoch,
+    );
+  }
+
   Future<RevisionSelections> inspectRevisionSelections(
     Set<ManagedSkillId> managedSkillIds,
   ) => _database.transaction(() async {
@@ -50,12 +69,16 @@ final class DriftRevisionPointerReader implements RevisionPointerReaderPort {
         ..where(selection.managedSkillId.isIn(ids.skip(start).take(batchSize)));
       for (final row in await query.get()) {
         final heads = _packHeads(row);
-        final id = ManagedSkillId(row.readTable(selection).managedSkillId);
+        final current = row.readTable(selection);
+        final id = ManagedSkillId(current.managedSkillId);
         selections[id] = RevisionSelection(
           effective: RevisionId(heads.effective.value),
           upstream: heads.upstream == null
               ? null
               : RevisionId(heads.upstream!.value),
+          sourceEpoch: SourceLineageReference(
+            current.sourceLineageId,
+          ).localEpoch,
         );
       }
     }

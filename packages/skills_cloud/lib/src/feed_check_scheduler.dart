@@ -11,6 +11,17 @@ final class FeedCheckResult {
 
   final bool _succeeded;
   final Duration? _retryAfter;
+
+  /// The combined result of two checks performed in the same scheduled run.
+  FeedCheckResult followedBy(FeedCheckResult other) {
+    final first = _retryAfter, second = other._retryAfter;
+    final retryAfter = first != null && (second == null || first > second)
+        ? first
+        : second;
+    return _succeeded && other._succeeded
+        ? FeedCheckResult.success(retryAfter: retryAfter)
+        : FeedCheckResult.failure(retryAfter: retryAfter);
+  }
 }
 
 /// Schedules checks while started and coalesces triggers during a check.

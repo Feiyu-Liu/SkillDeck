@@ -27,6 +27,7 @@ import 'fake_skills_workspace_repository.dart';
 import 'fake_app_translation_repository.dart';
 
 import 'package:skills_manager/features/settings/models/app_settings.dart';
+import 'package:skills_manager/features/settings/data/app_settings_store.dart';
 import 'package:skills_manager/features/settings/data/workspace_validation_history_store.dart';
 import 'package:skills_manager/features/settings/presentation/view_models/workspace_validation_view_model.dart';
 import 'package:skills_manager/features/settings/settings_providers.dart';
@@ -60,6 +61,7 @@ Widget skillsManagerTestApp({
   SkillSourceInputMode initialSourceInputMode = SkillSourceInputMode.smart,
   FileLocationOpener? fileLocationOpener,
   AppSettings initialSettings = const AppSettings(),
+  AppSettingsStore? appSettingsStore,
   DateTime? lastUpdateSweepAt,
   bool startupUpdateSweep = false,
   WorkspaceValidationHistoryStore? validationHistoryStore,
@@ -72,7 +74,7 @@ Widget skillsManagerTestApp({
     overrides: [
       ...overrides,
       appSettingsStoreProvider.overrideWithValue(
-        MemoryAppSettingsStore(initialSettings),
+        appSettingsStore ?? MemoryAppSettingsStore(initialSettings),
       ),
       workspaceValidationHistoryStoreProvider.overrideWithValue(
         validationHistoryStore ?? InMemoryWorkspaceValidationHistoryStore(),

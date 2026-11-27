@@ -10,6 +10,32 @@ const _success = FeedCheckResult.success();
 const _failure = FeedCheckResult.failure();
 
 void main() {
+  test('combined checks preserve a local failure and the longer delay', () {
+    fakeAsync((time) {
+      final fixture = _Fixture(time);
+      fixture.response = () async =>
+          const FeedCheckResult.failure(retryAfter: Duration(minutes: 5))
+              .followedBy(const FeedCheckResult.success(retryAfter: _interval));
+      final scheduler = fixture.scheduler..start();
+      time.flushMicrotasks();
+      time.elapse(const Duration(minutes: 5) - _tick);
+      expect(fixture.starts, [Duration.zero]);
+      time.elapse(_tick);
+      expect(fixture.starts, [Duration.zero, const Duration(minutes: 5)]);
+      scheduler.stop();
+    });
+    fakeAsync((time) {
+      final fixture = _Fixture(time, random: () => 0.5);
+      fixture.response = () async => _success.followedBy(_failure);
+      final scheduler = fixture.scheduler..start();
+      time.flushMicrotasks();
+      time.elapse(const Duration(minutes: 3) - _tick);
+      expect(fixture.starts, [Duration.zero]);
+      time.elapse(_tick);
+      expect(fixture.starts, [Duration.zero, const Duration(minutes: 3)]);
+      scheduler.stop();
+    });
+  });
   test('starts immediately and checks every two minutes while idle', () {
     fakeAsync((time) {
       final fixture = _Fixture(time);

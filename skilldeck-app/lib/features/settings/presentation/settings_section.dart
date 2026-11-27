@@ -3,6 +3,7 @@ enum SettingsSection {
   general('general'),
   agents('agents'),
   translation('translation'),
+  cloud('cloud'),
   commandLine('command-line'),
   maintenance('maintenance'),
   about('about');

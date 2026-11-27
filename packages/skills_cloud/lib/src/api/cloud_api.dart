@@ -23,6 +23,7 @@ final class CloudApi {
   final CloudSessionStore _sessions;
   static const maxPackBytes = 16 * 1024 * 1024;
   static const _maxJsonBytes = 4 * 1024 * 1024;
+  static final _lineageId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
   Future<CloudApiResult<LibraryPage>> listLibrary({
     String? cursor,
@@ -88,11 +89,7 @@ final class CloudApi {
     query: {'after': ?after, 'limit': '$limit'},
   );
   String _lineage(String id) {
-    if (id.isEmpty ||
-        id.length > 64 ||
-        id.contains('/') ||
-        id == '.' ||
-        id == '..') {
+    if (_lineageId.matchAsPrefix(id)?.end != id.length) {
       throw ArgumentError('Invalid lineage identifier');
     }
     return '/v0/lineages/$id';
@@ -215,6 +212,7 @@ final class CloudApi {
     required String effective,
     required String? upstream,
   }) async {
+    final packUri = origin.resolve(_packPath(id, generation, digest));
     revision(effective);
     if (upstream != null) revision(upstream);
     final file = File(path), session = await _session();
@@ -225,14 +223,9 @@ final class CloudApi {
       if (length > maxPackBytes) {
         return const ApiPackTooLarge(PackSizeLimit.packed);
       }
-      final request =
-          _FileRequest(
-              origin.resolve(_packPath(id, generation, digest)),
-              file,
-              abort.future,
-            )
-            ..followRedirects = false
-            ..contentLength = length;
+      final request = _FileRequest(packUri, file, abort.future)
+        ..followRedirects = false
+        ..contentLength = length;
       request.headers.addAll({
         'authorization': 'Bearer ${session.token}',
         'content-type': 'application/x-git-packed-objects',
@@ -259,6 +252,7 @@ final class CloudApi {
     required PackDigest digest,
     required String path,
   }) async {
+    final packUri = origin.resolve(_packPath(id, generation, digest));
     final session = await _session();
     if (session == null) return const ApiSignInRequired();
     final file = File(path), abort = Completer<void>();
@@ -270,7 +264,7 @@ final class CloudApi {
       output = await file.open(mode: FileMode.writeOnly);
       final request = http.AbortableRequest(
         'GET',
-        origin.resolve(_packPath(id, generation, digest)),
+        packUri,
         abortTrigger: abort.future,
       )..followRedirects = false;
       request.headers['authorization'] = 'Bearer ${session.token}';

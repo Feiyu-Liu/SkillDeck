@@ -20,6 +20,7 @@ import 'package:skills_workspace/src/application/operations/operation_plan_assem
 import 'package:skills_workspace/src/application/revision_store/managed_skill_revision_access_gate.dart';
 import 'package:skills_workspace/src/application/runtime/workspace_snapshot_publisher.dart';
 import 'package:skills_workspace/src/composition/operation_revision_reference_maintenance.dart';
+import 'package:skills_workspace/src/composition/candidate_conflict_commands.dart';
 import 'package:skills_workspace/src/composition/remote_content_command.dart';
 import 'package:skills_workspace/src/composition/revision_operation_plans.dart';
 import 'package:skills_workspace/src/composition/revision_preparation_service.dart';
@@ -54,6 +55,14 @@ import 'package:skills_workspace/src/platform/operations/operation_recovery_bund
 
 Future<void> main(List<String> arguments) async {
   final (workspace, operation, crashPoint, request) = switch (arguments) {
+    [
+      final workspace,
+      'resolve',
+      final skill,
+      final operation,
+      final crashPoint,
+    ] =>
+      (workspace, operation, crashPoint, ManagedSkillId(skill)),
     [
       final workspace,
       'replace',
@@ -175,8 +184,9 @@ Future<void> main(List<String> arguments) async {
       ),
     );
     final registry = OperationRecoverySpecRegistry();
-    final publishedParent = await filesystem.resolveMutationPath(
+    final publishedTarget = await filesystem.resolveMutationPath(
       switch (request) {
+        final ManagedSkillId id => layout.draftPath(id),
         RemoteSkillContent(:final managedSkillId) => path.join(
           layout.revisionStorePath(managedSkillId),
           'objects',
@@ -211,7 +221,9 @@ Future<void> main(List<String> arguments) async {
       onMutationBarrier: (barrier, targetPath) {
         if (crashPoint == 'beforeCommit' &&
             barrier == DurablePathMutationBarrier.afterCandidatePublished &&
-            path.isWithin(publishedParent, targetPath)) {
+            (request is ManagedSkillId
+                ? path.equals(publishedTarget, targetPath)
+                : path.isWithin(publishedTarget, targetPath))) {
           exit(71);
         }
       },
@@ -253,6 +265,59 @@ Future<void> main(List<String> arguments) async {
         metadataObserver: FileSystemPublishedArtifactMetadataObserver(),
       ),
     );
+    final preparation = WorkspaceRevisionPreparationService(
+      readCommittedRoots: DriftCommittedRevisionRoots(database).readForBundle,
+      revisions: runtime,
+      layout: layout,
+      filesystem: filesystem,
+      drafts: drafts,
+    );
+    final context = SkillsCommandContext(
+      operationId: operationId,
+      cancellationToken: CancellationToken.none(),
+      lockWaitPolicy: null,
+      markBusinessCommitted: () {
+        if (crashPoint == 'afterCommit') exit(72);
+      },
+      reportProgress: (_, {currentItem, completed = 0, total}) {},
+    );
+    if (request case final ManagedSkillId id) {
+      final handlers = buildCandidateConflictCommands(
+        snapshots: snapshots,
+        states: states,
+        access: access,
+        operations: operations,
+        preparation: preparation,
+        plans: plans,
+        runtime: runtime,
+      );
+      final reviewResult = await handlers
+          .singleWhere(
+            (handler) =>
+                handler.kind ==
+                WorkspaceOperationKind.inspectUpdateCandidateResolution,
+          )
+          .execute(id, context);
+      final review =
+          reviewResult.valueOrNull as UpdateCandidateResolutionReview;
+      final result = await handlers
+          .singleWhere(
+            (handler) =>
+                handler.kind ==
+                WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+          )
+          .execute(
+            ResolveUpdateCandidateConflictsRequest(
+              managedSkillId: id,
+              reviewToken: review.token,
+              side: UpdateCandidateSide.incoming,
+            ),
+            context,
+          );
+      throw StateError(
+        'Candidate resolution did not reach the crash point: $result',
+      );
+    }
     final command = buildRemoteContentCommand(
       handleLibrary: (_, _) => throw UnsupportedError('Content crash fixture'),
       handleRemoval: (_, _) => throw UnsupportedError('Content crash fixture'),
@@ -304,7 +369,7 @@ Future<void> main(List<String> arguments) async {
         ),
         identities: const UuidWorkspaceIdentities(),
         sourcePayloads: const ApplicationSourcePayloadAdapter(),
-        readPackHeads: pointers.readCurrentPackHeads,
+        readPackHeads: pointers.readCurrentPackHeadsWithEpoch,
         runtime: runtime,
       ),
       snapshots: snapshots,
@@ -313,32 +378,15 @@ Future<void> main(List<String> arguments) async {
       slotMigrations: FileSystemUpdateSlotMigrationInspector(
         repositoryCopyPathForSlot: layout.repositoryCopyPath,
       ),
-      preparation: WorkspaceRevisionPreparationService(
-        readCommittedRoots: DriftCommittedRevisionRoots(database).readForBundle,
-        revisions: runtime,
-        layout: layout,
-        filesystem: filesystem,
-        drafts: drafts,
-      ),
+      preparation: preparation,
       plans: plans,
       runtime: runtime,
       access: access,
       identities: const UuidWorkspaceIdentities(),
       sourcePayloads: const ApplicationSourcePayloadAdapter(),
-      readPackHeads: pointers.readCurrentPackHeads,
+      readPackHeads: pointers.readCurrentPackHeadsWithEpoch,
     );
-    final result = await command.execute(
-      request,
-      SkillsCommandContext(
-        operationId: operationId,
-        cancellationToken: CancellationToken.none(),
-        lockWaitPolicy: null,
-        markBusinessCommitted: () {
-          if (crashPoint == 'afterCommit') exit(72);
-        },
-        reportProgress: (_, {currentItem, completed = 0, total}) {},
-      ),
-    );
+    final result = await command.execute(request, context);
     throw StateError('Remote apply did not reach the crash point: $result');
   } finally {
     await snapshots.close();

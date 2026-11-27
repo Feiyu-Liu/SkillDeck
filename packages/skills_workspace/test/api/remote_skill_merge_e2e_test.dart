@@ -6,6 +6,7 @@ import 'package:skills_workspace/src/infrastructure/workspace_layout.dart';
 import 'package:test/test.dart';
 
 import '../support/drift_facade_fixture.dart';
+import '../support/operations/remote_apply_test_support.dart';
 import '../support/remote_revision_pack_fixture.dart';
 
 void main() {
@@ -298,6 +299,427 @@ void main() {
         'Resolved notes\n',
         secondActivation: true,
       );
+    },
+  );
+
+  for (final side in UpdateCandidateSide.values) {
+    test('resolves reviewed Sync Merge content using ${side.name}', () async {
+      final remote = await donor.incoming(
+        files: {'notes.md': 'Remote notes\n', 'incoming.md': 'New file\n'},
+      );
+      expect(
+        await driftSuccess(
+          repository.applyRemoteState(
+            RemoteSkillContent(
+              managedSkillId: skill,
+              expectedEffective: local,
+              effective: remote.revision,
+              upstream: donor.base.upstream,
+              packPath: remote.packPath,
+            ),
+          ),
+        ),
+        isA<RemoteApplyConflicted>(),
+      );
+      final draft = (await driftSuccess(
+        repository.inspectDraft(InspectDraftRequest(managedSkillId: skill)),
+      ))!;
+      final stale = (await driftSuccess(
+        repository.inspectUpdateCandidateResolution(skill),
+      ))!;
+      await File(
+        path.join(draft.path, 'custom.md'),
+      ).writeAsString('My draft\n');
+      final empty = await Directory(path.join(draft.path, 'empty')).create();
+      SkillsOperation<RepositorySnapshot> resolve(Object token) =>
+          repository.resolveUpdateCandidateConflicts(
+            ResolveUpdateCandidateConflictsRequest(
+              managedSkillId: skill,
+              reviewToken: token,
+              side: side,
+            ),
+          );
+      final revision = repository.snapshot.revision;
+      expect(
+        (await resolve(Object()).completed).failureOrNull?.code,
+        SkillsErrorCode.staleSnapshot,
+      );
+      expect(
+        (await resolve(stale.token).completed).failureOrNull?.code,
+        SkillsErrorCode.staleSnapshot,
+      );
+      expect(repository.snapshot.revision, revision);
+      expect(
+        await File(path.join(draft.path, 'custom.md')).readAsString(),
+        'My draft\n',
+      );
+      expect(await empty.exists(), isTrue);
+      final fresh = (await driftSuccess(
+        repository.inspectUpdateCandidateResolution(skill),
+      ))!;
+      final expected = side == UpdateCandidateSide.current
+          ? 'Local notes\n'
+          : 'Remote notes\n';
+      final resolved = await driftSuccess(resolve(fresh.token));
+      expect(
+        resolved
+            .findSkill(skill)
+            ?.updateCandidate
+            ?.conflicts
+            .single
+            .resolutionState,
+        UpdateConflictResolutionState.resolved,
+      );
+      expect(
+        await File(path.join(draft.path, 'notes.md')).readAsString(),
+        expected,
+      );
+      expect(
+        await File(path.join(draft.path, 'incoming.md')).readAsString(),
+        'New file\n',
+      );
+      expect(
+        await File(path.join(draft.path, 'custom.md')).readAsString(),
+        'My draft\n',
+      );
+      await fixture.expectMaterializedNotes(
+        'Local notes\n',
+        secondActivation: true,
+      );
+
+      await driftSuccess(
+        repository.publishUpdateCandidate(
+          PublishUpdateCandidateRequest(managedSkillId: skill),
+        ),
+      );
+      await fixture.expectMaterializedNotes(expected, secondActivation: true);
+      await _expectParents(fixture, (await inspectSelection()).effective, [
+        local,
+        remote.revision,
+      ]);
+    });
+  }
+
+  for (final committed in [false, true]) {
+    test(
+      'recovers a side selection interrupted ${committed ? 'after' : 'before'} commit',
+      () async {
+        final remote = await donor.incoming(
+          files: {'notes.md': 'Remote notes\n'},
+        );
+        expect(
+          await driftSuccess(
+            repository.applyRemoteState(
+              RemoteSkillContent(
+                managedSkillId: skill,
+                expectedEffective: local,
+                effective: remote.revision,
+                upstream: donor.base.upstream,
+                packPath: remote.packPath,
+              ),
+            ),
+          ),
+          isA<RemoteApplyConflicted>(),
+        );
+        final draft = (await driftSuccess(
+          repository.inspectDraft(InspectDraftRequest(managedSkillId: skill)),
+        ))!;
+        final notes = File(path.join(draft.path, 'notes.md'));
+        final before = await notes.readAsString();
+        final previousRevision = repository.snapshot.revision.value;
+        await driftSuccess(repository.close());
+        final layout = WorkspaceLayout(fixture.workspacePath);
+        final operation = OperationId('123e4567-e89b-42d3-a456-426614174097');
+        await crashRemoteApply([
+          layout.rootPath,
+          'resolve',
+          skill.value,
+          operation.value,
+        ], committed: committed);
+        final interrupted = readOperationDatabaseRows(layout.databasePath);
+        expect(
+          interrupted['operation_journals']!.singleWhere(
+            (row) => row['operation_id'] == operation.value,
+          )['phase'],
+          committed ? 'committed' : 'applying',
+        );
+        repository = fixture.createRepository();
+        await driftSuccess(repository.open());
+        expect(
+          repository.snapshot.revision.value,
+          previousRevision + (committed ? 1 : 0),
+        );
+        expect(
+          await notes.readAsString(),
+          committed ? 'Remote notes\n' : before,
+        );
+        final candidate = repository.snapshot.findSkill(skill)?.updateCandidate;
+        expect(
+          candidate?.conflicts.single.resolutionState,
+          committed
+              ? UpdateConflictResolutionState.resolved
+              : UpdateConflictResolutionState.unresolved,
+        );
+        expect(
+          await Directory(layout.operationRecoveryPath(operation)).exists(),
+          isFalse,
+        );
+        expect(
+          await Directory(layout.operationStagingPath(operation)).exists(),
+          isFalse,
+        );
+        await fixture.expectMaterializedNotes(
+          'Local notes\n',
+          secondActivation: true,
+        );
+      },
+      timeout: const Timeout(Duration(minutes: 2)),
+    );
+  }
+
+  test(
+    'keeps the incoming rename, delete, binary bytes, and executable mode',
+    () async {
+      final base = await donor.incoming(
+        parent: local,
+        files: {
+          'move.md': 'Shared content used to detect the same rename\n',
+          'delete.md': 'Shared content\n',
+          'both.bin': '\u0000base',
+          'script.sh': 'base\n',
+          'preserved.md': 'Base conflict\n',
+        },
+      );
+      expect(
+        await driftSuccess(
+          repository.applyRemoteState(
+            RemoteSkillContent(
+              managedSkillId: skill,
+              expectedEffective: local,
+              effective: base.revision,
+              upstream: donor.base.upstream,
+              packPath: base.packPath,
+            ),
+          ),
+        ),
+        isA<RemoteApplyFastForwarded>(),
+      );
+      final localDraft = await driftSuccess(
+        repository.ensureDraft(EnsureDraftRequest(managedSkillId: skill)),
+      );
+      File file(String name) => File(path.join(localDraft.path, name));
+      await file('move.md').rename(file('local-name.md').path);
+      await file('delete.md').writeAsString('Local content\n');
+      await file('both.bin').writeAsBytes([0, 1, 2]);
+      await file('script.sh').writeAsString('Local script\n');
+      await file('preserved.md').writeAsString('Local conflict\n');
+      await driftSuccess(
+        repository.publishDraft(PublishDraftRequest(managedSkillId: skill)),
+      );
+      final before = (await inspectSelection()).effective;
+      final remote = await donor.incoming(
+        parent: base.revision,
+        deletedFiles: {'move.md', 'delete.md'},
+        executableFiles: {'script.sh'},
+        files: {
+          'remote-name.md': 'Shared content used to detect the same rename\n',
+          'both.bin': '\u0000remote',
+          'script.sh': 'Remote script\n',
+          'preserved.md': 'Remote conflict\n',
+        },
+      );
+      expect(
+        await driftSuccess(
+          repository.applyRemoteState(
+            RemoteSkillContent(
+              managedSkillId: skill,
+              expectedEffective: before,
+              effective: remote.revision,
+              upstream: donor.base.upstream,
+              packPath: remote.packPath,
+            ),
+          ),
+        ),
+        isA<RemoteApplyConflicted>(),
+      );
+      final stale = (await driftSuccess(
+        repository.inspectUpdateCandidateResolution(skill),
+      ))!;
+      final conflictPaths = stale.summary.conflicts
+          .map((item) => item.path)
+          .toList();
+      expect(
+        conflictPaths,
+        containsAll(['both.bin', 'delete.md', 'script.sh', 'preserved.md']),
+      );
+      expect(conflictPaths.any((name) => name.contains('name.md')), isTrue);
+      await file('preserved.md').writeAsString('Already resolved\n');
+      await driftSuccess(
+        repository.resolveUpdateConflict(
+          ResolveUpdateConflictRequest(
+            managedSkillId: skill,
+            path: 'preserved.md',
+            resolutionState: UpdateConflictResolutionState.resolved,
+          ),
+        ),
+      );
+      SkillsOperation<RepositorySnapshot> resolve(Object token) =>
+          repository.resolveUpdateCandidateConflicts(
+            ResolveUpdateCandidateConflictsRequest(
+              managedSkillId: skill,
+              reviewToken: token,
+              side: UpdateCandidateSide.incoming,
+            ),
+          );
+      expect(
+        (await resolve(stale.token).completed).failureOrNull?.code,
+        SkillsErrorCode.staleSnapshot,
+      );
+      final review = (await driftSuccess(
+        repository.inspectUpdateCandidateResolution(skill),
+      ))!;
+      await driftSuccess(resolve(review.token));
+      expect(await file('local-name.md').exists(), isFalse);
+      expect(
+        await file('remote-name.md').readAsString(),
+        startsWith('Shared content'),
+      );
+      expect(await file('delete.md').exists(), isFalse);
+      expect(await file('both.bin').readAsBytes(), '\u0000remote'.codeUnits);
+      expect(await file('preserved.md').readAsString(), 'Already resolved\n');
+      expect(await file('script.sh').readAsString(), 'Remote script\n');
+      await driftSuccess(
+        repository.publishUpdateCandidate(
+          PublishUpdateCandidateRequest(managedSkillId: skill),
+        ),
+      );
+      final selected = await inspectSelection();
+      final store = WorkspaceLayout(
+        fixture.workspacePath,
+      ).revisionStorePath(skill);
+      final mode = await Process.run('git', [
+        '--git-dir=$store',
+        'ls-tree',
+        selected.effective.value,
+        'script.sh',
+      ]);
+      expect(mode.exitCode, 0);
+      expect(mode.stdout, startsWith('100755 '));
+      await _expectParents(fixture, selected.effective, [
+        before,
+        remote.revision,
+      ]);
+    },
+  );
+
+  test(
+    'reviews a pending pack without applying it over a Dirty Draft',
+    () async {
+      final draft = (await driftSuccess(
+        repository.ensureDraft(EnsureDraftRequest(managedSkillId: skill)),
+      ));
+      await fixture.changeNotes(draft.path, 'Unpublished\n');
+      final remote = await donor.incoming(
+        files: {'renamed.md': 'Local notes\n', 'new.bin': '\u0000bin'},
+        parent: local,
+        deletedFiles: {'notes.md'},
+      );
+      final before = repository.snapshot.revision;
+      final operation = repository.inspectRevisionPackDiff(
+        InspectRevisionPackDiffRequest(
+          managedSkillId: skill,
+          expectedEffective: local,
+          incomingEffective: remote.revision,
+          packPath: remote.packPath,
+        ),
+      );
+      final diff = await driftSuccess(operation);
+      expect(diff.from, local);
+      expect(diff.to, remote.revision);
+      final files = {for (final file in diff.files) file.path: file};
+      expect(files['renamed.md']?.previousPath, 'notes.md');
+      expect(files['new.bin']?.isBinary, isTrue);
+      expect(repository.snapshot.revision, before);
+      await fixture.expectMaterializedNotes(
+        'Local notes\n',
+        secondActivation: true,
+      );
+      expect(
+        await File(path.join(draft.path, 'notes.md')).readAsString(),
+        'Unpublished\n',
+      );
+      final layout = WorkspaceLayout(fixture.workspacePath);
+      expect(
+        await Directory(
+          layout.operationStagingPath(operation.operationId),
+        ).exists(),
+        isFalse,
+      );
+      final store = layout.revisionStorePath(skill);
+      final landed = await Process.run('git', [
+        '--git-dir=$store',
+        'cat-file',
+        '-e',
+        remote.revision.value,
+      ]);
+      expect(landed.exitCode, isNot(0));
+      expect(
+        (await repository
+                .inspectRevisionPackDiff(
+                  InspectRevisionPackDiffRequest(
+                    managedSkillId: skill,
+                    expectedEffective: donor.base.effective,
+                    incomingEffective: remote.revision,
+                    packPath: remote.packPath,
+                  ),
+                )
+                .completed)
+            .failureOrNull
+            ?.code,
+        SkillsErrorCode.staleSnapshot,
+      );
+      final malformed = await File(
+        path.join(fixture.exportDirectory, 'malformed.pack'),
+      ).writeAsString('fixture');
+      expect(
+        (await repository
+                .inspectRevisionPackDiff(
+                  InspectRevisionPackDiffRequest(
+                    managedSkillId: skill,
+                    expectedEffective: local,
+                    incomingEffective: remote.revision,
+                    packPath: malformed.path,
+                  ),
+                )
+                .completed)
+            .failureOrNull
+            ?.code,
+        SkillsErrorCode.archiveInvalid,
+      );
+      final cancelled = repository.inspectRevisionPackDiff(
+        InspectRevisionPackDiffRequest(
+          managedSkillId: skill,
+          expectedEffective: local,
+          incomingEffective: remote.revision,
+          packPath: remote.packPath,
+        ),
+      );
+      await cancelled.progress
+          .firstWhere(
+            (event) => event.phase == OperationProgressPhase.preparing,
+          )
+          .then((_) => cancelled.cancel());
+      expect(
+        (await cancelled.completed).failureOrNull?.code,
+        SkillsErrorCode.operationCancelled,
+      );
+      expect(
+        await Directory(
+          layout.operationStagingPath(cancelled.operationId),
+        ).exists(),
+        isFalse,
+      );
+      expect(repository.snapshot.revision, before);
     },
   );
 }

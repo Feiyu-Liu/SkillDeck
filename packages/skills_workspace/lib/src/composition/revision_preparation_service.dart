@@ -38,6 +38,7 @@ import 'remote_revision_store.dart';
 part 'remote_content_preparation.dart';
 part 'remote_install_preparation.dart';
 part 'remote_source_replacement_preparation.dart';
+part 'candidate_conflict_preparation.dart';
 
 /// Shared Revision preparation adapter for Install, Draft, Update and Restore.
 ///
@@ -1064,12 +1065,27 @@ final class WorkspaceRevisionPreparationService
     return _PreparedCommitEvidence(tree: treeObject, commit: commit);
   }
 
+  DraftCaptureRequest _conflictCaptureRequest({
+    required String draftPath,
+    required String stagingPath,
+    required NormalizedSkillTree candidate,
+    required CancellationToken token,
+  }) => DraftCaptureRequest(
+    liveDraftPath: draftPath,
+    stagingDestinationPath: stagingPath,
+    capturePosixExecutableIntent: _capturePosixExecutableIntent,
+    executableIntentOverrides: _executableIntentOverrides(candidate),
+    isCancelled: () => token.isCancelled,
+  );
+
   Future<void> _writeTree(
     String root,
     NormalizedSkillTree tree,
-    CancellationToken token,
-  ) => _filesystem.materializeStagedDirectory(
+    CancellationToken token, {
+    Iterable<String> directories = const [],
+  }) => _filesystem.materializeStagedDirectory(
     rootPath: root,
+    directories: directories,
     files: tree.files.map(
       (file) => StagedDirectoryFile(
         relativePath: file.relativePath,

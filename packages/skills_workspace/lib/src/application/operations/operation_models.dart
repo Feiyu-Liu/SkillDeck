@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../../domain/identifiers.dart';
 import '../runtime/revision_engine_port.dart';
 import 'workspace_business_changes.dart';
@@ -175,6 +179,9 @@ final class SourceLineageReference {
   SourceLineageReference(String encoded) : encoded = _requireOpaque(encoded);
 
   final String encoded;
+
+  String get localEpoch =>
+      sha256.convert(utf8.encode('workspace-source-epoch:$encoded')).toString();
 
   @override
   bool operator ==(Object other) =>

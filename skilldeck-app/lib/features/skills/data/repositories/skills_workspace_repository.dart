@@ -1,6 +1,8 @@
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 
 abstract interface class SkillsUpdateCheckStore {
   Future<WorkspaceUpdateCacheSnapshot> readUpdateCache();
@@ -34,6 +36,43 @@ abstract interface class SkillsWorkspaceRepository {
   });
 
   SkillsWorkspaceSnapshot? get current;
+
+  String? deriveSlotKey(String declaredName);
+
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> skillIds,
+  );
+
+  WorkspaceTask<WorkspaceCommittedChanges> inspectCommittedChanges(int since);
+
+  WorkspaceTask<WorkspaceRevisionHeads> exportRevisionPack(
+    WorkspaceSkillId skillId,
+    String destination,
+  );
+
+  WorkspaceTask<WorkspaceRemoteResult> applyRemoteState(
+    WorkspaceRemoteChange change,
+  );
+
+  WorkspaceTask<WorkspaceRevisionPackDiff> inspectRevisionPackDiff({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  });
+
+  WorkspaceTask<WorkspaceUpdateCandidateReview?>
+  inspectUpdateCandidateResolution(WorkspaceSkillId skillId);
+
+  WorkspaceTask<SkillsWorkspaceSnapshot> resolveUpdateCandidateConflicts({
+    required WorkspaceUpdateCandidateReview review,
+    required WorkspaceUpdateCandidateSide side,
+  });
+
+  WorkspaceTask<WorkspaceMutationReceipt> publishUpdateCandidate(
+    WorkspaceSkillId skillId,
+  );
 
   Stream<SkillsWorkspaceSnapshot> get snapshots;
 
@@ -181,6 +220,12 @@ abstract interface class SkillsWorkspaceRepository {
     required WorkspaceSkillId skillId,
     required String tagId,
   });
+
+  WorkspaceTask<SkillsWorkspaceSnapshot> discardDraft(WorkspaceSkillId skillId);
+
+  WorkspaceTask<WorkspaceMutationReceipt> publishDraft(
+    WorkspaceSkillId skillId,
+  );
 
   WorkspaceTask<SkillsWorkspaceSnapshot> abandonUpdateCandidate(
     WorkspaceSkillId skillId,

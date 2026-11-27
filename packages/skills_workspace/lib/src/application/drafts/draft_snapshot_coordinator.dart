@@ -104,6 +104,14 @@ final class DraftSnapshotCoordinator {
     DraftFingerprint expected,
   ) async => (await _filesystem.fingerprint(request)).valueOrNull == expected;
 
+  Future<DraftSnapshotResult<DraftFingerprint>> fingerprint(
+    DraftCaptureRequest request,
+  ) => _filesystem.fingerprint(request);
+
+  Future<DraftSnapshotResult<StableDraftCapture>> captureForConflictResolution(
+    DraftCaptureRequest request,
+  ) => _captureStable(request);
+
   /// Freezes the post-commit Draft action for the operation journal.
   ///
   /// An unavailable or inconclusive revalidation always preserves user bytes.
@@ -138,12 +146,12 @@ final class DraftSnapshotCoordinator {
     return const DraftSnapshotSuccess<void>(null);
   }
 
-  Future<DraftSnapshotResult<_StableDraftCapture>> _captureStable(
+  Future<DraftSnapshotResult<StableDraftCapture>> _captureStable(
     DraftCaptureRequest request,
   ) async {
     for (var attempt = 1; attempt <= maximumCaptureAttempts; attempt += 1) {
       if (request.isCancelled?.call() ?? false) {
-        return DraftSnapshotFailure<_StableDraftCapture>(
+        return DraftSnapshotFailure<StableDraftCapture>(
           code: DraftSnapshotFailureCode.operationCancelled,
         );
       }
@@ -155,7 +163,7 @@ final class DraftSnapshotCoordinator {
             attempt < maximumCaptureAttempts) {
           continue;
         }
-        return DraftSnapshotFailure<_StableDraftCapture>(
+        return DraftSnapshotFailure<StableDraftCapture>(
           code: captureFailure.code,
           context: captureFailure.context,
         );
@@ -168,9 +176,9 @@ final class DraftSnapshotCoordinator {
       );
       final normalizationFailure = normalized.failureOrNull;
       if (normalizationFailure != null) {
-        final cleanupFailure = await _discard<_StableDraftCapture>(capture);
+        final cleanupFailure = await _discard<StableDraftCapture>(capture);
         if (cleanupFailure != null) return cleanupFailure;
-        return DraftSnapshotFailure<_StableDraftCapture>(
+        return DraftSnapshotFailure<StableDraftCapture>(
           code: normalizationFailure.code,
           context: normalizationFailure.context,
         );
@@ -179,17 +187,17 @@ final class DraftSnapshotCoordinator {
       final current = await _filesystem.fingerprint(request);
       final stable = current.valueOrNull == capture.fingerprint;
       if (stable) {
-        return DraftSnapshotSuccess<_StableDraftCapture>(
-          _StableDraftCapture(capture: capture, tree: normalized.valueOrNull!),
+        return DraftSnapshotSuccess<StableDraftCapture>(
+          StableDraftCapture(capture: capture, tree: normalized.valueOrNull!),
         );
       }
-      final cleanupFailure = await _discard<_StableDraftCapture>(capture);
+      final cleanupFailure = await _discard<StableDraftCapture>(capture);
       if (cleanupFailure != null) return cleanupFailure;
       if (attempt == maximumCaptureAttempts) {
         break;
       }
     }
-    return DraftSnapshotFailure<_StableDraftCapture>(
+    return DraftSnapshotFailure<StableDraftCapture>(
       code: DraftSnapshotFailureCode.draftChangedDuringPublish,
     );
   }
@@ -217,8 +225,8 @@ final class DraftCleanupInspection {
   final DraftFingerprint? cleanupFingerprint;
 }
 
-final class _StableDraftCapture {
-  const _StableDraftCapture({required this.capture, required this.tree});
+final class StableDraftCapture {
+  const StableDraftCapture({required this.capture, required this.tree});
 
   final DraftCapture capture;
   final NormalizedSkillTree tree;

@@ -11,12 +11,71 @@ import 'package:skills_manager/features/skills/data/repositories/package_skills_
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
 import 'package:skills_workspace/skills_workspace.dart' as workspace;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_skill_drift_reviews.dart';
 
 void main() {
+  test(
+    'only the originating App repository can use a candidate review',
+    () async {
+      final id = workspace.ManagedSkillId(_managedSkillId);
+      final snapshot = _repositorySnapshot(
+        revision: 1,
+        managedSkillId: id,
+        slotKey: 'reviewer',
+      );
+      final token = Object();
+      final backend = _ControlledSkillsRepository(snapshot)
+        ..candidateReview = workspace.UpdateCandidateResolutionReview(
+          summary: workspace.UpdateCandidateSummary(
+            status: workspace.UpdateCandidateStatus.validationFailed,
+            conflicts: const [],
+            validationCode: 'example',
+            createdAt: DateTime.utc(2026),
+          ),
+          token: token,
+        );
+      final foreignBackend = _ControlledSkillsRepository(snapshot);
+      addTearDown(backend.dispose);
+      addTearDown(foreignBackend.dispose);
+      final repository = PackageSkillsWorkspaceRepository(backend: backend);
+      final other = PackageSkillsWorkspaceRepository(backend: foreignBackend);
+      final review = (await _expectCompleted(
+        repository.inspectUpdateCandidateResolution(WorkspaceSkillId(id.value)),
+      ))!;
+      expect(review.skillId.value, id.value);
+      expect(review.summary.validationCode, 'example');
+      final refused = await other
+          .resolveUpdateCandidateConflicts(
+            review: review,
+            side: WorkspaceUpdateCandidateSide.incoming,
+          )
+          .completed;
+      expect(
+        refused,
+        isA<WorkspaceFailed<SkillsWorkspaceSnapshot>>().having(
+          (result) => result.failure.code,
+          'code',
+          WorkspaceErrorCode.staleSnapshot,
+        ),
+      );
+      expect(foreignBackend.candidateResolutions, isEmpty);
+      await _expectCompleted(
+        repository.resolveUpdateCandidateConflicts(
+          review: review,
+          side: WorkspaceUpdateCandidateSide.incoming,
+        ),
+      );
+      final submitted = backend.candidateResolutions.single;
+      expect(submitted.managedSkillId, id);
+      expect(submitted.reviewToken, same(token));
+      expect(submitted.side, workspace.UpdateCandidateSide.incoming);
+    },
+  );
+
   test(
     'maps stable managed identity and reads Effective Markdown without paths',
     () async {
@@ -1619,6 +1678,23 @@ final class _ControlledSkillsRepository implements workspace.SkillsRepository {
   final driftInspectionRequests = <workspace.InspectSkillDriftRequest>[];
   final driftExportRequests = <workspace.ExportSkillDriftArtifactRequest>[];
   final driftResolveRequests = <workspace.ResolveSkillDriftRequest>[];
+  workspace.UpdateCandidateResolutionReview? candidateReview;
+  final candidateResolutions =
+      <workspace.ResolveUpdateCandidateConflictsRequest>[];
+
+  @override
+  workspace.SkillsOperation<workspace.UpdateCandidateResolutionReview?>
+  inspectUpdateCandidateResolution(workspace.ManagedSkillId skillId) =>
+      _operation(workspace.SkillsSuccess(value: candidateReview));
+
+  @override
+  workspace.SkillsOperation<workspace.RepositorySnapshot>
+  resolveUpdateCandidateConflicts(
+    workspace.ResolveUpdateCandidateConflictsRequest request,
+  ) {
+    candidateResolutions.add(request);
+    return _operation(workspace.SkillsSuccess(value: _snapshot));
+  }
 
   @override
   workspace.SkillsOperation<workspace.SkillDriftReview> inspectSkillDrift(

@@ -40,9 +40,17 @@ final class RemoteRevisionPackFixture {
   Future<({RevisionId revision, String packPath})> incoming({
     RevisionId? parent,
     required Map<String, String> files,
+    Set<String> deletedFiles = const {},
+    Set<String> executableFiles = const {},
   }) async {
     final anchor = parent ?? base.effective;
     await _gitText(_donorStore, ['read-tree', anchor.value]);
+    for (final deleted in deletedFiles) {
+      await _gitText(_donorStore, [
+        'update-index',
+        '--index-info',
+      ], '0 ${'0' * 40}\t$deleted\n');
+    }
     for (final entry in files.entries) {
       final blob = await _gitText(_donorStore, [
         'hash-object',
@@ -53,7 +61,8 @@ final class RemoteRevisionPackFixture {
         'update-index',
         '--add',
         '--cacheinfo',
-        '100644,$blob,${entry.key}',
+        '${executableFiles.contains(entry.key) ? '100755' : '100644'},'
+            '$blob,${entry.key}',
       ]);
     }
     final tree = await _gitText(_donorStore, ['write-tree']);

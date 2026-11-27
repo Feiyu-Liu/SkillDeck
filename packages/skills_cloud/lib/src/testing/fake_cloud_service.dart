@@ -10,10 +10,14 @@ import 'fake_pack.dart';
 
 /// Contract v0.1 fake behind a real package:http client, with explicit fault controls.
 final class FakeCloudService {
-  FakeCloudService({DateTime Function()? now}) : _now = now ?? DateTime.now {
+  FakeCloudService({DateTime Function()? now, this.acceptRealPacks = false})
+    : _now = now ?? DateTime.now {
     client = MockClient(_handle);
   }
   final DateTime Function() _now;
+  // Real Workspace integration checks bytes end to end. The service's pack
+  // verification and ancestry checks need the real service integration.
+  final bool acceptRealPacks;
   late final http.Client client;
   final _sessions = <String, ({String account, String name})>{};
   final _accounts = <String, _Account>{};
@@ -253,24 +257,32 @@ final class FakeCloudService {
           r.headers['content-type'] != 'application/x-git-packed-objects') {
         throw const FormatException();
       }
-      FakePack decoded;
-      try {
-        decoded = FakePack.decode(r.bodyBytes);
-      } on Exception {
-        return _json({'error': 'packRejected', 'reason': 'packFormat'}, 422);
-      }
-      if (roots.any((root) => !decoded.commits.containsKey(root))) {
-        return _json({'error': 'packRejected', 'reason': 'missingRoot'}, 422);
-      }
-      if (!decoded.containsClosure(decoded.commits.keys)) {
-        return _json({'error': 'packRejected', 'reason': 'missingObject'}, 422);
+      FakePack? decoded;
+      if (!acceptRealPacks) {
+        try {
+          decoded = FakePack.decode(r.bodyBytes);
+        } on Exception {
+          return _json({'error': 'packRejected', 'reason': 'packFormat'}, 422);
+        }
+        if (roots.any((root) => !decoded!.commits.containsKey(root))) {
+          return _json({'error': 'packRejected', 'reason': 'missingRoot'}, 422);
+        }
+        if (!decoded.containsClosure(decoded.commits.keys)) {
+          return _json({
+            'error': 'packRejected',
+            'reason': 'missingObject',
+          }, 422);
+        }
       }
       if (p == null) {
         l.packs[key] = _FakePack(r.bodyBytes, decoded, roots.toSet(), _now());
       } else {
         p.roots.addAll(roots);
       }
-      return _json({'sha256': digest, 'commits': decoded.commits.length});
+      return _json({
+        'sha256': digest,
+        'commits': decoded?.commits.length ?? roots.length,
+      });
     }
     if (parts.length != 4 || r.method != 'POST') throw const FormatException();
     final action = parts[3], b = body();
@@ -357,16 +369,19 @@ final class FakeCloudService {
       return _json({'error': 'packLacksHead'}, 409);
     }
     if (!change && expected != null) {
-      if (!p.pack.descends(next.effective, jsonString(expected['effective']))) {
+      final graph = p.pack;
+      if (graph != null &&
+          !graph.descends(next.effective, jsonString(expected['effective']))) {
         return _json({'error': 'notDescendant'}, 409);
       }
       if (expected['upstream'] == null
           ? next.upstream != null
           : next.upstream == null ||
-                !p.pack.descends(
-                  next.upstream!,
-                  jsonString(expected['upstream']),
-                )) {
+                (graph != null &&
+                    !graph.descends(
+                      next.upstream!,
+                      jsonString(expected['upstream']),
+                    ))) {
         return _json({'error': 'notDescendant'}, 409);
       }
     }
@@ -495,7 +510,7 @@ final class _FakeLineage {
 final class _FakePack {
   _FakePack(this.bytes, this.pack, this.roots, this.uploaded);
   final List<int> bytes;
-  final FakePack pack;
+  final FakePack? pack;
   final Set<String> roots;
   final DateTime uploaded;
   bool referenced = false;

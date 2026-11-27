@@ -41,6 +41,12 @@ flutter run -d macos --dart-define-from-file=debug.json
 flutter build macos --release --dart-define-from-file=staging.json
 ```
 
+The optional `SKILLDECK_CLOUD_ORIGIN` key enables SkillDeck Cloud in macOS
+builds. Set it to an HTTPS origin (scheme, host, and optional port) or a
+loopback HTTP origin for local development. A missing or invalid value leaves
+Cloud disabled, as does building for any other platform. The origin is public
+configuration. Keep session credentials out of define files.
+
 ## Verify
 
 ```sh

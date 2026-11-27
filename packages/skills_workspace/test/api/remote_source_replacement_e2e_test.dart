@@ -23,6 +23,7 @@ void main() {
   )).selections[id]!;
   Future<RemoteSkillSourceReplacement> request({
     RevisionId? expected,
+    String? expectedSourceEpoch,
     RevisionId? effective,
     RevisionId? upstream,
     String? packPath,
@@ -30,6 +31,7 @@ void main() {
   }) async => RemoteSkillSourceReplacement(
     managedSkillId: id,
     expectedEffective: expected ?? (await selection()).effective,
+    expectedSourceEpoch: expectedSourceEpoch,
     packPath: packPath ?? pack,
     effective: effective ?? incoming.base.effective,
     upstream: upstream ?? incoming.base.upstream,
@@ -54,6 +56,49 @@ void main() {
     incoming = await RemoteRevisionPackFixture.create(donor);
     pack = path.join(donor.exportDirectory, 'base.pack');
   });
+  test(
+    'identical-head replacement stales a previously reviewed apply or removal',
+    () async {
+      await driftSuccess(repository.applyRemoteState(await request()));
+      final reviewed = await selection();
+      expect(reviewed.sourceEpoch, isNotNull);
+      await driftSuccess(
+        repository.applyRemoteState(
+          await request(expectedSourceEpoch: reviewed.sourceEpoch),
+        ),
+      );
+      final fresh = await selection();
+      expect(fresh.effective, reviewed.effective);
+      expect(fresh.sourceEpoch, isNot(reviewed.sourceEpoch));
+      final layout = WorkspaceLayout(fixture.workspacePath);
+      final rows = readOperationDatabaseRows(layout.databasePath);
+      final snapshot = repository.snapshot;
+      for (final stale in [
+        RemoteSkillContent(
+          managedSkillId: id,
+          expectedEffective: reviewed.effective,
+          expectedSourceEpoch: reviewed.sourceEpoch,
+          effective: fresh.effective,
+          upstream: fresh.upstream,
+          packPath: pack,
+        ),
+        RemoteSkillRemoval(
+          managedSkillId: id,
+          expectedEffective: reviewed.effective,
+          expectedSourceEpoch: reviewed.sourceEpoch,
+        ),
+      ]) {
+        await driftFailure(
+          repository.applyRemoteState(stale),
+          SkillsErrorCode.staleSnapshot,
+          reason: 'sourceLineageChanged',
+        );
+        expect(repository.snapshot.revision, snapshot.revision);
+        expect(repository.snapshot.findSkill(id), snapshot.findSkill(id));
+        expect(readOperationDatabaseRows(layout.databasePath), rows);
+      }
+    },
+  );
   test(
     'preserves identity, activations and extra data while selecting unrelated full history',
     () async {

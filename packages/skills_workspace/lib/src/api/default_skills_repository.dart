@@ -402,6 +402,21 @@ final class DefaultSkillsRepository implements SkillsRepository {
   );
 
   @override
+  SkillsOperation<UpdateCandidateResolutionReview?>
+  inspectUpdateCandidateResolution(ManagedSkillId skillId) => _dispatch(
+    kind: WorkspaceOperationKind.inspectUpdateCandidateResolution,
+    request: skillId,
+  );
+
+  @override
+  SkillsOperation<RepositorySnapshot> resolveUpdateCandidateConflicts(
+    ResolveUpdateCandidateConflictsRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+    request: request,
+  );
+
+  @override
   SkillsOperation<MutationReport> publishUpdateCandidate(
     PublishUpdateCandidateRequest request,
   ) => _dispatch(
@@ -479,6 +494,14 @@ final class DefaultSkillsRepository implements SkillsRepository {
     ExportRevisionPackRequest request,
   ) => _dispatch(
     kind: WorkspaceOperationKind.exportRevisionPack,
+    request: request,
+  );
+
+  @override
+  SkillsOperation<RevisionPackDiff> inspectRevisionPackDiff(
+    InspectRevisionPackDiffRequest request,
+  ) => _dispatch(
+    kind: WorkspaceOperationKind.inspectRevisionPackDiff,
     request: request,
   );
 

@@ -35,18 +35,24 @@ final class PortableSource {
     required String originSourceType,
     required String originDeviceLabel,
     required String displayLabel,
+    String? originSourceId,
   }) : _json = {
          'version': 1,
          'type': 'deviceBound',
          'originSourceType': originSourceType,
          'originDeviceLabel': originDeviceLabel,
          'displayLabel': displayLabel,
+         'originSourceId': ?originSourceId,
        } {
     if (!['local', 'adoptedSnapshot'].contains(originSourceType)) {
       throw ArgumentError('Invalid origin source type');
     }
     _label(originDeviceLabel);
     _label(displayLabel);
+    if (originSourceId != null &&
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(originSourceId)) {
+      throw ArgumentError('Invalid portable source identity');
+    }
   }
   final Map<String, Object?> _json;
   bool get isDeviceBound => _json['type'] == 'deviceBound';
@@ -69,6 +75,7 @@ final class PortableSource {
         originSourceType: jsonString(m['originSourceType']),
         originDeviceLabel: jsonString(m['originDeviceLabel']),
         displayLabel: jsonString(m['displayLabel']),
+        originSourceId: nullableString(m['originSourceId']),
       ),
       _ => throw const FormatException('source_type'),
     };
@@ -82,11 +89,12 @@ final class PortableSource {
 
 void _label(String value) {
   if (value.trim().isEmpty ||
+      value.runes.length > 256 ||
       value.contains('/') ||
       value.contains(r'\') ||
       value.contains(':') ||
-      RegExp(r'[\x00-\x1f]').hasMatch(value)) {
-    throw ArgumentError('Source labels must not contain paths');
+      RegExp(r'[\x00-\x1f\x7f-\x9f]').hasMatch(value)) {
+    throw ArgumentError('Invalid portable source label');
   }
 }
 

@@ -504,6 +504,32 @@ void main() {
           InspectRevisionSelectionsRequest(managedSkillIds: {skillId}),
         ),
       );
+      final packDiff = InspectRevisionPackDiffRequest(
+        managedSkillId: skillId,
+        expectedEffective: RevisionId('a' * 40),
+        incomingEffective: RevisionId('b' * 40),
+        packPath: '/imports/skill.pack',
+      );
+      await route(
+        WorkspaceOperationKind.inspectRevisionPackDiff,
+        repository.inspectRevisionPackDiff(packDiff),
+      );
+      expect(dispatcher.calls.last.$2, same(packDiff));
+      await route(
+        WorkspaceOperationKind.inspectUpdateCandidateResolution,
+        repository.inspectUpdateCandidateResolution(skillId),
+      );
+      expect(dispatcher.calls.last.$2, skillId);
+      final conflictResolution = ResolveUpdateCandidateConflictsRequest(
+        managedSkillId: skillId,
+        reviewToken: Object(),
+        side: UpdateCandidateSide.incoming,
+      );
+      await route(
+        WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+        repository.resolveUpdateCandidateConflicts(conflictResolution),
+      );
+      expect(dispatcher.calls.last.$2, same(conflictResolution));
 
       expect(
         dispatcher.calls.map((call) => call.$1),

@@ -4,6 +4,8 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 
 import 'fake_skill_drift_reviews.dart';
 
@@ -61,6 +63,107 @@ final class FakeSkillsWorkspaceRepository implements SkillsWorkspaceRepository {
   final StreamController<SkillsWorkspaceSnapshot> _snapshots =
       StreamController<SkillsWorkspaceSnapshot>.broadcast();
   SkillsWorkspaceSnapshot _current;
+
+  @override
+  String? deriveSlotKey(String declaredName) =>
+      throw UnimplementedError('deriveSlotKey');
+
+  @override
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> skillIds,
+  ) => throw UnimplementedError('inspectRevisionSelections');
+
+  @override
+  WorkspaceTask<WorkspaceCommittedChanges> inspectCommittedChanges(int since) =>
+      throw UnimplementedError('inspectCommittedChanges');
+
+  @override
+  WorkspaceTask<WorkspaceRevisionHeads> exportRevisionPack(
+    WorkspaceSkillId skillId,
+    String destination,
+  ) => throw UnimplementedError('exportRevisionPack');
+
+  @override
+  WorkspaceTask<WorkspaceRemoteResult> applyRemoteState(
+    WorkspaceRemoteChange change,
+  ) => throw UnimplementedError('applyRemoteState');
+
+  WorkspaceTask<WorkspaceRevisionPackDiff> Function({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  })?
+  revisionPackDiffTask;
+
+  @override
+  WorkspaceTask<WorkspaceRevisionPackDiff> inspectRevisionPackDiff({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  }) =>
+      revisionPackDiffTask?.call(
+        skillId: skillId,
+        expectedEffective: expectedEffective,
+        incomingEffective: incomingEffective,
+        incomingUpstream: incomingUpstream,
+        packPath: packPath,
+      ) ??
+      (throw UnimplementedError('inspectRevisionPackDiff'));
+
+  @override
+  WorkspaceTask<WorkspaceUpdateCandidateReview?>
+  inspectUpdateCandidateResolution(WorkspaceSkillId skillId) {
+    final candidate = _current.findSkillById(skillId)?.updateCandidate;
+    return completedWorkspaceTask(
+      kind: WorkspaceOperationKind.inspectUpdateCandidateResolution,
+      value: candidate == null
+          ? null
+          : _FakeWorkspaceUpdateCandidateReview(
+              skillId,
+              candidate,
+              candidate.conflictPaths.isNotEmpty &&
+                  !_resolvedCandidateSkills.contains(skillId),
+            ),
+    );
+  }
+
+  final resolvedConflictSides = <WorkspaceUpdateCandidateSide>[];
+  final _resolvedCandidateSkills = <WorkspaceSkillId>{};
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> resolveUpdateCandidateConflicts({
+    required WorkspaceUpdateCandidateReview review,
+    required WorkspaceUpdateCandidateSide side,
+  }) {
+    resolvedConflictSides.add(side);
+    _resolvedCandidateSkills.add(review.skillId);
+    return completedWorkspaceTask(
+      kind: WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+      value: _current,
+    );
+  }
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishUpdateCandidate(
+    WorkspaceSkillId skillId,
+  ) {
+    _resolvedCandidateSkills.remove(skillId);
+    _replaceSkill(
+      skillId,
+      (skill) => skill.copyWith(updateCandidate: null, draft: null),
+    );
+    return completedWorkspaceTask(
+      kind: WorkspaceOperationKind.publishUpdateCandidate,
+      value: WorkspaceMutationReceipt(
+        snapshot: _current,
+        affectedSkillIds: {skillId},
+      ),
+    );
+  }
 
   final Map<String, String> documents;
   final List<WorkspaceActivationTarget> globalTargets;
@@ -991,6 +1094,31 @@ final class FakeSkillsWorkspaceRepository implements SkillsWorkspaceRepository {
   }
 
   @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> discardDraft(
+    WorkspaceSkillId skillId,
+  ) {
+    _replaceSkill(skillId, (skill) => skill.copyWith(draft: null));
+    return completedWorkspaceTask(
+      kind: WorkspaceOperationKind.discardDraft,
+      value: _current,
+    );
+  }
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishDraft(
+    WorkspaceSkillId skillId,
+  ) {
+    _replaceSkill(skillId, (skill) => skill.copyWith(draft: null));
+    return completedWorkspaceTask(
+      kind: WorkspaceOperationKind.publishDraft,
+      value: WorkspaceMutationReceipt(
+        snapshot: _current,
+        affectedSkillIds: {skillId},
+      ),
+    );
+  }
+
+  @override
   WorkspaceTask<SkillsWorkspaceSnapshot> abandonUpdateCandidate(
     WorkspaceSkillId skillId,
   ) {
@@ -1112,6 +1240,22 @@ final class FakeSkillsWorkspaceRepository implements SkillsWorkspaceRepository {
     _current = snapshot;
     if (!_snapshots.isClosed) _snapshots.add(snapshot);
   }
+}
+
+final class _FakeWorkspaceUpdateCandidateReview
+    implements WorkspaceUpdateCandidateReview {
+  const _FakeWorkspaceUpdateCandidateReview(
+    this.skillId,
+    this.summary,
+    this.hasUnresolvedConflicts,
+  );
+
+  @override
+  final WorkspaceSkillId skillId;
+  @override
+  final WorkspaceUpdateCandidateSummary summary;
+  @override
+  final bool hasUnresolvedConflicts;
 }
 
 WorkspaceTask<T> completedWorkspaceTask<T>({

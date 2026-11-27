@@ -42,6 +42,209 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonCancel => '取消';
 
   @override
+  String get cloudSettingsTitle => 'SkillDeck Cloud';
+
+  @override
+  String get cloudAccount => '云端账号';
+
+  @override
+  String get cloudCheckingSession => '正在检查登录状态…';
+
+  @override
+  String get cloudSignIn => '登录';
+
+  @override
+  String get cloudSignedOut => '登录你的 SkillDeck Cloud 账号。';
+
+  @override
+  String get cloudRequestingCode => '正在请求验证码…';
+
+  @override
+  String cloudVerificationCode(String code) {
+    return '验证码：$code';
+  }
+
+  @override
+  String get cloudVerifyInBrowser => '在浏览器中确认验证码一致，再批准此设备。';
+
+  @override
+  String get cloudOpenBrowser => '打开浏览器';
+
+  @override
+  String get cloudBrowserOpenFailed => '无法打开浏览器，请重试。';
+
+  @override
+  String get cloudSignInDenied => '浏览器中的登录请求已被拒绝。';
+
+  @override
+  String get cloudSignInExpired => '验证码已过期。';
+
+  @override
+  String get cloudSignInFailed => '无法登录。';
+
+  @override
+  String get cloudSessionCheckFailed => '无法读取已保存的登录会话。';
+
+  @override
+  String get cloudTryAgain => '重试';
+
+  @override
+  String get cloudOffline => '当前离线，暂时无法检查登录状态。';
+
+  @override
+  String get cloudSignOut => '退出登录';
+
+  @override
+  String get cloudSigningOut => '正在退出登录…';
+
+  @override
+  String get cloudSignOutFailed => '无法移除已保存的登录会话，请重试。';
+
+  @override
+  String get cloudSyncToggle => '同步到云端';
+
+  @override
+  String get cloudSyncDeviceOnly => '仅此设备';
+
+  @override
+  String get cloudSyncSynced => '已同步';
+
+  @override
+  String get cloudSyncWaiting => '等待上传';
+
+  @override
+  String get cloudSyncApplying => '正在应用云端更改…';
+
+  @override
+  String get cloudSyncIncomingDraft => '请先处理草稿，再应用云端更改。';
+
+  @override
+  String get cloudSyncMergeConflict => '两台设备上的更改需要合并。';
+
+  @override
+  String get cloudSyncRemovedWithDraft => '另一台设备已删除此 Skill，这台设备仍有草稿。';
+
+  @override
+  String get cloudSyncTooLarge => '此 Skill 太大，无法同步。';
+
+  @override
+  String get cloudSyncSlotOccupied => '另一个本地 Skill 已占用此位置。';
+
+  @override
+  String get cloudSyncMissingAfterReset => '重置后，此 Skill 已不在云端资料库中。';
+
+  @override
+  String get cloudSyncSourceReplaced => '另一台设备已替换来源，这台设备仍有未同步的更改。';
+
+  @override
+  String get cloudSyncStorageLimit => '你的云端账户已达到存储上限。';
+
+  @override
+  String get cloudSyncStopped => '同步因错误停止。';
+
+  @override
+  String get cloudPublishDraft => '发布草稿';
+
+  @override
+  String get cloudDiscardDraft => '丢弃草稿';
+
+  @override
+  String get cloudReviewIncoming => '查看云端更改';
+
+  @override
+  String get cloudReviewConflict => '查看同步冲突';
+
+  @override
+  String get cloudRemoveHere => '从这台设备移除';
+
+  @override
+  String get cloudKeepDeviceOnly => '仅保留在这台设备';
+
+  @override
+  String get cloudAcceptReplacement => '接受来源替换';
+
+  @override
+  String get cloudReplaceLocalSkill => '替换本地 Skill';
+
+  @override
+  String get cloudKeepAndHide => '保留本地 Skill 并隐藏同步副本';
+
+  @override
+  String get cloudStopSyncingAction => '停止同步';
+
+  @override
+  String get cloudUploadAsNew => '作为新的云端记录上传';
+
+  @override
+  String get cloudOccupiedLocalSlot => '云端 Skill 所需的位置已被这个本地 Skill 占用。';
+
+  @override
+  String get cloudAttentionActionFailed => '无法完成此操作，请重试。';
+
+  @override
+  String get cloudConfirmDiscardDraft => '要丢弃尚未发布的更改吗？';
+
+  @override
+  String get cloudConfirmRemoveDraft => '要从这台设备移除此 Skill，并丢弃其尚未发布的更改吗？';
+
+  @override
+  String get cloudConfirmRemoveSkill => '要从这台设备移除此 Skill 及其本地历史吗？';
+
+  @override
+  String get cloudConfirmReplacement => '要应用云端来源并丢弃这台设备尚未同步的版本吗？';
+
+  @override
+  String get cloudConfirmReplaceSlot => '要用同步副本替换这个本地 Skill 吗？';
+
+  @override
+  String get cloudIncomingNoFileChanges => '没有文件更改。';
+
+  @override
+  String get cloudIncomingBinaryFile => '二进制文件有更改。';
+
+  @override
+  String get cloudConflictChooseVersion => '为有冲突的文件选择要保留的设备版本。';
+
+  @override
+  String get cloudConflictReviewDraft => '发布前请检查解决冲突后的草稿。';
+
+  @override
+  String get cloudRevealDraft => '在访达中显示草稿';
+
+  @override
+  String get cloudPublishResolved => '发布已解决冲突的草稿';
+
+  @override
+  String get cloudConflictKeepThis => '保留这台设备的版本';
+
+  @override
+  String get cloudConflictKeepOther => '保留另一台设备的版本';
+
+  @override
+  String get cloudHiddenSkills => '已在这台 Mac 上隐藏';
+
+  @override
+  String get cloudHiddenUnnamedSkill => '已隐藏的 Skill';
+
+  @override
+  String get cloudShowAgain => '重新显示';
+
+  @override
+  String get cloudNewDeviceTitle => '同步的 Skills 已就绪';
+
+  @override
+  String get cloudNewDeviceSubtitle => '选择要启用的 Skills 和使用它们的 Agent。';
+
+  @override
+  String get cloudActivationLoading => '正在加载 Agent…';
+
+  @override
+  String get cloudActivateLater => '稍后';
+
+  @override
+  String get cloudActivateSelected => '启用所选 Skills';
+
+  @override
   String get commonClose => '关闭';
 
   @override

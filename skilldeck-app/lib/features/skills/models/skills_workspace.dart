@@ -228,11 +228,21 @@ enum WorkspaceOperationKind {
   deletePersonalTag,
   assignPersonalTag,
   unassignPersonalTag,
+  discardDraft,
+  publishDraft,
   abandonUpdateCandidate,
   validateWorkspace,
   inspectSkillDrift,
   exportSkillDriftArtifact,
   resolveSkillDrift,
+  inspectRevisionSelections,
+  inspectCommittedChanges,
+  exportRevisionPack,
+  applyRemoteState,
+  inspectRevisionPackDiff,
+  inspectUpdateCandidateResolution,
+  resolveUpdateCandidateConflicts,
+  publishUpdateCandidate,
 }
 
 enum WorkspaceOperationPhase {
@@ -557,6 +567,8 @@ final class SkillSourceProvenance {
     this.ref,
     this.repositorySubpath = '',
     this.skillPath = '',
+    this.syncedOrigin,
+    this.adoptedContentHash,
   });
 
   final WorkspaceSourceKind kind;
@@ -564,6 +576,14 @@ final class SkillSourceProvenance {
   final String? ref;
   final String repositorySubpath;
   final String skillPath;
+  final String? adoptedContentHash;
+  final ({
+    WorkspaceSourceKind originKind,
+    String deviceLabel,
+    String displayLabel,
+    String? sourceId,
+  })?
+  syncedOrigin;
 }
 
 final class SkillRevision {
@@ -687,6 +707,7 @@ final class WorkspaceSkill {
     bool? isFavorite,
     Object? note = _workspaceUnset,
     List<String>? personalTagIds,
+    Object? draft = _workspaceUnset,
     Object? updateCandidate = _workspaceUnset,
   }) => WorkspaceSkill(
     id: id,
@@ -702,7 +723,9 @@ final class WorkspaceSkill {
     note: identical(note, _workspaceUnset) ? this.note : note as String?,
     personalTagIds: personalTagIds ?? this.personalTagIds,
     integrity: integrity,
-    draft: draft,
+    draft: identical(draft, _workspaceUnset)
+        ? this.draft
+        : draft as WorkspaceDraftSummary?,
     updateCandidate: identical(updateCandidate, _workspaceUnset)
         ? this.updateCandidate
         : updateCandidate as WorkspaceUpdateCandidateSummary?,

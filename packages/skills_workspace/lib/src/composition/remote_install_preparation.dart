@@ -1,7 +1,13 @@
 part of 'revision_preparation_service.dart';
 
 typedef ReadRemotePackHeads =
-    Future<({RevisionObjectId effective, RevisionObjectId? upstream})?>
+    Future<
+      ({
+        RevisionObjectId effective,
+        RevisionObjectId? upstream,
+        String sourceEpoch,
+      })?
+    >
     Function(ManagedSkillId);
 
 typedef PreparedRemoteInstall = ({
@@ -86,7 +92,10 @@ extension WorkspaceRemoteInstallPreparation
         return SkillsSuccess(
           value: (
             result: same
-                ? RemoteApplyInstalled(occupant.id)
+                ? RemoteApplyInstalled(
+                    occupant.id,
+                    sourceEpoch: heads.sourceEpoch,
+                  )
                 : RemoteApplySkillSlotOccupied(occupant.id),
             evidence: null,
           ),
@@ -138,7 +147,10 @@ extension WorkspaceRemoteInstallPreparation
       );
       return SkillsSuccess(
         value: (
-          result: RemoteApplyInstalled(managedSkillId),
+          result: RemoteApplyInstalled(
+            managedSkillId,
+            sourceEpoch: lineage.localEpoch,
+          ),
           evidence: (
             managedSkillId: managedSkillId,
             slotKey: slot,

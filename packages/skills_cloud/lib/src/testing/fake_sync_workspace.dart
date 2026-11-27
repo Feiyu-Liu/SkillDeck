@@ -33,6 +33,7 @@ final class FakeSyncWorkspace implements SyncWorkspace {
   final activations = <String, Set<String>>{};
   final extraData = <String, Map<String, Object?>>{};
   int _next = 0;
+  int _nextSourceEpoch = 0;
   int installCount = 0, applyCount = 0;
   int? exportSize;
   WorkspaceSkill seed({
@@ -51,15 +52,20 @@ final class FakeSyncWorkspace implements SyncWorkspace {
       source: source,
       declaredName: name,
       slotKey: slotKeyForName(name)!,
+      sourceEpoch: 'source-${_nextSourceEpoch++}',
     );
     _skills[skill.id] = skill;
     _changed(skill.id);
     return skill;
   }
 
-  WorkspaceSkill publish(String id, Map<String, String> edits) {
+  WorkspaceSkill publish(
+    String id,
+    Map<String, String> edits, {
+    String? mergeParent,
+  }) {
     final local = _skills[id]!, files = _files(local.effective)..addAll(edits);
-    final next = _commit([local.effective], files);
+    final next = _commit([local.effective, ?mergeParent], files);
     final result = _with(
       local,
       effective: next.id,
@@ -76,18 +82,27 @@ final class FakeSyncWorkspace implements SyncWorkspace {
     String id,
     PortableSource source, {
     String name = 'fixture',
+    bool preserveSelection = false,
   }) {
-    final commit = _commit([], {
-      'SKILL.md': '---\nname: $name\n---\n',
-      'body.txt': 'replacement-${_next++}',
-    });
+    final prior = _skills[id]!;
+    final effective = preserveSelection
+        ? prior.effective
+        : _commit([], {
+            'SKILL.md': '---\nname: $name\n---\n',
+            'body.txt': 'replacement-${_next++}',
+          }).id;
     final result = WorkspaceSkill(
       id: id,
-      effective: commit.id,
-      upstream: source.isAdoptedSnapshot ? null : commit.id,
+      effective: effective,
+      upstream: preserveSelection
+          ? prior.upstream
+          : source.isAdoptedSnapshot
+          ? null
+          : effective,
       source: source,
       declaredName: name,
       slotKey: slotKeyForName(name)!,
+      sourceEpoch: 'source-${_nextSourceEpoch++}',
     );
     _skills[id] = result;
     _changed(id);
@@ -197,11 +212,15 @@ final class FakeSyncWorkspace implements SyncWorkspace {
       if (occupant.source == source &&
           occupant.effective == effective &&
           occupant.upstream == upstream) {
-        return WorkspaceInstalled(occupant.id);
+        return WorkspaceInstalled(
+          occupant.id,
+          sourceEpoch: occupant.sourceEpoch,
+        );
       }
       return WorkspaceSlotOccupied(occupant.id);
     }
     final id = 'skill-${_next++}';
+    final sourceEpoch = 'source-${_nextSourceEpoch++}';
     _skills[id] = WorkspaceSkill(
       id: id,
       effective: effective,
@@ -209,23 +228,27 @@ final class FakeSyncWorkspace implements SyncWorkspace {
       source: source,
       declaredName: name,
       slotKey: slot,
+      sourceEpoch: sourceEpoch,
     );
     if (source.isDeviceBound) syncedOriginSkills.add(id);
     installCount++;
     _changed(id);
-    return WorkspaceInstalled(id);
+    return WorkspaceInstalled(id, sourceEpoch: sourceEpoch);
   }
 
   @override
   Future<WorkspaceApply> remove({
     required String managedSkillId,
     required String expectedEffective,
+    String? expectedSourceEpoch,
   }) async {
     final local = _skills[managedSkillId];
     if (local == null) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.skillNotFound);
     }
-    if (local.effective != expectedEffective) {
+    if (local.effective != expectedEffective ||
+        (expectedSourceEpoch != null &&
+            local.sourceEpoch != expectedSourceEpoch)) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.staleSnapshot);
     }
     if (drafts.contains(managedSkillId) || conflicts.contains(managedSkillId)) {
@@ -240,6 +263,7 @@ final class FakeSyncWorkspace implements SyncWorkspace {
   Future<WorkspaceApply> applyContent({
     required String managedSkillId,
     required String expectedEffective,
+    String? expectedSourceEpoch,
     required String effective,
     required String? upstream,
     required String packPath,
@@ -249,7 +273,9 @@ final class FakeSyncWorkspace implements SyncWorkspace {
     if (local == null) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.skillNotFound);
     }
-    if (local.effective != expectedEffective) {
+    if (local.effective != expectedEffective ||
+        (expectedSourceEpoch != null &&
+            local.sourceEpoch != expectedSourceEpoch)) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.staleSnapshot);
     }
     final incoming = await _read(packPath, effective, upstream);
@@ -328,18 +354,22 @@ final class FakeSyncWorkspace implements SyncWorkspace {
     required String effective,
     required String? upstream,
     required PortableSource source,
+    String? expectedSourceEpoch,
   }) async {
     final local = _skills[managedSkillId];
     if (local == null) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.skillNotFound);
     }
-    if (local.effective != expectedEffective) {
+    if (local.effective != expectedEffective ||
+        (expectedSourceEpoch != null &&
+            local.sourceEpoch != expectedSourceEpoch)) {
       return const WorkspaceApplyFailed(WorkspaceFailureCode.staleSnapshot);
     }
-    if (local.source == source &&
+    if (expectedSourceEpoch == null &&
+        local.source == source &&
         local.effective == effective &&
         local.upstream == upstream) {
-      return const WorkspaceNoChange();
+      return WorkspaceNoChange(sourceEpoch: local.sourceEpoch);
     }
     if (drafts.contains(managedSkillId) || conflicts.contains(managedSkillId)) {
       return const WorkspaceDraftRequired();
@@ -355,6 +385,7 @@ final class FakeSyncWorkspace implements SyncWorkspace {
             .where((s) => s.id != managedSkillId && s.slotKey == slot)
             .firstOrNull;
     if (occupant != null) return WorkspaceSlotOccupied(occupant.id);
+    final sourceEpoch = 'source-${_nextSourceEpoch++}';
     _skills[managedSkillId] = WorkspaceSkill(
       id: managedSkillId,
       effective: effective,
@@ -362,6 +393,7 @@ final class FakeSyncWorkspace implements SyncWorkspace {
       source: source,
       declaredName: name,
       slotKey: slot,
+      sourceEpoch: sourceEpoch,
     );
     if (source.isDeviceBound) {
       syncedOriginSkills.add(managedSkillId);
@@ -369,7 +401,7 @@ final class FakeSyncWorkspace implements SyncWorkspace {
       syncedOriginSkills.remove(managedSkillId);
     }
     _changed(managedSkillId);
-    return const WorkspaceSourceReplaced();
+    return WorkspaceSourceReplaced(sourceEpoch: sourceEpoch);
   }
 
   Map<String, String> _files(String revision) => _commits[revision]!.files.map(
@@ -409,5 +441,6 @@ final class FakeSyncWorkspace implements SyncWorkspace {
     source: old.source,
     declaredName: name ?? old.declaredName,
     slotKey: slotKeyForName(name ?? old.declaredName)!,
+    sourceEpoch: old.sourceEpoch,
   );
 }

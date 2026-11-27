@@ -26,11 +26,13 @@ void main() {
         contentHash: 'a' * 64,
       ),
       for (final originSourceType in SyncedOriginSourceType.values)
-        SyncedOriginSourceDescriptor(
-          originSourceType: originSourceType,
-          originDeviceLabel: 'MacBook Pro',
-          displayLabel: 'Team Skills',
-        ),
+        for (final originSourceId in [null, 'c' * 64])
+          SyncedOriginSourceDescriptor(
+            originSourceType: originSourceType,
+            originDeviceLabel: 'MacBook Pro',
+            displayLabel: 'Team Skills',
+            originSourceId: originSourceId,
+          ),
     ];
 
     for (final source in sources) {
@@ -88,6 +90,14 @@ void main() {
       expect(
         () => decode({...payload, 'originSourceType': 'git'}),
         throwsA(_reason('invalidPayloadValue')),
+      );
+      expect(
+        () => decode({...payload, 'originSourceId': '/tmp/skills'}),
+        throwsA(_reason('invalidPayloadValue')),
+      );
+      expect(
+        decode({...payload, 'originSourceId': 'd' * 64}),
+        isNot(decode({...payload, 'originSourceId': 'e' * 64})),
       );
     },
   );

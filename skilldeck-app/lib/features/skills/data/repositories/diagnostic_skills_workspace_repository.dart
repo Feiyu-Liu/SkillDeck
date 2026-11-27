@@ -2,6 +2,8 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 import 'package:skills_manager/shared/diagnostics/app_diagnostics.dart';
 import 'package:skills_manager/shared/failures/app_failure_reporter.dart';
 
@@ -57,6 +59,84 @@ final class DiagnosticSkillsWorkspaceRepository
 
   @override
   SkillsWorkspaceSnapshot? get current => _delegate.current;
+
+  @override
+  String? deriveSlotKey(String declaredName) =>
+      _delegate.deriveSlotKey(declaredName);
+
+  @override
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> skillIds,
+  ) => _traceTask(
+    WorkspaceOperationKind.inspectRevisionSelections,
+    () => _delegate.inspectRevisionSelections(skillIds),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceCommittedChanges> inspectCommittedChanges(int since) =>
+      _traceTask(
+        WorkspaceOperationKind.inspectCommittedChanges,
+        () => _delegate.inspectCommittedChanges(since),
+      );
+
+  @override
+  WorkspaceTask<WorkspaceRevisionHeads> exportRevisionPack(
+    WorkspaceSkillId skillId,
+    String destination,
+  ) => _traceTask(
+    WorkspaceOperationKind.exportRevisionPack,
+    () => _delegate.exportRevisionPack(skillId, destination),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceRemoteResult> applyRemoteState(
+    WorkspaceRemoteChange change,
+  ) => _traceTask(
+    WorkspaceOperationKind.applyRemoteState,
+    () => _delegate.applyRemoteState(change),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceRevisionPackDiff> inspectRevisionPackDiff({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  }) => _traceTask(
+    WorkspaceOperationKind.inspectRevisionPackDiff,
+    () => _delegate.inspectRevisionPackDiff(
+      skillId: skillId,
+      expectedEffective: expectedEffective,
+      incomingEffective: incomingEffective,
+      incomingUpstream: incomingUpstream,
+      packPath: packPath,
+    ),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceUpdateCandidateReview?>
+  inspectUpdateCandidateResolution(WorkspaceSkillId skillId) => _traceTask(
+    WorkspaceOperationKind.inspectUpdateCandidateResolution,
+    () => _delegate.inspectUpdateCandidateResolution(skillId),
+  );
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> resolveUpdateCandidateConflicts({
+    required WorkspaceUpdateCandidateReview review,
+    required WorkspaceUpdateCandidateSide side,
+  }) => _traceTask(
+    WorkspaceOperationKind.resolveUpdateCandidateConflicts,
+    () => _delegate.resolveUpdateCandidateConflicts(review: review, side: side),
+  );
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishUpdateCandidate(
+    WorkspaceSkillId skillId,
+  ) => _traceTask(
+    WorkspaceOperationKind.publishUpdateCandidate,
+    () => _delegate.publishUpdateCandidate(skillId),
+  );
 
   @override
   WorkspaceTask<WorkspaceSkillDriftReview> inspectSkillDrift(
@@ -489,6 +569,26 @@ final class DiagnosticSkillsWorkspaceRepository
     () => _delegate.unassignPersonalTag(skillId: skillId, tagId: tagId),
     startContext: {'skillId': skillId.value, 'tagId': tagId},
     successContext: (snapshot) => {'revision': snapshot.revision},
+  );
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> discardDraft(
+    WorkspaceSkillId skillId,
+  ) => _traceTask(
+    WorkspaceOperationKind.discardDraft,
+    () => _delegate.discardDraft(skillId),
+    startContext: {'skillId': skillId.value},
+    successContext: (snapshot) => {'revision': snapshot.revision},
+  );
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishDraft(
+    WorkspaceSkillId skillId,
+  ) => _traceTask(
+    WorkspaceOperationKind.publishDraft,
+    () => _delegate.publishDraft(skillId),
+    startContext: {'skillId': skillId.value},
+    successContext: (receipt) => {'revision': receipt.snapshot.revision},
   );
 
   @override

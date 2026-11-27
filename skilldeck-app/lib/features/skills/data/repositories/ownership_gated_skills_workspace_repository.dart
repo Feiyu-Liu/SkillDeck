@@ -5,6 +5,8 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/models/external_skills.dart';
 import 'package:skills_manager/features/skills/models/skill_document.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
+import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 
 final class OwnershipGatedSkillsWorkspaceRepository
     implements SkillsWorkspaceRepository, SkillsUpdateCheckStore {
@@ -44,6 +46,79 @@ final class OwnershipGatedSkillsWorkspaceRepository
 
   @override
   SkillsWorkspaceSnapshot? get current => _delegate.current;
+
+  @override
+  String? deriveSlotKey(String declaredName) =>
+      _delegate.deriveSlotKey(declaredName);
+
+  @override
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> skillIds,
+  ) => _delegate.inspectRevisionSelections(skillIds);
+
+  @override
+  WorkspaceTask<WorkspaceCommittedChanges> inspectCommittedChanges(int since) =>
+      _delegate.inspectCommittedChanges(since);
+
+  @override
+  WorkspaceTask<WorkspaceRevisionHeads> exportRevisionPack(
+    WorkspaceSkillId skillId,
+    String destination,
+  ) => _delegate.exportRevisionPack(skillId, destination);
+
+  @override
+  WorkspaceTask<WorkspaceRemoteResult> applyRemoteState(
+    WorkspaceRemoteChange change,
+  ) {
+    final skillId = switch (change) {
+      WorkspaceRemoteContent(:final skillId) ||
+      WorkspaceRemoteRemoval(:final skillId) ||
+      WorkspaceRemoteSourceReplacement(:final skillId) => skillId,
+      WorkspaceRemoteInstall() => null,
+    };
+    WorkspaceTask<WorkspaceRemoteResult> start() =>
+        _delegate.applyRemoteState(change);
+    return skillId != null && _touchesGlobalActivations({skillId})
+        ? _gated(WorkspaceOperationKind.applyRemoteState, start)
+        : start();
+  }
+
+  @override
+  WorkspaceTask<WorkspaceRevisionPackDiff> inspectRevisionPackDiff({
+    required WorkspaceSkillId skillId,
+    required String expectedEffective,
+    required String incomingEffective,
+    required String? incomingUpstream,
+    required String packPath,
+  }) => _delegate.inspectRevisionPackDiff(
+    skillId: skillId,
+    expectedEffective: expectedEffective,
+    incomingEffective: incomingEffective,
+    incomingUpstream: incomingUpstream,
+    packPath: packPath,
+  );
+
+  @override
+  WorkspaceTask<WorkspaceUpdateCandidateReview?>
+  inspectUpdateCandidateResolution(WorkspaceSkillId skillId) =>
+      _delegate.inspectUpdateCandidateResolution(skillId);
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> resolveUpdateCandidateConflicts({
+    required WorkspaceUpdateCandidateReview review,
+    required WorkspaceUpdateCandidateSide side,
+  }) => _delegate.resolveUpdateCandidateConflicts(review: review, side: side);
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishUpdateCandidate(
+    WorkspaceSkillId skillId,
+  ) {
+    WorkspaceTask<WorkspaceMutationReceipt> start() =>
+        _delegate.publishUpdateCandidate(skillId);
+    return _touchesGlobalActivations({skillId})
+        ? _gated(WorkspaceOperationKind.publishUpdateCandidate, start)
+        : start();
+  }
 
   @override
   WorkspaceTask<WorkspaceSkillDriftReview> inspectSkillDrift(
@@ -340,6 +415,22 @@ final class OwnershipGatedSkillsWorkspaceRepository
     required WorkspaceSkillId skillId,
     required String tagId,
   }) => _delegate.unassignPersonalTag(skillId: skillId, tagId: tagId);
+
+  @override
+  WorkspaceTask<SkillsWorkspaceSnapshot> discardDraft(
+    WorkspaceSkillId skillId,
+  ) => _delegate.discardDraft(skillId);
+
+  @override
+  WorkspaceTask<WorkspaceMutationReceipt> publishDraft(
+    WorkspaceSkillId skillId,
+  ) {
+    WorkspaceTask<WorkspaceMutationReceipt> start() =>
+        _delegate.publishDraft(skillId);
+    return _touchesGlobalActivations({skillId})
+        ? _gated(WorkspaceOperationKind.publishDraft, start)
+        : start();
+  }
 
   @override
   WorkspaceTask<SkillsWorkspaceSnapshot> abandonUpdateCandidate(

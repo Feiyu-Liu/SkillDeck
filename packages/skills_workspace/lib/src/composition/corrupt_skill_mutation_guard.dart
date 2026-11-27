@@ -116,6 +116,7 @@ bool _requiresIntegrity(WorkspaceOperationKind kind) => switch (kind) {
   WorkspaceOperationKind.discardDraft ||
   WorkspaceOperationKind.publishDraft ||
   WorkspaceOperationKind.resolveUpdateConflict ||
+  WorkspaceOperationKind.resolveUpdateCandidateConflicts ||
   WorkspaceOperationKind.publishUpdateCandidate ||
   WorkspaceOperationKind.abandonUpdateCandidate ||
   WorkspaceOperationKind.restorePublish => true,
@@ -152,10 +153,12 @@ Set<ManagedSkillId> _affectedSkillIds(
   WorkspaceOperationKind.updatePersonalTag ||
   WorkspaceOperationKind.inspectDraft ||
   WorkspaceOperationKind.inspectUpdateCandidate ||
+  WorkspaceOperationKind.inspectUpdateCandidateResolution ||
   WorkspaceOperationKind.inspectOperationHistory ||
   WorkspaceOperationKind.inspectPublishedHistory ||
   WorkspaceOperationKind.inspectCommittedChanges ||
   WorkspaceOperationKind.inspectRevisionSelections ||
+  WorkspaceOperationKind.inspectRevisionPackDiff ||
   WorkspaceOperationKind.inspectDiff ||
   WorkspaceOperationKind.inspectSkillDrift ||
   WorkspaceOperationKind.exportSkillDriftArtifact ||
@@ -226,6 +229,9 @@ Set<ManagedSkillId> _affectedSkillIds(
   },
   WorkspaceOperationKind.resolveUpdateConflict => <ManagedSkillId>{
     (request as ResolveUpdateConflictRequest).managedSkillId,
+  },
+  WorkspaceOperationKind.resolveUpdateCandidateConflicts => <ManagedSkillId>{
+    (request as ResolveUpdateCandidateConflictsRequest).managedSkillId,
   },
   WorkspaceOperationKind.publishUpdateCandidate => <ManagedSkillId>{
     (request as PublishUpdateCandidateRequest).managedSkillId,

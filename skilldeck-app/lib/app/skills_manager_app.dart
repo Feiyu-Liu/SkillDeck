@@ -18,6 +18,9 @@ import 'package:skills_manager/shared/widgets/app_notification_scope.dart';
 import 'package:skills_manager/features/settings/models/app_settings.dart';
 import 'package:skills_manager/features/settings/presentation/view_models/appearance_mode.dart';
 import 'package:skills_manager/features/settings/settings_providers.dart';
+import 'package:skills_manager/features/cloud/cloud_sync_providers.dart';
+import 'package:skills_manager/features/cloud/data/cloud_sync_runtime.dart';
+import 'package:skills_manager/features/cloud/presentation/widgets/cloud_new_device_step.dart';
 import 'package:skills_manager/features/command_host/presentation/command_host_providers.dart';
 import 'package:skills_manager/features/self_update/self_update_providers.dart';
 import 'package:skills_manager/features/skills/workspace_snapshot_providers.dart';
@@ -94,6 +97,13 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
     if (mounted) setState(() {});
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (mounted && state == AppLifecycleState.resumed) {
+      ref.read(cloudSyncLifecycleProvider.notifier).onForeground();
+    }
+  }
+
   /// Waits for the first ready Workspace Snapshot, then sweeps at most once.
   ///
   /// Failures stay silent: the coordinator records them as state only. Raising
@@ -123,6 +133,7 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
     ref.watch(appUpdateCoordinatorProvider);
     ref.watch(workspaceSnapshotProvider);
     ref.watch(commandHostProvider);
+    ref.watch(cloudSyncRuntimeProvider);
     final finalization = ref.watch(workspaceFinalizationCoordinatorProvider);
     final settings = ref.watch(appSettingsViewModelProvider);
     final resolvedLocale =
@@ -169,6 +180,8 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
                       AppNotificationHost(
                         child: child ?? const SizedBox.shrink(),
                       ),
+                      const _CloudSyncNoticeBanner(),
+                      const CloudNewDeviceStep(),
                       if (finalization.canRetry)
                         _WorkspaceFinalizationRetryBanner(
                           recovering: finalization.isRecovering,
@@ -185,6 +198,41 @@ class _SkillsManagerAppState extends ConsumerState<SkillsManagerApp>
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _CloudSyncNoticeBanner extends ConsumerWidget {
+  const _CloudSyncNoticeBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notice = ref.watch(
+      cloudSyncStateProvider.select((state) => state.value?.notice),
+    );
+    final text = switch (notice) {
+      CloudSyncNotice.storageLimit => context.l10n.cloudSyncStorageLimit,
+      CloudSyncNotice.stopped => context.l10n.cloudSyncStopped,
+      null => null,
+    };
+    if (text == null) return const SizedBox.shrink();
+    return Positioned(
+      left: 16,
+      bottom: 16,
+      child: Semantics(
+        liveRegion: true,
+        child: Container(
+          key: const Key('cloud-sync-notice'),
+          constraints: const BoxConstraints(maxWidth: 320),
+          padding: const EdgeInsets.all(12),
+          decoration: AppCorners.smooth(
+            color: AppPalette.of(context).warningSoft,
+            radius: AppRadii.lg,
+            side: BorderSide(color: AppPalette.of(context).warningBorder),
+          ),
+          child: Text(text, style: AppTypography.of(context).body),
         ),
       ),
     );

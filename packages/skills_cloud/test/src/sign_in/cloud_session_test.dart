@@ -38,6 +38,24 @@ void main() {
       expectTokenOnlyInHeader();
     });
 
+    test(
+      'returns a previously verified account after restarting offline',
+      () async {
+        await service.signIn(store).currentSession();
+        service.session = networkFailure;
+
+        final status =
+            await service.signIn(store).currentSession()
+                as CloudSessionUnavailable;
+
+        expect(status.code, CloudFailureCode.network);
+        expect(status.account?.email, accountEmail);
+        expect(status.account?.id, 'account-1');
+        expect(status.account?.sessionExpiresAt, DateTime.utc(2026, 12, 26));
+        expect(await storedToken(), sessionToken);
+      },
+    );
+
     test('without a stored token requires sign-in and sends nothing', () async {
       await store.delete(origin);
       expect(

@@ -67,6 +67,8 @@ final class RepositoryCommandComposition {
     required this.effectiveContent,
     required this.revisionPackExport,
     required this.revisionPackImport,
+    required this.revisionPackDiff,
+    required this.candidateConflictCommands,
     required this.remoteApply,
     required this.externalSkills,
     required this.historyPort,
@@ -116,6 +118,8 @@ final class RepositoryCommandComposition {
   final CurrentEffectiveRevisionContentPort effectiveContent;
   final SkillsCommandHandler revisionPackExport;
   final SkillsCommandHandler revisionPackImport;
+  final SkillsCommandHandler revisionPackDiff;
+  final List<SkillsCommandHandler> candidateConflictCommands;
   final SkillsCommandHandler remoteApply;
   final ExternalSkillScannerFactory externalSkills;
   final WorkspaceHistoryPort historyPort;
@@ -168,6 +172,8 @@ final class RepositoryCommandComposition {
     final handlers = <SkillsCommandHandler>[
       revisionPackExport,
       revisionPackImport,
+      revisionPackDiff,
+      ...candidateConflictCommands,
       inspectCommittedChanges,
       inspectRevisionSelections,
       remoteApply,

@@ -95,7 +95,7 @@ final class DriftWorkspaceHistoryContent
       final repositoryPath = _storePath(managedSkillId);
       final files = from == null
           ? await _initialDiff(repositoryPath, to.objectId)
-          : await _revisionDiff(repositoryPath, from.objectId, to.objectId);
+          : await compareRevisions(repositoryPath, from.objectId, to.objectId);
       return HistorySuccess<SkillDiff>(
         SkillDiff(
           managedSkillId: managedSkillId,
@@ -242,7 +242,7 @@ final class DriftWorkspaceHistoryContent
       ..sort((left, right) => left.path.compareTo(right.path));
   }
 
-  Future<List<SkillFileDiff>> _revisionDiff(
+  Future<List<SkillFileDiff>> compareRevisions(
     String repositoryPath,
     RevisionObjectId from,
     RevisionObjectId to,

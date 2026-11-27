@@ -66,11 +66,13 @@ final class SourceDescriptorCodec {
         :final originSourceType,
         :final originDeviceLabel,
         :final displayLabel,
+        :final originSourceId,
       ) =>
         {
           'originSourceType': originSourceType.name,
           'originDeviceLabel': originDeviceLabel,
           'displayLabel': displayLabel,
+          'originSourceId': ?originSourceId,
         },
     };
     return EncodedSourceDescriptor(
@@ -138,7 +140,14 @@ final class SourceDescriptorCodec {
 }
 
 SyncedOriginSourceDescriptor _decodeSyncedOrigin(Map<String, Object?> payload) {
-  if (payload.length > 3) {
+  if (payload.keys.any(
+    (key) => !const {
+      'originSourceType',
+      'originDeviceLabel',
+      'displayLabel',
+      'originSourceId',
+    }.contains(key),
+  )) {
     throw const SourceDescriptorCodecException('unexpectedField');
   }
   return SyncedOriginSourceDescriptor(
@@ -147,6 +156,7 @@ SyncedOriginSourceDescriptor _decodeSyncedOrigin(Map<String, Object?> payload) {
     ),
     originDeviceLabel: _requiredString(payload, 'originDeviceLabel'),
     displayLabel: _requiredString(payload, 'displayLabel'),
+    originSourceId: _optionalString(payload, 'originSourceId'),
   );
 }
 

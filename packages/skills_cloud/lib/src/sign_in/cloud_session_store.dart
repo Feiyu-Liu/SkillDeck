@@ -1,13 +1,37 @@
 import 'cloud_service_origin.dart';
 
-/// One Cloud Session token and the origin that issued it.
+/// The Cloud Account as last verified by the issuing service.
+final class CloudAccount {
+  const CloudAccount({
+    required this.id,
+    required this.email,
+    required this.sessionExpiresAt,
+  });
+
+  /// An opaque account identifier.
+  final String id;
+
+  /// Shown in Settings. Never log it.
+  final String email;
+
+  final DateTime sessionExpiresAt;
+}
+
+/// One Cloud Session token, its issuing origin, and its last verified account.
 final class StoredCloudSession {
-  const StoredCloudSession({required this.origin, required this.token});
+  const StoredCloudSession({
+    required this.origin,
+    required this.token,
+    this.account,
+  });
 
   final CloudServiceOrigin origin;
 
   /// The bearer token. Send it only to [origin], and never log it.
   final String token;
+
+  /// For display when the service cannot be reached.
+  final CloudAccount? account;
 
   @override
   String toString() => 'StoredCloudSession($origin)';

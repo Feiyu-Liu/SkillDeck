@@ -19,23 +19,6 @@ enum CloudFailureCode {
   server,
 }
 
-/// The signed-in Cloud Account, as `get-session` reports it.
-final class CloudAccount {
-  const CloudAccount({
-    required this.id,
-    required this.email,
-    required this.sessionExpiresAt,
-  });
-
-  /// An opaque account identifier.
-  final String id;
-
-  /// Shown in Settings. Never log it.
-  final String email;
-
-  final DateTime sessionExpiresAt;
-}
-
 /// The result of [CloudSignIn.start].
 sealed class CloudSignInStart {
   const CloudSignInStart();
@@ -137,9 +120,12 @@ final class CloudSignInRequired extends CloudSessionStatus {
 
 /// The session could not be checked. The stored token is kept.
 final class CloudSessionUnavailable extends CloudSessionStatus {
-  const CloudSessionUnavailable(this.code);
+  const CloudSessionUnavailable(this.code, {this.account});
 
   final CloudFailureCode code;
+
+  /// The last verified account, if stored. The session is not verified now.
+  final CloudAccount? account;
 }
 
 /// Device Authorization sign-in (RFC 8628) against one service origin.
@@ -273,12 +259,24 @@ final class CloudSignIn {
     if (stored == null) return const CloudSignInRequired();
     switch (await _readAccount(stored.token)) {
       case _AccountFound(:final account):
+        final previous = stored.account;
+        if (previous?.id != account.id ||
+            previous?.email != account.email ||
+            previous?.sessionExpiresAt != account.sessionExpiresAt) {
+          await _store.write(
+            StoredCloudSession(
+              origin: origin,
+              token: stored.token,
+              account: account,
+            ),
+          );
+        }
         return CloudSignedIn(account);
       case _SessionEnded():
         await _store.delete(origin);
         return const CloudSignInRequired();
       case _AccountUnreadable(:final code):
-        return CloudSessionUnavailable(code);
+        return CloudSessionUnavailable(code, account: stored.account);
     }
   }
 
@@ -363,7 +361,9 @@ final class CloudSignIn {
     }
     switch (read) {
       case _AccountFound(:final account):
-        await _store.write(StoredCloudSession(origin: origin, token: token));
+        await _store.write(
+          StoredCloudSession(origin: origin, token: token, account: account),
+        );
         return CloudSignInSucceeded(account);
       case _SessionEnded():
         return const CloudSignInFailed(CloudFailureCode.protocol);

@@ -2,6 +2,8 @@ import Cocoa
 import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
+  private var wakeObserver: NSObjectProtocol?
+
   override func awakeFromNib() {
     // Flutter does not forward macOS launch arguments to Dart by default.
     let project = FlutterDartProject()
@@ -29,6 +31,18 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    let cloudLifecycle = FlutterMethodChannel(
+      name: "skilldeck/cloud_lifecycle",
+      binaryMessenger: flutterViewController.engine.binaryMessenger
+    )
+    wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+      forName: NSWorkspace.didWakeNotification,
+      object: nil,
+      queue: .main
+    ) { _ in
+      cloudLifecycle.invokeMethod("wake", arguments: nil)
+    }
+
     // A command-line approval needs the user without taking their keyboard:
     // bounce the Dock icon rather than activating the App.
     FlutterMethodChannel(
@@ -44,5 +58,11 @@ class MainFlutterWindow: NSWindow {
     }
 
     super.awakeFromNib()
+  }
+
+  deinit {
+    if let observer = wakeObserver {
+      NSWorkspace.shared.notificationCenter.removeObserver(observer)
+    }
   }
 }

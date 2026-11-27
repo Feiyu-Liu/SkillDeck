@@ -148,6 +148,14 @@ abstract interface class SkillsRepository {
   SkillsOperation<RepositorySnapshot> resolveUpdateConflict(
     ResolveUpdateConflictRequest request,
   );
+
+  SkillsOperation<UpdateCandidateResolutionReview?>
+  inspectUpdateCandidateResolution(ManagedSkillId skillId);
+
+  SkillsOperation<RepositorySnapshot> resolveUpdateCandidateConflicts(
+    ResolveUpdateCandidateConflictsRequest request,
+  );
+
   SkillsOperation<MutationReport> publishUpdateCandidate(
     PublishUpdateCandidateRequest request,
   );
@@ -174,6 +182,12 @@ abstract interface class SkillsRepository {
   );
 
   SkillsOperation<SkillDiff> inspectDiff(InspectDiffRequest request);
+
+  /// Compares an incoming pack without publishing any of its objects.
+  SkillsOperation<RevisionPackDiff> inspectRevisionPackDiff(
+    InspectRevisionPackDiffRequest request,
+  );
+
   SkillsOperation<MutationReport> restorePublish(RestorePublishRequest request);
 
   /// Reviews external changes without modifying published materializations.

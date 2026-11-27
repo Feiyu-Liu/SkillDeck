@@ -195,9 +195,11 @@ final class SyncedOriginSourceDescriptor extends SourceDescriptor {
     required this.originSourceType,
     required this.originDeviceLabel,
     required this.displayLabel,
+    this.originSourceId,
   }) {
     _requirePortableDisplayLabel(originDeviceLabel, 'originDeviceLabel');
     _requirePortableDisplayLabel(displayLabel, 'displayLabel');
+    if (originSourceId case final id?) _requireSha256(id, 'originSourceId');
   }
 
   /// The source type on the device that supplied the Skill.
@@ -208,6 +210,9 @@ final class SyncedOriginSourceDescriptor extends SourceDescriptor {
 
   /// The display name of the source.
   final String displayLabel;
+
+  /// Opaque identity supplied by the Device that owns the source.
+  final String? originSourceId;
 
   @override
   SourceType get type => SourceType.syncedOrigin;
@@ -220,7 +225,8 @@ final class SyncedOriginSourceDescriptor extends SourceDescriptor {
       other is SyncedOriginSourceDescriptor &&
       originSourceType == other.originSourceType &&
       originDeviceLabel == other.originDeviceLabel &&
-      displayLabel == other.displayLabel;
+      displayLabel == other.displayLabel &&
+      originSourceId == other.originSourceId;
 
   @override
   bool operator ==(Object other) =>
@@ -228,8 +234,13 @@ final class SyncedOriginSourceDescriptor extends SourceDescriptor {
       other is SyncedOriginSourceDescriptor && hasSameIdentity(other);
 
   @override
-  int get hashCode =>
-      Object.hash(type, originSourceType, originDeviceLabel, displayLabel);
+  int get hashCode => Object.hash(
+    type,
+    originSourceType,
+    originDeviceLabel,
+    displayLabel,
+    originSourceId,
+  );
 }
 
 void _requirePortableDisplayLabel(String value, String name) {

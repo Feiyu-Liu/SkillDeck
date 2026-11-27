@@ -19,12 +19,19 @@ final class SyncBootstrap {
     required Map<String, SyncOutcome> outcomes,
     required this.completed,
   }) : installedSkillIds = Set.unmodifiable(installedSkillIds),
-       outcomes = Map.unmodifiable(outcomes);
+       outcomes = Map.unmodifiable(outcomes),
+       _accountCondition = null;
+
+  const SyncBootstrap._unavailable(this._accountCondition)
+    : installedSkillIds = const {},
+      outcomes = const {},
+      completed = false;
   final Set<String> installedSkillIds;
 
   /// Keyed by Lineage ID, including those that could not be installed.
   final Map<String, SyncOutcome> outcomes;
   final bool completed;
+  final SyncAccountCondition? _accountCondition;
 }
 
 /// State reconciliation for one account/device. Serialize calls through the App.
@@ -43,6 +50,10 @@ final class Reconciler {
   final String scratchDirectory;
   final _outcomes = <String, SyncOutcome>{};
   Map<String, SyncOutcome> get outcomes => Map.unmodifiable(_outcomes);
+  SyncAccountCondition? _accountCondition;
+
+  /// Account condition observed by the latest check, even without a Skill link.
+  SyncAccountCondition? get accountCondition => _accountCondition;
   Duration? _retryAfter;
 
   Future<SyncOutcome> startSyncing(String skillId) async {
@@ -61,24 +72,47 @@ final class Reconciler {
       return _record(skillId, const SkillDeviceOnly());
     }
     final result = await api.stop(link!.lineageId!);
-    if (result is CloudApiSuccess<Lineage>) {
+    if (result is CloudApiSuccess<Lineage> || result is ApiNotFound) {
       await state.unlink(skillId);
       return _record(skillId, const SkillDeviceOnly());
     }
     if (result is ApiLineageEnded && result.lineage != null) {
-      return _record(skillId, await _reconcile(link, result.lineage));
+      return _record(skillId, await _reconcile(link, remote: result.lineage));
     }
     return _record(skillId, _failure(result));
   }
 
   Future<FeedCheckResult> checkLocalChanges() async {
+    _retryAfter = null;
+    _accountCondition = null;
     final changes = await workspace.inspectCommittedChanges(
       await state.workspaceCursor(),
     );
     var success = true;
     for (final link in await state.links()) {
       if (!changes.skillIds.contains(link.managedSkillId) &&
-          link.lineageId != null) {
+          !link.uploadBlockedByQuota &&
+          (link.clientKey == null || link.attentionAttempt != null)) {
+        // Links written before Source Epochs were recorded need a local baseline.
+        if (link.sourceEpoch == null && link.lineageId != null) {
+          final current = await workspace.inspectRevisionSelections(
+            link.managedSkillId,
+          );
+          if (current?.sourceEpoch case final epoch?) {
+            await state.put(
+              SyncLink(
+                managedSkillId: link.managedSkillId,
+                lineageId: link.lineageId,
+                clientKey: link.clientKey,
+                version: link.version,
+                generation: link.generation,
+                effective: link.effective,
+                attentionAttempt: link.attentionAttempt,
+                sourceEpoch: epoch,
+              ),
+            );
+          }
+        }
         continue;
       }
       final result = _record(link.managedSkillId, await _reconcile(link));
@@ -92,10 +126,13 @@ final class Reconciler {
 
   Future<FeedCheckResult> feedCheck() async {
     _retryAfter = null;
+    _accountCondition = null;
     var success = true;
+    final checked = <String>{};
     for (final pending in (await state.links()).where(
-      (l) => l.lineageId == null,
+      (l) => l.clientKey != null && l.attentionAttempt == null,
     )) {
+      checked.add(pending.managedSkillId);
       success =
           _settled(
             _record(pending.managedSkillId, await _reconcile(pending)),
@@ -105,22 +142,26 @@ final class Reconciler {
     if (await state.feedCursor() == null) {
       final result = await bootstrap();
       if (!result.completed) {
-        return FeedCheckResult.failure(retryAfter: _retryAfter);
+        return result._accountCondition != null && success
+            ? FeedCheckResult.success(retryAfter: _retryAfter)
+            : FeedCheckResult.failure(retryAfter: _retryAfter);
       }
     }
     while (true) {
       final result = await api.checkFeed(after: await state.feedCursor());
       if (result is ApiCursorExpired) {
         final reset = await bootstrap(reset: true);
-        return reset.completed
-            ? FeedCheckResult.success()
-            : FeedCheckResult.failure();
+        success =
+            (reset.completed || reset._accountCondition != null) && success;
+        break;
       }
       if (result is! CloudApiSuccess<FeedPage>) {
-        _failure(result);
-        return FeedCheckResult.failure(retryAfter: _retryAfter);
+        success = _settled(_failure(result)) && success;
+        return success
+            ? FeedCheckResult.success(retryAfter: _retryAfter)
+            : FeedCheckResult.failure(retryAfter: _retryAfter);
       }
-      _retryAfter = result.retryAfter;
+      _retryAfter = result.retryAfter ?? _retryAfter;
       final page = result.value;
       var pageSettled = true;
       for (final entry in page.entries) {
@@ -131,24 +172,48 @@ final class Reconciler {
             .where((l) => l.lineageId == entry.id)
             .firstOrNull;
         if (link != null && entry.version <= link.version) continue;
-        final remote = await api.readLineage(entry.id);
-        SyncOutcome outcome;
-        if (remote is CloudApiSuccess<Lineage>) {
-          outcome = link == null
-              ? (await _materialize(remote.value)).outcome
-              : await _reconcile(link, remote.value);
+        final SyncOutcome outcome;
+        var outcomeId = link?.managedSkillId ?? entry.id;
+        if (link != null) {
+          checked.add(link.managedSkillId);
+          outcome = await _reconcile(
+            link,
+            skipUnchangedAttention:
+                _outcomes[link.managedSkillId] is! WaitingToUpload,
+          );
         } else {
-          outcome = remote is ApiNotFound
-              ? const SyncNeedsAttention(AttentionReason.missingAfterReset)
-              : _failure(remote);
+          final remote = await api.readLineage(entry.id);
+          if (remote is ApiNotFound) continue;
+          if (remote is CloudApiSuccess<Lineage>) {
+            final materialized = await _materialize(remote.value);
+            outcome = materialized.outcome;
+            outcomeId = materialized.managedSkillId ?? outcomeId;
+          } else {
+            outcome = _failure(remote);
+          }
         }
-        _record(link?.managedSkillId ?? entry.id, outcome);
+        _record(outcomeId, outcome);
         pageSettled = _settled(outcome) && pageSettled;
       }
       success = pageSettled && success;
       if (!pageSettled) break;
       await state.setFeedCursor(page.cursor);
       if (!page.more) break;
+    }
+    for (final link in await state.links()) {
+      if (link.attentionAttempt == null ||
+          checked.contains(link.managedSkillId)) {
+        continue;
+      }
+      final result = _record(
+        link.managedSkillId,
+        await _reconcile(
+          link,
+          skipUnchangedAttention:
+              _outcomes[link.managedSkillId] is! WaitingToUpload,
+        ),
+      );
+      success = _settled(result) && success;
     }
     return success
         ? FeedCheckResult.success(retryAfter: _retryAfter)
@@ -161,7 +226,11 @@ final class Reconciler {
     return _record(managedSkillId, await _reconcile(link));
   }
 
-  Future<SyncOutcome> _reconcile(SyncLink initial, [Lineage? remote]) async {
+  Future<SyncOutcome> _reconcile(
+    SyncLink initial, {
+    Lineage? remote,
+    bool skipUnchangedAttention = false,
+  }) async {
     var link = initial;
     for (var attempt = 0; attempt < 3; attempt++) {
       var local = await workspace.inspectRevisionSelections(
@@ -189,10 +258,32 @@ final class Reconciler {
       if (remote == null) {
         final read = await api.readLineage(link.lineageId!);
         if (read is ApiNotFound) {
-          return const SyncNeedsAttention(AttentionReason.missingAfterReset);
+          if (link.clientKey != null) {
+            link = await _clearPendingLineage(link);
+            continue;
+          }
+          return _rememberAttention(
+            link,
+            link.version,
+            local,
+            const SyncNeedsAttention(AttentionReason.missingAfterReset),
+          );
         }
         if (read is! CloudApiSuccess<Lineage>) return _failure(read);
         remote = read.value;
+      }
+      final previous = link.attentionAttempt;
+      final localSourceReplaced =
+          link.sourceEpoch != null &&
+          local?.sourceEpoch != null &&
+          local!.sourceEpoch != link.sourceEpoch;
+      if (skipUnchangedAttention &&
+          previous != null &&
+          !localSourceReplaced &&
+          previous.outcome.reason != AttentionReason.missingAfterReset &&
+          remote.version == previous.version &&
+          local?.effective == previous.effective) {
+        return previous.outcome;
       }
       if (remote.state == LineageState.stopped) {
         await state.unlink(link.managedSkillId);
@@ -203,9 +294,15 @@ final class Reconciler {
           final applied = await workspace.remove(
             managedSkillId: local.id,
             expectedEffective: local.effective,
+            expectedSourceEpoch: local.sourceEpoch,
           );
           if (applied is WorkspaceDraftRequired) {
-            return const SyncNeedsAttention(AttentionReason.removedWithDraft);
+            return _rememberAttention(
+              link,
+              remote.version,
+              local,
+              const SyncNeedsAttention(AttentionReason.removedWithDraft),
+            );
           }
           if (applied is WorkspaceApplyFailed &&
               applied.code == WorkspaceFailureCode.staleSnapshot) {
@@ -223,33 +320,48 @@ final class Reconciler {
       }
       if (local == null) {
         final removed = await api.remove(remote.id);
-        if (removed is! CloudApiSuccess<Lineage>) return _failure(removed);
+        if (removed is! CloudApiSuccess<Lineage> && removed is! ApiNotFound) {
+          return _failure(removed);
+        }
         await state.unlink(link.managedSkillId);
         return const SkillRemoved();
       }
       final source = PortableSource.fromJson(remote.source), head = remote.head;
+      final newerGeneration = remote.generation > link.generation;
+      // A new remote Generation with our changed local epoch and matching
+      // bytes can acknowledge a Generation change whose response was lost.
       if (head != null &&
+          (newerGeneration ? localSourceReplaced : !localSourceReplaced) &&
           local.source == source &&
           local.effective == head.effective &&
           local.upstream == head.upstream) {
-        await _remember(link, remote);
+        await _remember(link, remote, local.sourceEpoch);
         return const SkillSynced();
       }
-      if (remote.generation > link.generation) {
-        if (local.effective != link.effective) {
-          return const SyncNeedsAttention(
-            AttentionReason.sourceReplacedWithLocalChanges,
+      if (newerGeneration) {
+        if (local.effective != link.effective || localSourceReplaced) {
+          return _rememberAttention(
+            link,
+            remote.version,
+            local,
+            const SyncNeedsAttention(
+              AttentionReason.sourceReplacedWithLocalChanges,
+            ),
           );
         }
-        return _replace(link, remote, local);
+        final outcome = await _replace(link, remote, local);
+        return outcome is SyncNeedsAttention
+            ? _rememberAttention(link, remote.version, local, outcome)
+            : outcome;
       }
-      final sourceChanged = local.source != source;
+      final sourceChanged = local.source != source || localSourceReplaced;
       if (head != null && !sourceChanged) {
         final applied = await _download(
           remote,
           (path) => workspace.applyContent(
             managedSkillId: local!.id,
             expectedEffective: local.effective,
+            expectedSourceEpoch: local.sourceEpoch,
             effective: head.effective,
             upstream: head.upstream,
             packPath: path,
@@ -258,17 +370,27 @@ final class Reconciler {
         if (applied.error != null) return applied.error!;
         switch (applied.value!) {
           case WorkspaceDraftRequired():
-            return const SyncNeedsAttention(AttentionReason.incomingDraft);
+            return _rememberAttention(
+              link,
+              remote.version,
+              local,
+              const SyncNeedsAttention(AttentionReason.incomingDraft),
+            );
           case WorkspaceConflicted():
-            return SyncNeedsAttention(
-              AttentionReason.syncMergeConflict,
-              deviceName: head.deviceName,
+            return _rememberAttention(
+              link,
+              remote.version,
+              local,
+              SyncNeedsAttention(
+                AttentionReason.syncMergeConflict,
+                deviceName: head.deviceName,
+              ),
             );
           case WorkspaceApplyFailed(code: WorkspaceFailureCode.staleSnapshot):
             remote = null;
             continue;
           case WorkspaceFastForwarded():
-            await _remember(link, remote);
+            await _remember(link, remote, local.sourceEpoch);
             return const SkillSynced();
           case WorkspaceNoChange():
           case WorkspaceMerged():
@@ -283,7 +405,7 @@ final class Reconciler {
         }
         if (local.effective == head.effective &&
             local.upstream == head.upstream) {
-          await _remember(link, remote);
+          await _remember(link, remote, local.sourceEpoch);
           return const SkillSynced();
         }
       }
@@ -294,7 +416,7 @@ final class Reconciler {
       );
       switch (uploaded) {
         case CloudApiSuccess<Lineage>(:final value):
-          await _remember(link, value);
+          await _remember(link, value, local.sourceEpoch);
           return const SkillSynced();
         case ApiStaleHead(:final lineage):
           remote = lineage;
@@ -304,11 +426,75 @@ final class Reconciler {
           remote = lineage;
         case ApiPackMissing():
           remote = null;
+        case ApiNotFound():
+          if (link.clientKey != null) {
+            link = await _clearPendingLineage(link);
+          }
+          remote = null;
         default:
-          return _failure(uploaded);
+          final result = _failure(uploaded);
+          if (uploaded is ApiStorageLimitReached &&
+              !link.uploadBlockedByQuota) {
+            await state.put(
+              SyncLink(
+                managedSkillId: link.managedSkillId,
+                lineageId: link.lineageId,
+                clientKey: link.clientKey,
+                version: link.version,
+                generation: link.generation,
+                effective: link.effective,
+                sourceEpoch: link.sourceEpoch,
+                uploadBlockedByQuota: true,
+              ),
+            );
+          }
+          return result is SyncNeedsAttention
+              ? _rememberAttention(link, remote.version, local, result)
+              : result;
       }
     }
     return const WaitingToUpload();
+  }
+
+  Future<SyncLink> _clearPendingLineage(SyncLink link) async {
+    final pending = SyncLink(
+      managedSkillId: link.managedSkillId,
+      clientKey: link.clientKey,
+    );
+    await state.put(pending);
+    return pending;
+  }
+
+  Future<SyncNeedsAttention> _rememberAttention(
+    SyncLink link,
+    int version,
+    WorkspaceSkill? local,
+    SyncNeedsAttention outcome,
+  ) async {
+    final attempt = link.attentionAttempt;
+    if (attempt?.version != version ||
+        attempt?.effective != local?.effective ||
+        attempt?.outcome.reason != outcome.reason ||
+        attempt?.outcome.deviceName != outcome.deviceName ||
+        attempt?.outcome.occupant != outcome.occupant) {
+      await state.put(
+        SyncLink(
+          managedSkillId: link.managedSkillId,
+          lineageId: link.lineageId,
+          clientKey: link.clientKey,
+          version: link.version,
+          generation: link.generation,
+          effective: link.effective,
+          sourceEpoch: link.sourceEpoch,
+          attentionAttempt: (
+            version: version,
+            effective: local?.effective,
+            outcome: outcome,
+          ),
+        ),
+      );
+    }
+    return outcome;
   }
 
   Future<CloudApiResult<Lineage>> _upload(
@@ -341,6 +527,7 @@ final class Reconciler {
       final current = await workspace.inspectRevisionSelections(local.id);
       if (current == null ||
           current.source != local.source ||
+          current.sourceEpoch != local.sourceEpoch ||
           current.effective != export.effective ||
           current.upstream != export.upstream) {
         return const ApiUnavailable(CloudFailureCode.server);
@@ -395,15 +582,17 @@ final class Reconciler {
     }
   }
 
-  Future<void> _remember(SyncLink link, Lineage remote) => state.put(
-    SyncLink(
-      managedSkillId: link.managedSkillId,
-      lineageId: remote.id,
-      version: remote.version,
-      generation: remote.generation,
-      effective: remote.head?.effective,
-    ),
-  );
+  Future<void> _remember(SyncLink link, Lineage remote, String? sourceEpoch) =>
+      state.put(
+        SyncLink(
+          managedSkillId: link.managedSkillId,
+          lineageId: remote.id,
+          version: remote.version,
+          generation: remote.generation,
+          effective: remote.head?.effective,
+          sourceEpoch: sourceEpoch,
+        ),
+      );
   Future<SyncLink?> _link(String skillId) async => (await state.links())
       .where((l) => l.managedSkillId == skillId)
       .firstOrNull;
@@ -417,23 +606,24 @@ final class Reconciler {
       return const SyncNeedsAttention(AttentionReason.tooLarge);
     }
     if (result is ApiUnavailable) {
-      _retryAfter = result.retryAfter;
+      _retryAfter = result.retryAfter ?? _retryAfter;
       if (result.code == CloudFailureCode.protocol) {
         throw StateError('cloud_protocol');
       }
       return const WaitingToUpload();
     }
     if (result is ApiSignInRequired || result is ApiStorageLimitReached) {
-      return SyncAccountCondition(result as CloudApiError);
+      final outcome = SyncAccountCondition(result as CloudApiError);
+      if (_accountCondition?.condition is! ApiSignInRequired) {
+        _accountCondition = outcome;
+      }
+      return outcome;
     }
     throw StateError('cloud_protocol');
   }
 
   Never _workspaceDefect() => throw StateError('cloud_workspace_contract');
-  bool _settled(SyncOutcome result) =>
-      result is SkillSynced ||
-      result is SkillDeviceOnly ||
-      result is SkillRemoved;
+  bool _settled(SyncOutcome result) => result is! WaitingToUpload;
   Future<String> _scratch() async {
     await Directory(scratchDirectory).create(recursive: true);
     return '$scratchDirectory/${_uuid()}.pack';
@@ -442,14 +632,22 @@ final class Reconciler {
   Future<SyncBootstrap> bootstrap({bool reset = false}) async {
     final library = <Lineage>[];
     String? cursor, feedCursor;
+    var restarted = false;
     do {
       final response = await api.listLibrary(cursor: cursor);
+      if (response is ApiCursorExpired && !restarted) {
+        restarted = true;
+        library.clear();
+        cursor = feedCursor = null;
+        continue;
+      }
       if (response is! CloudApiSuccess<LibraryPage>) {
-        _failure(response);
-        return SyncBootstrap(
-          installedSkillIds: [],
-          outcomes: {},
-          completed: false,
+        if (response is ApiCursorExpired) {
+          return const SyncBootstrap._unavailable(null);
+        }
+        final outcome = _failure(response);
+        return SyncBootstrap._unavailable(
+          outcome is SyncAccountCondition ? outcome : null,
         );
       }
       if (feedCursor != null && feedCursor != response.value.feedCursor) {
@@ -458,14 +656,15 @@ final class Reconciler {
       feedCursor = response.value.feedCursor;
       library.addAll(response.value.lineages);
       cursor = response.value.next;
-    } while (cursor != null);
+      if (cursor == null) break;
+    } while (true);
     final results = <String, SyncOutcome>{}, installed = <String>{};
     var completed = true;
     for (final remote in library) {
       if ((await state.exclusions()).contains(remote.id)) continue;
       final result = await _materialize(remote);
       results[remote.id] = result.outcome;
-      _record(remote.id, result.outcome);
+      _record(result.managedSkillId ?? remote.id, result.outcome);
       if (result.installed != null) installed.add(result.installed!);
       if (!_settled(result.outcome)) completed = false;
     }
@@ -473,9 +672,19 @@ final class Reconciler {
       final present = library.map((l) => l.id).toSet();
       for (final link in await state.links()) {
         if (link.lineageId != null && !present.contains(link.lineageId)) {
-          const reason = SyncNeedsAttention(AttentionReason.missingAfterReset);
-          results[link.lineageId!] = reason;
-          _record(link.managedSkillId, reason);
+          final outcome = link.clientKey != null
+              ? await _reconcile(link)
+              : await _rememberAttention(
+                  link,
+                  link.version,
+                  await workspace.inspectRevisionSelections(
+                    link.managedSkillId,
+                  ),
+                  const SyncNeedsAttention(AttentionReason.missingAfterReset),
+                );
+          results[link.lineageId!] = outcome;
+          _record(link.managedSkillId, outcome);
+          completed = _settled(outcome) && completed;
         }
       }
     }
@@ -487,17 +696,29 @@ final class Reconciler {
     );
   }
 
-  Future<({SyncOutcome outcome, String? installed})> _materialize(
-    Lineage remote,
-  ) async {
+  Future<({SyncOutcome outcome, String? installed, String? managedSkillId})>
+  _materialize(Lineage remote) async {
     if (remote.state != LineageState.live || remote.head == null) {
-      return (outcome: const SkillDeviceOnly(), installed: null);
+      return (
+        outcome: const SkillDeviceOnly(),
+        installed: null,
+        managedSkillId: null,
+      );
     }
     final linked = (await state.links())
         .where((l) => l.lineageId == remote.id)
         .firstOrNull;
     if (linked != null) {
-      return (outcome: await _reconcile(linked, remote), installed: null);
+      return (
+        outcome: await _reconcile(
+          linked,
+          remote: remote,
+          skipUnchangedAttention:
+              _outcomes[linked.managedSkillId] is! WaitingToUpload,
+        ),
+        installed: null,
+        managedSkillId: linked.managedSkillId,
+      );
     }
     final source = PortableSource.fromJson(remote.source), head = remote.head!;
     final existing = (await workspace.listSkills())
@@ -516,6 +737,7 @@ final class Reconciler {
             occupant: existing.id,
           ),
           installed: null,
+          managedSkillId: null,
         );
       }
       final link = SyncLink(
@@ -524,7 +746,11 @@ final class Reconciler {
         generation: remote.generation,
       );
       await state.put(link);
-      return (outcome: await _reconcile(link, remote), installed: null);
+      return (
+        outcome: await _reconcile(link, remote: remote),
+        installed: null,
+        managedSkillId: existing.id,
+      );
     }
     final applied = await _download(
       remote,
@@ -536,7 +762,7 @@ final class Reconciler {
       ),
     );
     if (applied.error != null) {
-      return (outcome: applied.error!, installed: null);
+      return (outcome: applied.error!, installed: null, managedSkillId: null);
     }
     if (applied.value case WorkspaceSlotOccupied(:final occupant)) {
       return (
@@ -545,11 +771,23 @@ final class Reconciler {
           occupant: occupant,
         ),
         installed: null,
+        managedSkillId: null,
       );
     }
-    if (applied.value case WorkspaceInstalled(:final managedSkillId)) {
-      await _remember(SyncLink(managedSkillId: managedSkillId), remote);
-      return (outcome: const SkillSynced(), installed: managedSkillId);
+    if (applied.value case WorkspaceInstalled(
+      :final managedSkillId,
+      :final sourceEpoch,
+    )) {
+      await _remember(
+        SyncLink(managedSkillId: managedSkillId),
+        remote,
+        sourceEpoch,
+      );
+      return (
+        outcome: const SkillSynced(),
+        installed: managedSkillId,
+        managedSkillId: managedSkillId,
+      );
     }
     _workspaceDefect();
   }
@@ -586,7 +824,13 @@ final class Reconciler {
       final applied = await workspace.remove(
         managedSkillId: skillId,
         expectedEffective: local.effective,
+        expectedSourceEpoch: local.sourceEpoch,
       );
+      if (applied case WorkspaceApplyFailed(
+        code: WorkspaceFailureCode.staleSnapshot,
+      )) {
+        throw const FormatException('cloud_confirmation_stale');
+      }
       if (applied is WorkspaceDraftRequired) {
         return _record(
           skillId,
@@ -613,8 +857,23 @@ final class Reconciler {
       throw StateError('cloud_workspace_contract');
     }
     final result = await api.readLineage(link!.lineageId!);
+    if (result is ApiNotFound) {
+      return _record(
+        skillId,
+        await _rememberAttention(
+          link,
+          link.version,
+          local,
+          const SyncNeedsAttention(AttentionReason.missingAfterReset),
+        ),
+      );
+    }
     if (result is! CloudApiSuccess<Lineage>) return _failure(result);
-    return _record(skillId, await _replace(link, result.value, local));
+    final outcome = await _replace(link, result.value, local);
+    if (outcome is SyncNeedsAttention) {
+      await _rememberAttention(link, result.value.version, local, outcome);
+    }
+    return _record(skillId, outcome);
   }
 
   /// Replaces the occupying local Skill only after an explicit user choice.
@@ -630,7 +889,13 @@ final class Reconciler {
     final local = await workspace.inspectRevisionSelections(occupant);
     if (local == null) throw StateError('cloud_workspace_contract');
     final result = await api.readLineage(lineageId);
+    if (result is ApiNotFound) {
+      return const SyncNeedsAttention(AttentionReason.missingAfterReset);
+    }
     if (result is! CloudApiSuccess<Lineage>) return _failure(result);
+    if (result.value.state != LineageState.live || result.value.head == null) {
+      return const SkillDeviceOnly();
+    }
     final outcome = await _replace(
       SyncLink(managedSkillId: occupant, lineageId: lineageId),
       result.value,
@@ -650,7 +915,7 @@ final class Reconciler {
     WorkspaceSkill local,
   ) async {
     if (remote.state != LineageState.live || remote.head == null) {
-      return _reconcile(link, remote);
+      return _reconcile(link, remote: remote);
     }
     final head = remote.head!,
         applied = await _download(
@@ -662,13 +927,19 @@ final class Reconciler {
             effective: head.effective,
             upstream: head.upstream,
             source: PortableSource.fromJson(remote.source),
+            expectedSourceEpoch:
+                remote.generation > link.generation && link.effective != null
+                ? local.sourceEpoch
+                : null,
           ),
         );
     if (applied.error != null) return applied.error!;
     switch (applied.value!) {
-      case WorkspaceSourceReplaced():
-      case WorkspaceNoChange():
-        await _remember(link, remote);
+      case WorkspaceSourceReplaced(:final sourceEpoch):
+        await _remember(link, remote, sourceEpoch);
+        return const SkillSynced();
+      case WorkspaceNoChange(:final sourceEpoch):
+        await _remember(link, remote, sourceEpoch ?? local.sourceEpoch);
         return const SkillSynced();
       case WorkspaceDraftRequired():
         return const SyncNeedsAttention(AttentionReason.incomingDraft);
