@@ -44,6 +44,7 @@ New development documents for this work go in this folder.
 | `tasks/T14-recovery-bundle-history.md` | Fix T13-1: Recovery Bundles carry each retained revision's history, with a roots-only fallback | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `tasks/T15-m5-nit-cleanup.md` | Clean up Nits T09-1, T09-2, T09-3, and T14-1 | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and Device Authorization sign-in. Library, pack, and feed endpoints come in v0.1 with M4 | Draft; code lifetime decided 2026-11-26 (10 minutes); HTTP 429 added 2026-11-27 (T19). Service side: T17 |
+| `cloud-api-contract-v0.1.md` | M4: Personal Sync data API: Cloud Library, Lineages and Generations, Head Packs, Head Advance, Removal and Stop Syncing, Account Change Feed | Draft 2026-11-27; three open points for the maintainer |
 | `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |
 | `tasks/T17-service-device-sign-in.md` | M3, service side: contract v0 sign-in on `wrangler dev`. Runs in the private service repository | Implemented in the service repository (`9de140b`), reviewed, and accepted; follow-ups T18 and T19 |
 | `reviews/2026-11-27-m3-review.md` | Review of T17, with T16 driven against the dev service | T17 accepted. T17-1 and T17-3: T18. T17-2 fixed in T19 |
