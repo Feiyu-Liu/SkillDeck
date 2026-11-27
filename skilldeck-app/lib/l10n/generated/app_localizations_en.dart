@@ -115,6 +115,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudSyncWaiting => 'Waiting to Upload';
 
   @override
+  String get cloudMetadataWaiting =>
+      'Favorites, notes, or tags are waiting to sync.';
+
+  @override
+  String get cloudMetadataUnavailable =>
+      'This server can sync Skill content. It does not yet support syncing favorites, notes, or tags.';
+
+  @override
+  String get cloudNoteConflict => 'Note conflict';
+
+  @override
+  String get cloudNoteReview => 'Review note conflict';
+
+  @override
+  String get cloudNoteTooLarge =>
+      'Shorten the note to 4 KiB or less to sync it.';
+
+  @override
+  String get cloudNoteEdit => 'Edit note';
+
+  @override
+  String get cloudNoteCloudVersion => 'Cloud note';
+
+  @override
+  String get cloudNoteOtherVersion => 'Incoming note';
+
+  @override
+  String get cloudNoteLocalVersion => 'Unsynced note on this device';
+
+  @override
+  String get cloudNoteEmpty => 'No note';
+
+  @override
+  String get cloudNoteUseVersion => 'Use this version';
+
+  @override
+  String get cloudNoteResolution => 'Note to save';
+
+  @override
+  String get cloudNoteCombine => 'Combine versions';
+
+  @override
+  String get cloudNoteReviewLatest => 'Show latest versions';
+
+  @override
+  String get cloudNoteVersionsChanged =>
+      'A version changed. Review the latest versions before saving. Your edited text stays here.';
+
+  @override
+  String get cloudNoteConflictGone =>
+      'There is no conflict to resolve now. Your edited text stays here.';
+
+  @override
+  String get cloudNoteResolutionFailed =>
+      'The resolution couldn’t sync. Your chosen text stays here.';
+
+  @override
+  String get cloudNoteSaveResolution => 'Save resolution';
+
+  @override
+  String get cloudTagNameTooLarge =>
+      'Shorten the tag name to 64 Unicode characters or fewer to sync it.';
+
+  @override
+  String get cloudTagVocabularyFull =>
+      'Your account can sync up to 256 tags. Delete a synced tag to make room.';
+
+  @override
   String get cloudSyncApplying => 'Applying Cloud changes…';
 
   @override

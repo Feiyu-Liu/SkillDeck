@@ -22,12 +22,14 @@ final class CloudSignInState {
     this.account,
     this.userCode,
     this.browserOpenFailed = false,
+    this.explicitSignIn = false,
   });
 
   final CloudSignInPhase phase;
   final CloudAccount? account;
   final String? userCode;
   final bool browserOpenFailed;
+  final bool explicitSignIn;
 
   CloudAccount? get verifiedAccount =>
       phase == CloudSignInPhase.signedIn ? account : null;
@@ -117,7 +119,11 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
       _set(CloudSignInPhase.waiting, userCode: result.userCode);
       switch (await signIn.complete(result)) {
         case CloudSignInSucceeded(:final account):
-          _set(CloudSignInPhase.signedIn, account: account);
+          _set(
+            CloudSignInPhase.signedIn,
+            account: account,
+            explicitSignIn: true,
+          );
         case CloudSignInDenied():
           _set(CloudSignInPhase.denied);
         case CloudSignInExpired():
@@ -196,6 +202,7 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
     CloudAccount? account,
     String? userCode,
     bool browserOpenFailed = false,
+    bool explicitSignIn = false,
   }) {
     if (!ref.mounted) return;
     state = AsyncData(
@@ -204,6 +211,7 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
         account: account,
         userCode: userCode,
         browserOpenFailed: browserOpenFailed,
+        explicitSignIn: explicitSignIn,
       ),
     );
   }

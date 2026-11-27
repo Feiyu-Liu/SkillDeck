@@ -132,6 +132,11 @@ final class PackageSkillsWorkspaceRepository
         workspace.CommittedChangesResetRequired() => const <WorkspaceSkillId>{},
       },
       resetRequired: result is workspace.CommittedChangesResetRequired,
+      vocabularyChanged: switch (result) {
+        workspace.CommittedChangesAvailable(:final vocabularyChanged) =>
+          vocabularyChanged,
+        workspace.CommittedChangesResetRequired() => true,
+      },
     ),
   );
 
@@ -193,6 +198,44 @@ final class PackageSkillsWorkspaceRepository
             effective: workspace.RevisionId(change.heads.effective),
             upstream: _backendRevision(change.heads.upstream),
             source: _remoteInstallSource(change.source),
+          ),
+        WorkspaceRemoteMetadata() => workspace.RemoteSkillMetadata(
+          managedSkillId: _backendId(change.skillId),
+          expectedRepositoryRevision: workspace.RepositoryRevision(
+            change.expectedRevision,
+          ),
+          expectedEffective: workspace.RevisionId(change.expectedEffective),
+          favorite: change.favorite,
+          note: change.note,
+          tagIds: change.tagIds,
+        ),
+        WorkspaceRemoteTagEnsure() => workspace.RemoteTagVocabulary.ensure(
+          expectedRepositoryRevision: workspace.RepositoryRevision(
+            change.expectedRevision,
+          ),
+          name: change.name,
+          color: change.color,
+        ),
+        WorkspaceRemoteTagUpdate() => workspace.RemoteTagVocabulary.update(
+          expectedRepositoryRevision: workspace.RepositoryRevision(
+            change.expectedRevision,
+          ),
+          tagId: change.tagId,
+          name: change.name,
+          color: change.color,
+        ),
+        WorkspaceRemoteTagDelete() => workspace.RemoteTagVocabulary.delete(
+          expectedRepositoryRevision: workspace.RepositoryRevision(
+            change.expectedRevision,
+          ),
+          tagId: change.tagId,
+        ),
+        WorkspaceRemoteTagRenameMany() =>
+          workspace.RemoteTagVocabulary.renameMany(
+            expectedRepositoryRevision: workspace.RepositoryRevision(
+              change.expectedRevision,
+            ),
+            names: change.names,
           ),
       };
       return _task(
@@ -1134,6 +1177,7 @@ final class PackageSkillsWorkspaceRepository
       WorkspacePersonalTag(
         id: tag.id,
         name: tag.name,
+        normalizedName: tag.normalizedName,
         color: tag.color,
         createdAt: tag.createdAt,
         updatedAt: tag.updatedAt,
@@ -1980,8 +2024,13 @@ WorkspaceRemoteResult _remoteApplyResult(workspace.RemoteApplyResult result) {
       null,
       null,
     ),
-    workspace.RemoteApplyMetadataApplied() || workspace.RemoteApplyTag() => (
-      WorkspaceRemoteResultKind.unsupported,
+    workspace.RemoteApplyMetadataApplied() => (
+      WorkspaceRemoteResultKind.metadataApplied,
+      null,
+      null,
+    ),
+    workspace.RemoteApplyTag() => (
+      WorkspaceRemoteResultKind.tagApplied,
       null,
       null,
     ),
@@ -1990,6 +2039,10 @@ WorkspaceRemoteResult _remoteApplyResult(workspace.RemoteApplyResult result) {
     kind: kind,
     skillId: id == null ? null : WorkspaceSkillId(id),
     effective: effective,
+    tagId: switch (result) {
+      workspace.RemoteApplyTag(:final tagId) => tagId,
+      _ => null,
+    },
     sourceEpoch: switch (result) {
       workspace.RemoteApplyInstalled(:final sourceEpoch) ||
       workspace.RemoteApplySourceReplaced(:final sourceEpoch) ||

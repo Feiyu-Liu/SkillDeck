@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -54,6 +55,12 @@ void main() {
         reopened.sourceIdFor(['local', '/other/project/skills']),
         isNot(id),
       );
+      final tagKey = identities.first.tagCreationKey('tag-one');
+      expect(tagKey, matches('^[0-9a-f]{64}\$'));
+      expect(reopened.tagCreationKey('tag-one'), tagKey);
+      expect(isolated.tagCreationKey('tag-one'), isNot(tagKey));
+      expect(reopened.tagCreationKey('tag-two'), isNot(tagKey));
+      expect(reopened.sourceIdFor(['tag-one']), isNot(tagKey));
     },
   );
 
@@ -134,6 +141,41 @@ void main() {
     expect(await store().feedCursor(), isNull);
     expect(await store().exclusions(), isEmpty);
     expect(support.listSync(recursive: true).whereType<File>(), hasLength(1));
+  });
+
+  test('upgrades a pre-metadata file and persists the metadata only in its account', () async {
+    final old = store();
+    await old.put(
+      const SyncLink(managedSkillId: 'skill', lineageId: 'lineage'),
+    );
+    await old.setFeedCursor('content-cursor');
+    final file = support.listSync(recursive: true).whereType<File>().single;
+    final legacy =
+        jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    legacy.remove('metadata');
+    await file.writeAsString(jsonEncode(legacy));
+
+    final upgraded = store();
+    expect((await upgraded.metadataState()).bootstrapped, isFalse);
+    expect((await upgraded.links()).single.lineageId, 'lineage');
+    expect(await upgraded.feedCursor(), 'content-cursor');
+    const metadata = SyncMetadataState(
+      bootstrapped: true,
+      knownTagIds: {'known-local-tag'},
+      eligibleTagIds: {'new-local-tag'},
+    );
+    await upgraded.setMetadataState(metadata);
+    expect((await store().metadataState()).toJson(), metadata.toJson());
+    expect((await store().links()).single.lineageId, 'lineage');
+    expect(
+      (await store(accountId: 'other-account').metadataState()).knownTagIds,
+      isNull,
+    );
+    expect(
+      (await store(deviceId: 'other-device').metadataState()).lineages,
+      isEmpty,
+    );
+    expect(diagnostics, isEmpty);
   });
 
   test(

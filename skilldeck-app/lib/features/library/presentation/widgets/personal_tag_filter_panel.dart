@@ -4,12 +4,15 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:next_ui/next_ui.dart';
+import 'package:skills_cloud/skills_cloud.dart';
+import 'package:skills_manager/features/cloud/cloud_sync_providers.dart';
 import 'package:skills_manager/features/library/personal_tag_palette.dart';
 import 'package:skills_manager/features/library/personal_tag_providers.dart';
 import 'package:skills_manager/features/library/presentation/widgets/personal_tag_controls.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/l10n/l10n.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
+import 'package:skills_manager/shared/widgets/app_tooltip.dart';
 
 /// The sort card's content: [sortSection] above the Personal Tag filter.
 ///
@@ -63,12 +66,23 @@ class _PersonalTagFilterPanelState
     final counts = ref.watch(personalTagCountsProvider);
     final selected = ref.watch(personalTagFilterProvider);
     final filter = ref.read(personalTagFilterProvider.notifier);
+    final runtime = ref.watch(cloudSyncRuntimeProvider);
+    final corrections = runtime == null
+        ? const <String, MetadataLimit>{}
+        : ref.watch(
+            cloudSyncStateProvider.select(
+              (state) => state.value?.accountId == runtime.accountId
+                  ? state.value!.vocabularyAttention
+                  : const <String, MetadataLimit>{},
+            ),
+          );
 
     final editing = tags.where((tag) => tag.id == _editingId).firstOrNull;
     if (editing != null) {
       return _PersonalTagEditor(
         key: ValueKey('personal-tag-editor-${editing.id}'),
         tag: editing,
+        correction: corrections[editing.id],
         skillCount: counts[editing.id] ?? 0,
         onDone: () => setState(() => _editingId = null),
       );
@@ -87,7 +101,14 @@ class _PersonalTagFilterPanelState
               ? const NeverScrollableScrollPhysics()
               : null,
           padding: EdgeInsets.zero,
-          children: _tagRows(context, tags, counts, selected, filter),
+          children: _tagRows(
+            context,
+            tags,
+            counts,
+            selected,
+            filter,
+            corrections,
+          ),
         );
         final content = Column(
           mainAxisSize: scrollWholePanel ? MainAxisSize.min : MainAxisSize.max,
@@ -183,6 +204,7 @@ class _PersonalTagFilterPanelState
     Map<String, int> counts,
     Set<String> selected,
     PersonalTagFilterController filter,
+    Map<String, MetadataLimit> corrections,
   ) {
     final l10n = context.l10n;
     return [
@@ -217,6 +239,7 @@ class _PersonalTagFilterPanelState
       for (final tag in tags)
         _TagFilterRow(
           tag: tag,
+          correction: corrections[tag.id],
           count: counts[tag.id] ?? 0,
           selected: selected.contains(tag.id),
           onTap: () => filter.toggle(tag.id),
@@ -232,6 +255,7 @@ class _PersonalTagFilterPanelState
 class _TagFilterRow extends StatefulWidget {
   const _TagFilterRow({
     required this.tag,
+    required this.correction,
     required this.count,
     required this.selected,
     required this.onTap,
@@ -239,6 +263,7 @@ class _TagFilterRow extends StatefulWidget {
   });
 
   final WorkspacePersonalTag tag;
+  final MetadataLimit? correction;
   final int count;
   final bool selected;
   final VoidCallback onTap;
@@ -287,6 +312,20 @@ class _TagFilterRowState extends State<_TagFilterRow> {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                if (_tagCorrection(context.l10n, widget.correction)
+                    case final label?)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: AppTooltip(
+                      message: label,
+                      child: Icon(
+                        LucideIcons.triangleAlert,
+                        size: AppSizes.iconXs,
+                        color: AppPalette.of(context).warning,
+                        semanticLabel: label,
+                      ),
+                    ),
+                  ),
                 Text(
                   '${widget.count}',
                   style: AppTypography.of(context).mono.copyWith(
@@ -320,12 +359,14 @@ class _TagFilterRowState extends State<_TagFilterRow> {
 class _PersonalTagEditor extends ConsumerStatefulWidget {
   const _PersonalTagEditor({
     required this.tag,
+    required this.correction,
     required this.skillCount,
     required this.onDone,
     super.key,
   });
 
   final WorkspacePersonalTag tag;
+  final MetadataLimit? correction;
   final int skillCount;
   final VoidCallback onDone;
 
@@ -369,6 +410,10 @@ class _PersonalTagEditorState extends ConsumerState<_PersonalTagEditor> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          if (_tagCorrection(l10n, widget.correction) case final message?) ...[
+            Text(message, style: AppTypography.of(context).bodyMuted),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           PersonalTagNameField(
             initialValue: tag.name,
             cancelOnBlur: false,
@@ -470,3 +515,10 @@ class _PersonalTagEditorState extends ConsumerState<_PersonalTagEditor> {
     );
   }
 }
+
+String? _tagCorrection(AppLocalizations l10n, MetadataLimit? reason) =>
+    switch (reason) {
+      MetadataLimit.name => l10n.cloudTagNameTooLarge,
+      MetadataLimit.vocabulary => l10n.cloudTagVocabularyFull,
+      _ => null,
+    };

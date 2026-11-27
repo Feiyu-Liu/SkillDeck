@@ -1,3 +1,5 @@
+import 'metadata_values.dart';
+
 /// Opaque SHA-256 identifier of a Revision Pack.
 final class PackDigest {
   PackDigest(this.value) {
@@ -112,16 +114,36 @@ final class LibraryPage {
     required Iterable<Lineage> lineages,
     required this.next,
     required this.feedCursor,
-  }) : lineages = List.unmodifiable(lineages);
+    Iterable<LineageMetadata>? metadata,
+    this.tagVocabulary,
+  }) : lineages = List.unmodifiable(lineages),
+       metadata = metadata == null ? null : List.unmodifiable(metadata);
   final List<Lineage> lineages;
   final String? next;
   final String feedCursor;
-  factory LibraryPage.fromJson(Object? value) {
+  final List<LineageMetadata>? metadata;
+  final TagVocabulary? tagVocabulary;
+  factory LibraryPage.fromJson(Object? value, {bool includeMetadata = false}) {
     final m = jsonObject(value);
+    final lineages = jsonList(m['lineages']).map(Lineage.fromJson).toList();
+    final metadata = includeMetadata
+        ? jsonList(m['metadata']).map(LineageMetadata.fromJson).toList()
+        : null;
+    if (metadata != null &&
+        (metadata.length != lineages.length ||
+            Iterable<int>.generate(lineages.length)
+                .any((i) => lineages[i].id != metadata[i].lineageId) ||
+            !m.containsKey('tagVocabulary'))) {
+      throw const FormatException('cloud_protocol');
+    }
     return LibraryPage(
-      lineages: jsonList(m['lineages']).map(Lineage.fromJson),
+      lineages: lineages,
       next: nullableString(m['next']),
       feedCursor: jsonString(m['feedCursor']),
+      metadata: metadata,
+      tagVocabulary: !includeMetadata || m['tagVocabulary'] == null
+          ? null
+          : TagVocabulary.fromJson(m['tagVocabulary']),
     );
   }
 }
@@ -136,6 +158,8 @@ final class FeedEntry {
   final String id;
   final int version;
   bool get isLineage => kind == 'lineage';
+  bool get isMetadata => kind == 'metadata';
+  bool get isTagVocabulary => kind == 'tagVocabulary';
   factory FeedEntry.fromJson(Object? value) {
     final m = jsonObject(value);
     return FeedEntry(

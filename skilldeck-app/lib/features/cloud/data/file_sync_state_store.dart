@@ -59,6 +59,13 @@ final class FileSyncStateStore implements SyncStateStore {
       _write((state) => state.workspaceCursor = cursor);
 
   @override
+  Future<SyncMetadataState> metadataState() => _read((state) => state.metadata);
+
+  @override
+  Future<void> setMetadataState(SyncMetadataState metadata) =>
+      _write((state) => state.metadata = metadata);
+
+  @override
   Future<Set<String>> exclusions() =>
       _read((state) => Set.unmodifiable(state.exclusions));
 
@@ -83,9 +90,9 @@ final class FileSyncStateStore implements SyncStateStore {
   Future<void> _write(void Function(_SyncState) update) => _serialize(() async {
     final next = (await _load()).copy();
     update(next);
-    await _file.parent.create(recursive: true);
     final temporary = File('${_file.path}.${_suffix()}.tmp');
     try {
+      await _file.parent.create(recursive: true);
       await temporary.writeAsString(jsonEncode(next.toJson()), flush: true);
       await temporary.rename(_file.path);
       _cached = next;
@@ -95,7 +102,7 @@ final class FileSyncStateStore implements SyncStateStore {
       } on FileSystemException {
         // A failed cleanup must not mask the original write failure.
       }
-      rethrow;
+      throw StateError('local_state_io');
     }
   });
 
@@ -137,6 +144,7 @@ final class _SyncState {
   _SyncState({
     this.feedCursor,
     this.workspaceCursor,
+    this.metadata = const SyncMetadataState(),
     Map<String, SyncLink>? links,
     Set<String>? exclusions,
   }) : links = links ?? {},
@@ -144,12 +152,14 @@ final class _SyncState {
 
   String? feedCursor;
   String? workspaceCursor;
+  SyncMetadataState metadata;
   final Map<String, SyncLink> links;
   final Set<String> exclusions;
 
   _SyncState copy() => _SyncState(
     feedCursor: feedCursor,
     workspaceCursor: workspaceCursor,
+    metadata: metadata,
     links: Map.of(links),
     exclusions: Set.of(exclusions),
   );
@@ -158,6 +168,7 @@ final class _SyncState {
     'version': 1,
     'feedCursor': feedCursor,
     'workspaceCursor': workspaceCursor,
+    'metadata': metadata.toJson(),
     'exclusions': exclusions.toList(),
     'links': [
       for (final link in links.values)
@@ -243,9 +254,16 @@ final class _SyncState {
     if (workspaceCursor != null && (int.tryParse(workspaceCursor) ?? -1) < 0) {
       throw const FormatException('sync_state_workspace_cursor');
     }
+    final metadata = json['metadata'];
+    if (metadata != null && metadata is! Map<String, Object?>) {
+      throw const FormatException('sync_state_metadata');
+    }
     return _SyncState(
       feedCursor: _nullableString(json['feedCursor']),
       workspaceCursor: workspaceCursor,
+      metadata: metadata == null
+          ? const SyncMetadataState()
+          : SyncMetadataState.fromJson(metadata as Map<String, Object?>),
       links: links,
       exclusions: {for (final id in json['exclusions'] as List) _string(id)},
     );

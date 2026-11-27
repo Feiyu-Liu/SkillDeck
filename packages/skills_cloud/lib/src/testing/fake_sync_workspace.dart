@@ -27,6 +27,12 @@ final class FakeSyncWorkspace implements SyncWorkspace {
   final _commits = <String, FakeCommit>{};
   final _blobs = <String, String>{};
   final _changes = <String>[];
+  static const _vocabularyChange = '@vocabulary';
+  final _metadata = <String, WorkspaceSkillMetadata>{};
+  final _tags = <String, WorkspaceTag>{};
+  int _nextTag = 0;
+  void Function()? beforeMetadataApply;
+  void Function()? beforeTagApply;
   final drafts = <String>{},
       conflicts = <String>{},
       syncedOriginSkills = <String>{};
@@ -126,12 +132,217 @@ final class FakeSyncWorkspace implements SyncWorkspace {
   Future<WorkspaceChanges> inspectCommittedChanges(String? cursor) async {
     final start = cursor == null ? 0 : int.parse(cursor);
     return WorkspaceChanges(
-      skillIds: _changes.skip(start),
+      skillIds: _changes.skip(start).where((id) => id != _vocabularyChange),
       cursor: '${_changes.length}',
+      vocabularyChanged: _changes.skip(start).contains(_vocabularyChange),
     );
   }
 
   void _changed(String id) => _changes.add(id);
+
+  void editMetadata(
+    String skillId, {
+    required bool favorite,
+    required String? note,
+    required Iterable<String> tagIds,
+  }) {
+    _metadata[skillId] = WorkspaceSkillMetadata(
+      favorite: favorite,
+      note: note,
+      tagIds: tagIds,
+    );
+    _changed(skillId);
+  }
+
+  WorkspaceTag createLocalTag(String name, {String? color}) {
+    final matching = _tags.values
+        .where((tag) => tag.normalizedName == name.trim().toUpperCase())
+        .firstOrNull;
+    if (matching != null) return matching;
+    final tag = WorkspaceTag(
+      id: 'tag-${_nextTag++}',
+      name: name.trim(),
+      normalizedName: name.trim().toUpperCase(),
+      color: color?.toUpperCase(),
+    );
+    _tags[tag.id] = tag;
+    _changed(_vocabularyChange);
+    return tag;
+  }
+
+  WorkspaceTag editTag(
+    String id, {
+    required String name,
+    required String? color,
+  }) {
+    final old = _tags[id]!;
+    final normalizedName = name.trim().toUpperCase();
+    final target = _tags.values
+        .where((tag) => tag.id != id && tag.normalizedName == normalizedName)
+        .firstOrNull;
+    if (target != null) {
+      _removeTag(id, replacement: target.id);
+    }
+    final tag = WorkspaceTag(
+      id: target?.id ?? id,
+      name: name.trim(),
+      normalizedName: normalizedName,
+      color: color?.toUpperCase(),
+    );
+    if (tag.id != old.id || tag.name != old.name || tag.color != old.color) {
+      _tags[tag.id] = tag;
+      _changed(_vocabularyChange);
+    }
+    return tag;
+  }
+
+  void removeLocalTag(String id) => _removeTag(id);
+
+  void _removeTag(String id, {String? replacement}) {
+    if (_tags.remove(id) == null) return;
+    _changed(_vocabularyChange);
+    for (final entry in _metadata.entries.toList()) {
+      final metadata = entry.value;
+      if (metadata.tagIds.contains(id)) {
+        editMetadata(
+          entry.key,
+          favorite: metadata.favorite,
+          note: metadata.note,
+          tagIds: {...metadata.tagIds, ?replacement}..remove(id),
+        );
+      }
+    }
+  }
+
+  @override
+  String tagClientKey(String localTagId) => sha256
+      .convert(utf8.encode('fake-device-${identityHashCode(this)}:$localTagId'))
+      .toString();
+
+  @override
+  Future<WorkspaceMetadataSnapshot> inspectMetadata() async =>
+      WorkspaceMetadataSnapshot(
+        revision: '${_changes.length}',
+        skills: {
+          for (final id in _skills.keys)
+            id:
+                _metadata[id] ??
+                WorkspaceSkillMetadata(
+                  favorite: false,
+                  note: null,
+                  tagIds: const {},
+                ),
+        },
+        tags: _tags,
+      );
+
+  @override
+  Future<WorkspaceApply> applyMetadata({
+    required String managedSkillId,
+    required String expectedRevision,
+    required bool favorite,
+    required String? note,
+    required Set<String> tagIds,
+  }) async {
+    beforeMetadataApply?.call();
+    if (expectedRevision != '${_changes.length}') {
+      return const WorkspaceApplyFailed(WorkspaceFailureCode.staleSnapshot);
+    }
+    if (!_skills.containsKey(managedSkillId)) {
+      return const WorkspaceApplyFailed(WorkspaceFailureCode.skillNotFound);
+    }
+    editMetadata(
+      managedSkillId,
+      favorite: favorite,
+      note: note,
+      tagIds: tagIds,
+    );
+    return const WorkspaceNoChange();
+  }
+
+  @override
+  Future<WorkspaceTagApply> ensureTag({
+    required String expectedRevision,
+    required String name,
+    required String? color,
+  }) async {
+    if (_staleTag(expectedRevision)) {
+      return const WorkspaceTagApplyFailed(WorkspaceFailureCode.staleSnapshot);
+    }
+    final matching = _tags.values
+        .where((tag) => tag.normalizedName == name.trim().toUpperCase())
+        .firstOrNull;
+    final applied = matching == null
+        ? createLocalTag(name, color: color)
+        : editTag(matching.id, name: name, color: color);
+    return WorkspaceTagApplied(localTagId: applied.id);
+  }
+
+  @override
+  Future<WorkspaceTagApply> updateTag({
+    required String expectedRevision,
+    required String localTagId,
+    required String name,
+    required String? color,
+  }) async {
+    if (_staleTag(expectedRevision)) {
+      return const WorkspaceTagApplyFailed(WorkspaceFailureCode.staleSnapshot);
+    }
+    return WorkspaceTagApplied(
+      localTagId: editTag(localTagId, name: name, color: color).id,
+    );
+  }
+
+  @override
+  Future<WorkspaceTagApply> deleteTag({
+    required String expectedRevision,
+    required String localTagId,
+  }) async {
+    if (_staleTag(expectedRevision)) {
+      return const WorkspaceTagApplyFailed(WorkspaceFailureCode.staleSnapshot);
+    }
+    _removeTag(localTagId);
+    return const WorkspaceTagApplied();
+  }
+
+  bool _staleTag(String expectedRevision) {
+    beforeTagApply?.call();
+    return expectedRevision != '${_changes.length}';
+  }
+
+  @override
+  Future<WorkspaceTagApply> renameTags({
+    required String expectedRevision,
+    required Map<String, String> names,
+  }) async {
+    if (_staleTag(expectedRevision)) {
+      return const WorkspaceTagApplyFailed(WorkspaceFailureCode.staleSnapshot);
+    }
+    final occupied = _tags.values
+        .where((tag) => !names.containsKey(tag.id))
+        .map((tag) => tag.normalizedName)
+        .toSet();
+    final changed = <String, WorkspaceTag>{};
+    for (final entry in names.entries) {
+      final name = entry.value.trim(), key = name.toUpperCase();
+      final original = _tags[entry.key];
+      if (original == null || !occupied.add(key)) {
+        return const WorkspaceTagApplyFailed(
+          WorkspaceFailureCode.operationFailed,
+        );
+      }
+      changed[entry.key] = WorkspaceTag(
+        id: entry.key,
+        name: name,
+        normalizedName: key,
+        color: original.color,
+      );
+    }
+    _tags.addAll(changed);
+    _changed(_vocabularyChange);
+    return const WorkspaceTagApplied();
+  }
+
   @override
   Future<WorkspaceExport> exportRevisionPack(
     String managedSkillId,

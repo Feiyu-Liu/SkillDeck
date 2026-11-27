@@ -542,6 +542,7 @@ final class RemoteSkillMetadata extends ApplyRemoteStateRequest {
   RemoteSkillMetadata({
     required this.managedSkillId,
     required this.expectedEffective,
+    this.expectedRepositoryRevision,
     required this.favorite,
     required String? note,
     required Iterable<String> tagIds,
@@ -554,6 +555,7 @@ final class RemoteSkillMetadata extends ApplyRemoteStateRequest {
 
   final ManagedSkillId managedSkillId;
   final RevisionId expectedEffective;
+  final RepositoryRevision? expectedRepositoryRevision;
   final bool favorite;
   final String? note;
   final Set<String> tagIds;
@@ -572,22 +574,37 @@ final class RemoteSkillRemoval extends ApplyRemoteStateRequest {
 }
 
 sealed class RemoteTagVocabulary extends ApplyRemoteStateRequest {
-  const RemoteTagVocabulary._();
+  const RemoteTagVocabulary._(this.expectedRepositoryRevision);
+
+  final RepositoryRevision? expectedRepositoryRevision;
 
   factory RemoteTagVocabulary.ensure({
     required String name,
     required String? color,
+    RepositoryRevision? expectedRepositoryRevision,
   }) = RemoteTagEnsure;
   factory RemoteTagVocabulary.update({
     required String tagId,
     required String name,
     required String? color,
+    RepositoryRevision? expectedRepositoryRevision,
   }) = RemoteTagUpdate;
-  factory RemoteTagVocabulary.delete({required String tagId}) = RemoteTagDelete;
+  factory RemoteTagVocabulary.delete({
+    required String tagId,
+    RepositoryRevision? expectedRepositoryRevision,
+  }) = RemoteTagDelete;
+  factory RemoteTagVocabulary.renameMany({
+    required Map<String, String> names,
+    required RepositoryRevision expectedRepositoryRevision,
+  }) = RemoteTagRenameMany;
 }
 
 final class RemoteTagEnsure extends RemoteTagVocabulary {
-  RemoteTagEnsure({required this.name, required this.color}) : super._() {
+  RemoteTagEnsure({
+    required this.name,
+    required this.color,
+    RepositoryRevision? expectedRepositoryRevision,
+  }) : super._(expectedRepositoryRevision) {
     _requireNonEmpty(name, 'name');
     validateColor(color);
   }
@@ -601,7 +618,8 @@ final class RemoteTagUpdate extends RemoteTagVocabulary {
     required this.tagId,
     required this.name,
     required this.color,
-  }) : super._() {
+    RepositoryRevision? expectedRepositoryRevision,
+  }) : super._(expectedRepositoryRevision) {
     _requireNonEmpty(tagId, 'tagId');
     _requireNonEmpty(name, 'name');
     validateColor(color);
@@ -613,11 +631,30 @@ final class RemoteTagUpdate extends RemoteTagVocabulary {
 }
 
 final class RemoteTagDelete extends RemoteTagVocabulary {
-  RemoteTagDelete({required this.tagId}) : super._() {
+  RemoteTagDelete({
+    required this.tagId,
+    RepositoryRevision? expectedRepositoryRevision,
+  }) : super._(expectedRepositoryRevision) {
     _requireNonEmpty(tagId, 'tagId');
   }
 
   final String tagId;
+}
+
+/// Renames existing tags together while preserving their identities and assignments.
+final class RemoteTagRenameMany extends RemoteTagVocabulary {
+  RemoteTagRenameMany({
+    required Map<String, String> names,
+    required RepositoryRevision expectedRepositoryRevision,
+  }) : names = Map.unmodifiable(names),
+       super._(expectedRepositoryRevision) {
+    for (final entry in this.names.entries) {
+      _requireNonEmpty(entry.key, 'tagId');
+      _requireNonEmpty(entry.value, 'name');
+    }
+  }
+
+  final Map<String, String> names;
 }
 
 /// Installs a portable source directly from a downloaded Revision Pack.

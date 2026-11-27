@@ -2,6 +2,7 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:next_ui/next_ui.dart';
 import 'package:skills_manager/features/cloud/cloud_providers.dart';
+import 'package:skills_manager/features/cloud/cloud_sync_providers.dart';
 import 'package:skills_manager/features/cloud/presentation/view_models/cloud_sign_in_view_model.dart';
 import 'package:skills_manager/features/cloud/presentation/widgets/cloud_device_exclusions.dart';
 import 'package:skills_manager/features/settings/presentation/widgets/settings_layout.dart';
@@ -21,6 +22,15 @@ class CloudSignInSettings extends ConsumerWidget {
     final vm = ref.read(cloudSignInViewModelProvider.notifier);
     final email = state?.account?.email;
     final phase = state?.phase;
+    final metadataUnavailable =
+        phase == CloudSignInPhase.signedIn &&
+        ref.watch(
+          cloudSyncStateProvider.select(
+            (sync) =>
+                sync.value?.accountId == state?.account?.id &&
+                sync.value?.metadataUnavailable == true,
+          ),
+        );
 
     AppButton button(
       String label,
@@ -81,7 +91,7 @@ class CloudSignInSettings extends ConsumerWidget {
       ),
       CloudSignInPhase.signedIn => (
         email ?? l10n.cloudAccount,
-        null,
+        metadataUnavailable ? l10n.cloudMetadataUnavailable : null,
         button(l10n.cloudSignOut, vm.signOut),
         null,
       ),

@@ -6,23 +6,40 @@ import 'package:http/testing.dart';
 
 import '../api/cloud_values.dart';
 import '../api/cloud_api.dart';
+import '../api/metadata_values.dart';
 import 'fake_pack.dart';
 
-/// Contract v0.1 fake behind a real package:http client, with explicit fault controls.
+part 'fake_metadata_service.dart';
+
+/// Contract fake behind a real package:http client, with explicit fault controls.
 final class FakeCloudService {
-  FakeCloudService({DateTime Function()? now, this.acceptRealPacks = false})
-    : _now = now ?? DateTime.now {
+  FakeCloudService({
+    DateTime Function()? now,
+    this.acceptRealPacks = false,
+    this.supportsMetadata = false,
+  }) : _now = now ?? DateTime.now {
     client = MockClient(_handle);
   }
   final DateTime Function() _now;
   // Real Workspace integration checks bytes end to end. The service's pack
   // verification and ancestry checks need the real service integration.
   final bool acceptRealPacks;
+  bool supportsMetadata;
+  int maxTags = 256;
+  Future<void> Function(http.Request)? beforeRequest;
   late final http.Client client;
   final _sessions = <String, ({String account, String name})>{};
   final _accounts = <String, _Account>{};
   final _faults =
-      <({String? path, int status, bool lost, Duration? retryAfter})>[];
+      <
+        ({
+          String? path,
+          String? method,
+          int status,
+          bool lost,
+          Duration? retryAfter,
+        })
+      >[];
   final requests = <({String method, String path})>[];
   int _nextId = 0;
   String session(String account, {String deviceName = 'Test device'}) {
@@ -33,11 +50,13 @@ final class FakeCloudService {
 
   void failNext({
     String? path,
+    String? method,
     int status = 503,
     bool afterCommit = false,
     Duration? retryAfter,
   }) => _faults.add((
     path: path,
+    method: method,
     status: status,
     lost: afterCommit,
     retryAfter: retryAfter,
@@ -48,10 +67,35 @@ final class FakeCloudService {
     if (a != null) a.floor = ++a.sequence;
   }
 
+  void restoreNote(String account, LineageMetadata snapshot, String cursor) {
+    final a = _accounts[account]!;
+    final metadata = a.lineages[snapshot.lineageId]!.metadata;
+    metadata.note = snapshot.note;
+    metadata.version = snapshot.version;
+    _restoreFeedPosition(a, cursor, 'metadata:${snapshot.lineageId}');
+  }
+
+  void restoreTag(String account, CloudTag snapshot, String cursor) {
+    final a = _accounts[account]!;
+    // This fixture uses a vocabulary containing one Tag.
+    a.tags[snapshot.id] = snapshot;
+    a.tagVersion = snapshot.version;
+    _restoreFeedPosition(a, cursor, 'tagVocabulary:vocabulary');
+  }
+
+  void _restoreFeedPosition(_Account a, String cursor, String feedKey) {
+    a.sequence = _cursor(cursor, false).$2;
+    a.feed.removeWhere((_, sequence) => sequence > a.sequence);
+    a.feed[feedKey] = a.sequence;
+  }
+
   Future<http.Response> _handle(http.Request request) async {
     requests.add((method: request.method, path: request.url.path));
+    await beforeRequest?.call(request);
     final index = _faults.indexWhere(
-      (f) => f.path == null || f.path == request.url.path,
+      (f) =>
+          (f.path == null || f.path == request.url.path) &&
+          (f.method == null || f.method == request.method),
     );
     final fault = index < 0 ? null : _faults.removeAt(index);
     if (fault != null && !fault.lost) {
@@ -95,7 +139,7 @@ final class FakeCloudService {
     _sweep(a);
     final path = r.url.path, parts = r.url.pathSegments;
     final allowed = path == '/v0/library'
-        ? {'cursor', 'limit'}
+        ? {'cursor', 'limit', if (supportsMetadata) 'include'}
         : path == '/v0/feed'
         ? {'after', 'limit'}
         : <String>{};
@@ -111,8 +155,13 @@ final class FakeCloudService {
       return jsonObject(jsonDecode(r.body));
     }
 
+    if (supportsMetadata &&
+        (path.startsWith('/v0/tags') || path.contains('/metadata'))) {
+      return _metadataRoute(a, r, session.name, body);
+    }
     if (path == '/v0/library' && r.method == 'GET') {
       final cursor = r.url.queryParameters['cursor'];
+      final includeMetadata = r.url.queryParameters['include'] == 'metadata';
       final parsed = cursor == null ? null : _cursor(cursor, true);
       if (parsed != null &&
           (parsed.$1 != session.account ||
@@ -136,6 +185,10 @@ final class FakeCloudService {
       final page = rows.take(limit).toList();
       return _json({
         'lineages': page.map((l) => l.value.toJson()).toList(),
+        if (includeMetadata) ...{
+          'metadata': [for (final l in page) l.metadata.value(l.id).toJson()],
+          'tagVocabulary': cursor == null ? a.vocabulary.toJson() : null,
+        },
         'next': rows.length > limit
             ? _encode(session.account, seq, page.last.id)
             : null,
@@ -158,15 +211,28 @@ final class FakeCloudService {
             ..sort((x, y) => x.value.compareTo(y.value));
       final page = rows.take(limit).toList();
       return _json({
-        'entries': page
-            .map(
-              (e) => {
-                'kind': 'lineage',
-                'id': e.key,
-                'version': a.lineages[e.key]!.version,
-              },
-            )
-            .toList(),
+        'entries': page.map((e) {
+          if (e.key == 'tagVocabulary:vocabulary') {
+            return {
+              'kind': 'tagVocabulary',
+              'id': 'vocabulary',
+              'version': a.tagVersion,
+            };
+          }
+          if (e.key.startsWith('metadata:')) {
+            final id = e.key.substring('metadata:'.length);
+            return {
+              'kind': 'metadata',
+              'id': id,
+              'version': a.lineages[id]!.metadata.version,
+            };
+          }
+          return {
+            'kind': 'lineage',
+            'id': e.key,
+            'version': a.lineages[e.key]!.version,
+          };
+        }).toList(),
         'cursor': page.isEmpty
             ? after ?? _encode(session.account, 0)
             : _encode(session.account, page.last.value),
@@ -302,6 +368,8 @@ final class FakeCloudService {
       l.endedGenerations[l.generation] = _now();
       l.state = state;
       l.head = null;
+      l.metadata = _FakeMetadata();
+      a.feed.remove('metadata:${l.id}');
       _change(a, l);
       return _json(l.value.toJson());
     }
@@ -483,6 +551,11 @@ final class _Account {
   final keys = <String, String>{};
   final feed = <String, int>{};
   int sequence = 0, floor = 0;
+  final tags = <String, CloudTag>{};
+  final tagAliases = <String, String>{};
+  final endedTags = <String, String?>{};
+  int tagVersion = 0;
+  TagVocabulary get vocabulary => TagVocabulary(tagVersion, tags.values);
 }
 
 final class _FakeLineage {
@@ -494,6 +567,7 @@ final class _FakeLineage {
   int version = 1, generation = 1;
   LineageState state = LineageState.live;
   LineageHead? head;
+  _FakeMetadata metadata = _FakeMetadata();
   final packs = <String, _FakePack>{};
   final endedGenerations = <int, DateTime>{};
   Lineage get value => Lineage(

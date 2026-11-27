@@ -10,8 +10,9 @@ import '../sign_in/cloud_session_store.dart';
 import '../sign_in/cloud_sign_in.dart';
 import 'cloud_result.dart';
 import 'cloud_values.dart';
+import 'metadata_values.dart';
 
-/// Contract v0.1 over the App's injected platform client. Owns no HTTP client.
+/// Cloud API over the App's injected platform client. Owns no HTTP client.
 final class CloudApi {
   CloudApi({
     required this._client,
@@ -23,17 +24,157 @@ final class CloudApi {
   final CloudSessionStore _sessions;
   static const maxPackBytes = 16 * 1024 * 1024;
   static const _maxJsonBytes = 4 * 1024 * 1024;
-  static final _lineageId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+  static final _opaqueId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
   Future<CloudApiResult<LibraryPage>> listLibrary({
     String? cursor,
     int limit = 100,
+    bool includeMetadata = false,
   }) => _json(
     'GET',
     '/v0/library',
-    LibraryPage.fromJson,
-    query: {'cursor': ?cursor, 'limit': '$limit'},
+    (value) {
+      final page = LibraryPage.fromJson(
+        value,
+        includeMetadata: includeMetadata,
+      );
+      if (includeMetadata && (page.tagVocabulary != null) != (cursor == null)) {
+        throw const FormatException('cloud_protocol');
+      }
+      return page;
+    },
+    query: {
+      'cursor': ?cursor,
+      'limit': '$limit',
+      if (includeMetadata) 'include': 'metadata',
+    },
   );
+  Future<CloudApiResult<LineageMetadata>> readMetadata(String id) =>
+      _json('GET', '${_lineage(id)}/metadata', (json) {
+        final metadata = LineageMetadata.fromJson(json);
+        if (metadata.lineageId != id) {
+          throw const FormatException('cloud_protocol');
+        }
+        return metadata;
+      });
+  Future<CloudApiResult<CloudFavorite>> readFavorite(String id) =>
+      _json('GET', '${_lineage(id)}/metadata/favorite', CloudFavorite.fromJson);
+  Future<CloudApiResult<CloudFavorite>> writeFavorite(
+    String id, {
+    required int expectedVersion,
+    required bool value,
+  }) => _json(
+    'PUT',
+    '${_lineage(id)}/metadata/favorite',
+    CloudFavorite.fromJson,
+    body: {'expectedVersion': expectedVersion, 'value': value},
+  );
+  Future<CloudApiResult<CloudNote>> readNote(String id) =>
+      _json('GET', '${_lineage(id)}/metadata/note', CloudNote.fromJson);
+  Future<CloudApiResult<CloudNote>> writeNote(
+    String id, {
+    required int expectedVersion,
+    required String? value,
+  }) => _writeNote('PUT', id, '', expectedVersion, value);
+  Future<CloudApiResult<CloudNote>> openNoteConflict(
+    String id, {
+    required int expectedVersion,
+    required String? value,
+  }) => _writeNote('POST', id, '/conflicts', expectedVersion, value);
+  Future<CloudApiResult<CloudNote>> resolveNote(
+    String id, {
+    required int expectedVersion,
+    required String? value,
+  }) => _writeNote('POST', id, '/resolve', expectedVersion, value);
+  Future<CloudApiResult<CloudNote>> _writeNote(
+    String method,
+    String id,
+    String suffix,
+    int expectedVersion,
+    String? value,
+  ) => _json(
+    method,
+    '${_lineage(id)}/metadata/note$suffix',
+    CloudNote.fromJson,
+    body: {'expectedVersion': expectedVersion, 'value': value},
+  );
+  Future<CloudApiResult<CloudAssignment>> readAssignment(
+    String id,
+    String tagId,
+  ) => _assignment('GET', id, tagId, null);
+  Future<CloudApiResult<CloudAssignment>> writeAssignment(
+    String id,
+    String tagId, {
+    required int expectedVersion,
+    required bool assigned,
+  }) => _assignment('PUT', id, tagId, {
+    'expectedVersion': expectedVersion,
+    'assigned': assigned,
+  });
+  Future<CloudApiResult<CloudAssignment>> _assignment(
+    String method,
+    String id,
+    String tagId,
+    Map<String, Object?>? body,
+  ) => _json(
+    method,
+    '${_lineage(id)}/metadata/assignments/${_requestId(tagId)}',
+    (json) {
+      final assignment = CloudAssignment.fromJson(json);
+      if (assignment.tagId != tagId) {
+        throw const FormatException('cloud_protocol');
+      }
+      return assignment;
+    },
+    body: body,
+  );
+  Future<CloudApiResult<TagVocabulary>> readTags() =>
+      _json('GET', '/v0/tags', TagVocabulary.fromJson);
+  Future<CloudApiResult<CloudTag>> readTag(String id) =>
+      _json('GET', '/v0/tags/${_requestId(id)}', (json) => _sameTag(id, json));
+  Future<CloudApiResult<CloudTag>> createTag({
+    required String clientKey,
+    required String name,
+    required String? color,
+  }) => _json(
+    'POST',
+    '/v0/tags',
+    CloudTag.fromJson,
+    body: {
+      'clientKey': clientKey,
+      'expectedVersion': null,
+      'name': name,
+      'color': color,
+    },
+  );
+  Future<CloudApiResult<CloudTag>> renameTag(
+    String id, {
+    required int expectedVersion,
+    required String name,
+  }) => _json(
+    'PUT',
+    '/v0/tags/${_requestId(id)}/name',
+    CloudTag.fromJson,
+    body: {'expectedVersion': expectedVersion, 'name': name},
+  );
+  Future<CloudApiResult<CloudTag>> recolorTag(
+    String id, {
+    required int expectedVersion,
+    required String? color,
+  }) => _json(
+    'PUT',
+    '/v0/tags/${_requestId(id)}/color',
+    (json) => _sameTag(id, json),
+    body: {'expectedVersion': expectedVersion, 'color': color},
+  );
+  Future<CloudApiResult<String>> deleteTag(
+    String id, {
+    required int expectedVersion,
+  }) => _json('POST', '/v0/tags/${_requestId(id)}/delete', (json) {
+    final deletedId = metadataId(jsonObject(json)['tagId']);
+    if (deletedId != id) throw const FormatException('cloud_protocol');
+    return deletedId;
+  }, body: {'expectedVersion': expectedVersion});
   Future<CloudApiResult<Lineage>> readLineage(String id) =>
       _json('GET', _lineage(id), Lineage.fromJson);
   Future<CloudApiResult<Lineage>> createLineage({
@@ -88,11 +229,13 @@ final class CloudApi {
     FeedPage.fromJson,
     query: {'after': ?after, 'limit': '$limit'},
   );
-  String _lineage(String id) {
-    if (_lineageId.matchAsPrefix(id)?.end != id.length) {
-      throw ArgumentError('Invalid lineage identifier');
+  String _lineage(String id) => '/v0/lineages/${_requestId(id)}';
+
+  String _requestId(String id) {
+    if (_opaqueId.matchAsPrefix(id)?.end != id.length) {
+      throw ArgumentError('Invalid cloud identifier');
     }
-    return '/v0/lineages/$id';
+    return id;
   }
 
   String _packPath(String id, int generation, PackDigest digest) =>
@@ -157,6 +300,12 @@ final class CloudApi {
       await response.stream.listen((_) {}).cancel();
       return ApiUnavailable(CloudFailureCode.server, retryAfter: delay);
     }
+    if (response.statusCode == 404 &&
+        request.url.path == '/v0/tags' &&
+        request.method == 'GET') {
+      await response.stream.listen((_) {}).cancel();
+      return const ApiNotFound();
+    }
     final bytes = <int>[];
     await for (final chunk in response.stream) {
       if (bytes.length + chunk.length > _maxJsonBytes) {
@@ -168,7 +317,8 @@ final class CloudApi {
     if (response.statusCode == 200 ||
         (response.statusCode == 201 &&
             request.method == 'POST' &&
-            request.url.path == '/v0/lineages')) {
+            (request.url.path == '/v0/lineages' ||
+                request.url.path == '/v0/tags'))) {
       return CloudApiSuccess(decode(value), retryAfter: delay);
     }
     final error = jsonObject(value), code = jsonString(error['error']);
@@ -189,7 +339,9 @@ final class CloudApi {
                 generation: Lineage.fromJson(error['lineage']).generation,
               ),
       (410, 'lineageEnded') => ApiLineageEnded(
-        request.method == 'PUT' ? null : Lineage.fromJson(error['lineage']),
+        request.url.path.contains('/packs/') && request.method == 'PUT'
+            ? null
+            : Lineage.fromJson(error['lineage']),
       ),
       (409, 'packMissing') => const ApiPackMissing(),
       (409, 'packLacksHead') => const ApiPackLacksHead(),
@@ -200,6 +352,22 @@ final class CloudApi {
       (422, 'packRejected') => ApiPackRejected(
         PackRejectionReason.values.byName(jsonString(error['reason'])),
       ),
+      (409, 'staleFieldVersion') => ApiStaleFieldVersion(
+        _currentMetadata(request.url.path, error['current']),
+      ),
+      (409, 'noteConflict') => ApiNoteConflict(
+        CloudNote.fromJson(error['current']),
+      ),
+      (409, 'noNoteConflict') => ApiNoNoteConflict(
+        CloudNote.fromJson(error['current']),
+      ),
+      (410, 'tagDeleted') => const ApiTagDeleted(),
+      (410, 'tagMerged') => ApiTagMerged(metadataId(error['replacementTagId'])),
+      (413, 'metadataTooLarge') => ApiMetadataTooLarge(switch (error['field']) {
+        'note' => MetadataLimit.note,
+        'name' => MetadataLimit.name,
+        _ => throw const FormatException('cloud_protocol'),
+      }),
       _ => const ApiUnavailable(CloudFailureCode.protocol),
     };
   }
@@ -381,6 +549,28 @@ Set<String> _allowedErrors(http.BaseRequest request) {
     return {'invalidRequest', 'cursorExpired'};
   }
   if (path == '/v0/lineages') return {'invalidRequest', 'storageLimitReached'};
+  if (path.contains('/metadata') || path.startsWith('/v0/tags')) {
+    final write = request.method != 'GET';
+    final note = path.contains('/metadata/note');
+    final resolve = path.endsWith('/note/resolve');
+    final vocabulary = path.startsWith('/v0/tags');
+    final collection = path == '/v0/tags';
+    final assignment = path.contains('/assignments/');
+    return {
+      'invalidRequest',
+      if (!collection) 'notFound',
+      if (path.contains('/metadata')) 'lineageEnded',
+      if (write) 'storageLimitReached',
+      if (write && !collection) 'staleFieldVersion',
+      if (assignment || (vocabulary && !collection)) 'tagMerged',
+      if (assignment ||
+          (vocabulary && (write || !collection) && !path.endsWith('/delete')))
+        'tagDeleted',
+      if (note && write) resolve ? 'noNoteConflict' : 'noteConflict',
+      if (write && (note || collection || path.endsWith('/name')))
+        'metadataTooLarge',
+    };
+  }
   if (path.contains('/packs/')) {
     return request.method == 'PUT'
         ? {
@@ -411,4 +601,17 @@ Set<String> _allowedErrors(http.BaseRequest request) {
     'notFound',
     if (path.endsWith('/removal') || path.endsWith('/stop')) 'lineageEnded',
   };
+}
+
+Object _currentMetadata(String path, Object? value) {
+  if (path.contains('/metadata/note')) return CloudNote.fromJson(value);
+  if (path.endsWith('/favorite')) return CloudFavorite.fromJson(value);
+  if (path.contains('/assignments/')) return CloudAssignment.fromJson(value);
+  return CloudTag.fromJson(value);
+}
+
+CloudTag _sameTag(String id, Object? value) {
+  final tag = CloudTag.fromJson(value);
+  if (tag.id != id) throw const FormatException('cloud_protocol');
+  return tag;
 }

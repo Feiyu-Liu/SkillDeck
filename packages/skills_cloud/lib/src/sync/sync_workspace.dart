@@ -7,6 +7,34 @@ abstract interface class SyncWorkspace {
   Future<List<WorkspaceSkill>> listSkills();
   Future<WorkspaceSkill?> inspectRevisionSelections(String managedSkillId);
   Future<WorkspaceChanges> inspectCommittedChanges(String? cursor);
+  Future<WorkspaceMetadataSnapshot> inspectMetadata();
+  Future<WorkspaceApply> applyMetadata({
+    required String managedSkillId,
+    required String expectedRevision,
+    required bool favorite,
+    required String? note,
+    required Set<String> tagIds,
+  });
+  Future<WorkspaceTagApply> ensureTag({
+    required String expectedRevision,
+    required String name,
+    required String? color,
+  });
+  Future<WorkspaceTagApply> updateTag({
+    required String expectedRevision,
+    required String localTagId,
+    required String name,
+    required String? color,
+  });
+  Future<WorkspaceTagApply> deleteTag({
+    required String expectedRevision,
+    required String localTagId,
+  });
+  Future<WorkspaceTagApply> renameTags({
+    required String expectedRevision,
+    required Map<String, String> names,
+  });
+  String tagClientKey(String localTagId);
   Future<WorkspaceExport> exportRevisionPack(
     String managedSkillId,
     String destination,
@@ -58,10 +86,64 @@ final class WorkspaceSkill {
 }
 
 final class WorkspaceChanges {
-  WorkspaceChanges({required Iterable<String> skillIds, required this.cursor})
-    : skillIds = Set.unmodifiable(skillIds);
+  WorkspaceChanges({
+    required Iterable<String> skillIds,
+    required this.cursor,
+    this.vocabularyChanged = false,
+  }) : skillIds = Set.unmodifiable(skillIds);
   final Set<String> skillIds;
   final String cursor;
+  final bool vocabularyChanged;
+}
+
+final class WorkspaceMetadataSnapshot {
+  WorkspaceMetadataSnapshot({
+    required this.revision,
+    required Map<String, WorkspaceSkillMetadata> skills,
+    required Map<String, WorkspaceTag> tags,
+  }) : skills = Map.unmodifiable(skills),
+       tags = Map.unmodifiable(tags);
+
+  final String revision;
+  final Map<String, WorkspaceSkillMetadata> skills;
+  final Map<String, WorkspaceTag> tags;
+}
+
+final class WorkspaceSkillMetadata {
+  WorkspaceSkillMetadata({
+    required this.favorite,
+    required this.note,
+    required Iterable<String> tagIds,
+  }) : tagIds = Set.unmodifiable(tagIds);
+
+  final bool favorite;
+  final String? note;
+  final Set<String> tagIds;
+}
+
+final class WorkspaceTag {
+  const WorkspaceTag({
+    required this.id,
+    required this.name,
+    required this.normalizedName,
+    required this.color,
+  });
+  final String id, name, normalizedName;
+  final String? color;
+}
+
+sealed class WorkspaceTagApply {
+  const WorkspaceTagApply();
+}
+
+final class WorkspaceTagApplied extends WorkspaceTagApply {
+  const WorkspaceTagApplied({this.localTagId});
+  final String? localTagId;
+}
+
+final class WorkspaceTagApplyFailed extends WorkspaceTagApply {
+  const WorkspaceTagApplyFailed(this.code);
+  final WorkspaceFailureCode code;
 }
 
 enum WorkspaceFailureCode {

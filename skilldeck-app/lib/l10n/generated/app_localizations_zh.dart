@@ -113,6 +113,66 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudSyncWaiting => '等待上传';
 
   @override
+  String get cloudMetadataWaiting => '收藏、备注或标签正在等待同步。';
+
+  @override
+  String get cloudMetadataUnavailable => '此服务器可以同步 Skill 内容，暂不支持同步收藏、备注或标签。';
+
+  @override
+  String get cloudNoteConflict => '备注冲突';
+
+  @override
+  String get cloudNoteReview => '审阅备注冲突';
+
+  @override
+  String get cloudNoteTooLarge => '将备注缩短至 4 KiB 以内即可同步。';
+
+  @override
+  String get cloudNoteEdit => '编辑备注';
+
+  @override
+  String get cloudNoteCloudVersion => '云端备注';
+
+  @override
+  String get cloudNoteOtherVersion => '传入的笔记';
+
+  @override
+  String get cloudNoteLocalVersion => '此设备上尚未同步的备注';
+
+  @override
+  String get cloudNoteEmpty => '无备注';
+
+  @override
+  String get cloudNoteUseVersion => '使用此版本';
+
+  @override
+  String get cloudNoteResolution => '要保存的备注';
+
+  @override
+  String get cloudNoteCombine => '合并版本';
+
+  @override
+  String get cloudNoteReviewLatest => '查看最新版本';
+
+  @override
+  String get cloudNoteVersionsChanged => '备注版本已变更。请审阅最新版本后再保存，已编辑的文字会保留在这里。';
+
+  @override
+  String get cloudNoteConflictGone => '目前没有待处理的备注冲突，已编辑的文字会保留在这里。';
+
+  @override
+  String get cloudNoteResolutionFailed => '未能同步处理结果，选定的文字会保留在这里。';
+
+  @override
+  String get cloudNoteSaveResolution => '保存处理结果';
+
+  @override
+  String get cloudTagNameTooLarge => '将标签名称缩短至 64 个 Unicode 字符以内即可同步。';
+
+  @override
+  String get cloudTagVocabularyFull => '此账号最多可同步 256 个标签。删除一个已同步标签即可腾出空间。';
+
+  @override
   String get cloudSyncApplying => '正在应用云端更改…';
 
   @override

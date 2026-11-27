@@ -251,6 +251,22 @@ RemoteLibraryHandler buildRemoteLibraryHandler({
   required UpdateRevisionStatePort states,
 }) => (request, context) async {
   final snapshot = snapshots.current;
+  final expectedRevision = switch (request) {
+    RemoteSkillMetadata(:final expectedRepositoryRevision) ||
+    RemoteTagVocabulary(
+      :final expectedRepositoryRevision,
+    ) => expectedRepositoryRevision,
+    _ => null,
+  };
+  if (expectedRevision != null && expectedRevision != snapshot.revision) {
+    return SkillsFailure(
+      code: SkillsErrorCode.staleSnapshot,
+      context: {
+        'reason': 'staleRepositoryRevision',
+        'actualRepositoryRevision': snapshot.revision.value,
+      },
+    );
+  }
   late final RemoteApplyResult applied;
   SkillsResult<RemoteApplyResult>? withoutCommit;
 
@@ -355,6 +371,17 @@ RemoteLibraryHandler buildRemoteLibraryHandler({
           changes = changesOf<void>(
             library.deleteTag(snapshot: snapshot, tagId: tagId),
             (_, _) => const RemoteApplyRemoved(),
+          );
+        case RemoteTagRenameMany(:final names):
+          changes = changesOf<void>(
+            library.renameTags(
+              snapshot: snapshot,
+              names: names,
+              updatedAt: clock.now(),
+            ),
+            (_, changed) => changed
+                ? const RemoteApplyMetadataApplied()
+                : const RemoteApplyNoChange(),
           );
         default:
           throw StateError('Expected a remote library request.');

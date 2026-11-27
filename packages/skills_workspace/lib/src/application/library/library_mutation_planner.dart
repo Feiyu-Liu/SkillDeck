@@ -1,8 +1,7 @@
-import 'package:unorm_dart/unorm_dart.dart' as unicode;
-
 import '../../domain/identifiers.dart';
 import '../../domain/public_models.dart';
 import '../operations/workspace_business_changes.dart';
+import 'personal_tag_name.dart';
 
 enum LibraryPlanningFailureCode {
   managedSkillNotFound,
@@ -212,7 +211,7 @@ final class LibraryMutationPlanner {
     required String? color,
     required DateTime createdAt,
   }) {
-    final normalized = _normalizeTagName(name);
+    final normalized = normalizePersonalTagName(name);
     if (_findByKey(snapshot, normalized.key) != null) {
       return const LibraryPlanningFailure<PersonalTag>(
         LibraryPlanningFailureCode.duplicatePersonalTag,
@@ -234,7 +233,7 @@ final class LibraryMutationPlanner {
         LibraryPlanningFailureCode.personalTagNotFound,
       );
     }
-    final normalized = _normalizeTagName(name);
+    final normalized = normalizePersonalTagName(name);
     final conflicting = _findByKey(snapshot, normalized.key);
     if (conflicting != null && conflicting.id != tagId) {
       return const LibraryPlanningFailure<PersonalTag>(
@@ -255,7 +254,7 @@ final class LibraryMutationPlanner {
     required String? color,
     required DateTime updatedAt,
   }) {
-    final normalized = _normalizeTagName(name);
+    final normalized = normalizePersonalTagName(name);
     return _putTag(
       normalized: normalized,
       color: color,
@@ -277,7 +276,7 @@ final class LibraryMutationPlanner {
         LibraryPlanningFailureCode.personalTagNotFound,
       );
     }
-    final normalized = _normalizeTagName(name);
+    final normalized = normalizePersonalTagName(name);
     final survivor = _findByKey(snapshot, normalized.key) ?? current;
     final put = _putTag(
       normalized: normalized,
@@ -307,8 +306,79 @@ final class LibraryMutationPlanner {
     );
   }
 
+  LibraryPlanningResult<void> renameTags({
+    required RepositorySnapshot snapshot,
+    required Map<String, String> names,
+    required DateTime updatedAt,
+  }) {
+    final usedFinalKeys = {
+      for (final tag in snapshot.personalTags)
+        if (!names.containsKey(tag.id)) normalizePersonalTagName(tag.name).key,
+    };
+    final finalNames = {
+      for (final entry in names.entries)
+        entry.key: normalizePersonalTagName(entry.value),
+    };
+    for (final name in finalNames.values) {
+      if (!usedFinalKeys.add(name.key)) {
+        return const LibraryPlanningFailure<void>(
+          LibraryPlanningFailureCode.duplicatePersonalTag,
+        );
+      }
+    }
+    final reservedKeys = {
+      ...usedFinalKeys,
+      for (final tag in snapshot.personalTags)
+        normalizePersonalTagName(tag.name).key,
+    };
+    final temporary = <PutPersonalTag>[];
+    final renamed = <PutPersonalTag>[];
+    for (final entry in finalNames.entries) {
+      final current = snapshot.findPersonalTag(entry.key);
+      if (current == null) {
+        return const LibraryPlanningFailure<void>(
+          LibraryPlanningFailureCode.personalTagNotFound,
+        );
+      }
+      if (current.name == entry.value.displayName) continue;
+      // Vacate the old unique keys within the same SQLite commit before
+      // writing any final names. Assignment rows keep their original IDs.
+      var temporaryKey = 'WORKSPACE-TAG-RENAME-${current.id.toUpperCase()}';
+      while (!reservedKeys.add(temporaryKey)) {
+        temporaryKey += '-';
+      }
+      temporary.add(
+        PutPersonalTag(
+          personalTagId: current.id,
+          normalizedKey: temporaryKey,
+          displayName: current.name,
+          color: current.color,
+          createdAtMicros: _micros(current.createdAt),
+          updatedAtMicros: _micros(current.updatedAt),
+        ),
+      );
+      renamed.add(
+        PutPersonalTag(
+          personalTagId: current.id,
+          normalizedKey: entry.value.key,
+          displayName: entry.value.displayName,
+          color: current.color,
+          createdAtMicros: _micros(current.createdAt),
+          updatedAtMicros: _micros(updatedAt),
+        ),
+      );
+    }
+    return LibraryMutationPlan<void>(
+      changes: WorkspaceBusinessChangeSet(
+        mutations: [...temporary, ...renamed],
+      ),
+      changed: renamed.isNotEmpty,
+      value: null,
+    );
+  }
+
   LibraryMutationPlan<PersonalTag> _putTag({
-    required _NormalizedTagName normalized,
+    required ({String displayName, String key}) normalized,
     required String? color,
     required DateTime updatedAt,
     PersonalTag? current,
@@ -461,7 +531,7 @@ WorkspaceBusinessChangeSet _userDataChange(
 
 PersonalTag? _findByKey(RepositorySnapshot snapshot, String key) {
   for (final tag in snapshot.personalTags) {
-    if (_normalizeTagName(tag.name).key == key) return tag;
+    if (normalizePersonalTagName(tag.name).key == key) return tag;
   }
   return null;
 }
@@ -474,22 +544,4 @@ String _normalizeNote(String text) {
   return value;
 }
 
-_NormalizedTagName _normalizeTagName(String value) {
-  final displayName = unicode.nfc(value.trim());
-  if (displayName.isEmpty || displayName.contains('\u0000')) {
-    throw ArgumentError.value(value, 'name', 'must not be empty');
-  }
-  return _NormalizedTagName(
-    displayName: displayName,
-    key: unicode.nfkc(displayName).toUpperCase(),
-  );
-}
-
 int _micros(DateTime value) => value.toUtc().microsecondsSinceEpoch;
-
-final class _NormalizedTagName {
-  const _NormalizedTagName({required this.displayName, required this.key});
-
-  final String displayName;
-  final String key;
-}

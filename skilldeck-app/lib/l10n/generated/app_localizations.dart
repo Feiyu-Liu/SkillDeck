@@ -298,6 +298,126 @@ abstract class AppLocalizations {
   /// **'Waiting to Upload'**
   String get cloudSyncWaiting;
 
+  /// No description provided for @cloudMetadataWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites, notes, or tags are waiting to sync.'**
+  String get cloudMetadataWaiting;
+
+  /// No description provided for @cloudMetadataUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This server can sync Skill content. It does not yet support syncing favorites, notes, or tags.'**
+  String get cloudMetadataUnavailable;
+
+  /// No description provided for @cloudNoteConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Note conflict'**
+  String get cloudNoteConflict;
+
+  /// No description provided for @cloudNoteReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review note conflict'**
+  String get cloudNoteReview;
+
+  /// No description provided for @cloudNoteTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorten the note to 4 KiB or less to sync it.'**
+  String get cloudNoteTooLarge;
+
+  /// No description provided for @cloudNoteEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit note'**
+  String get cloudNoteEdit;
+
+  /// No description provided for @cloudNoteCloudVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud note'**
+  String get cloudNoteCloudVersion;
+
+  /// No description provided for @cloudNoteOtherVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming note'**
+  String get cloudNoteOtherVersion;
+
+  /// No description provided for @cloudNoteLocalVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsynced note on this device'**
+  String get cloudNoteLocalVersion;
+
+  /// No description provided for @cloudNoteEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No note'**
+  String get cloudNoteEmpty;
+
+  /// No description provided for @cloudNoteUseVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this version'**
+  String get cloudNoteUseVersion;
+
+  /// No description provided for @cloudNoteResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Note to save'**
+  String get cloudNoteResolution;
+
+  /// No description provided for @cloudNoteCombine.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine versions'**
+  String get cloudNoteCombine;
+
+  /// No description provided for @cloudNoteReviewLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Show latest versions'**
+  String get cloudNoteReviewLatest;
+
+  /// No description provided for @cloudNoteVersionsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'A version changed. Review the latest versions before saving. Your edited text stays here.'**
+  String get cloudNoteVersionsChanged;
+
+  /// No description provided for @cloudNoteConflictGone.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no conflict to resolve now. Your edited text stays here.'**
+  String get cloudNoteConflictGone;
+
+  /// No description provided for @cloudNoteResolutionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The resolution couldn’t sync. Your chosen text stays here.'**
+  String get cloudNoteResolutionFailed;
+
+  /// No description provided for @cloudNoteSaveResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Save resolution'**
+  String get cloudNoteSaveResolution;
+
+  /// No description provided for @cloudTagNameTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Shorten the tag name to 64 Unicode characters or fewer to sync it.'**
+  String get cloudTagNameTooLarge;
+
+  /// No description provided for @cloudTagVocabularyFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account can sync up to 256 tags. Delete a synced tag to make room.'**
+  String get cloudTagVocabularyFull;
+
   /// No description provided for @cloudSyncApplying.
   ///
   /// In en, this message translates to:

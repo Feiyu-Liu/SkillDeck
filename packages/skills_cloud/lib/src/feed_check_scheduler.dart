@@ -10,7 +10,9 @@ final class FeedCheckResult {
   const FeedCheckResult.failure({this._retryAfter}) : _succeeded = false;
 
   final bool _succeeded;
+  bool get succeeded => _succeeded;
   final Duration? _retryAfter;
+  Duration? get retryAfter => _retryAfter;
 
   /// The combined result of two checks performed in the same scheduled run.
   FeedCheckResult followedBy(FeedCheckResult other) {

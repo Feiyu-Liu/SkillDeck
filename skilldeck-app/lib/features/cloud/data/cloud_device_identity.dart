@@ -44,4 +44,8 @@ final class CloudDeviceIdentity {
   String sourceIdFor(List<String?> sourceIdentity) => _hmac
       .convert(utf8.encode(jsonEncode(['source-v1', ...sourceIdentity])))
       .toString();
+
+  String tagCreationKey(String localTagId) => _hmac
+      .convert(utf8.encode(jsonEncode(['personal-tag-v1', localTagId])))
+      .toString();
 }

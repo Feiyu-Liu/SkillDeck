@@ -74,7 +74,9 @@ final class OwnershipGatedSkillsWorkspaceRepository
       WorkspaceRemoteContent(:final skillId) ||
       WorkspaceRemoteRemoval(:final skillId) ||
       WorkspaceRemoteSourceReplacement(:final skillId) => skillId,
-      WorkspaceRemoteInstall() => null,
+      WorkspaceRemoteInstall() ||
+      WorkspaceRemoteMetadata() ||
+      WorkspaceRemoteTag() => null,
     };
     WorkspaceTask<WorkspaceRemoteResult> start() =>
         _delegate.applyRemoteState(change);

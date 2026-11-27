@@ -15,8 +15,21 @@ export 'src/api/cloud_values.dart'
         FeedEntry,
         FeedPage,
         PackUploaded;
+export 'src/api/metadata_values.dart'
+    show
+        CloudFavorite,
+        CloudNoteDevice,
+        CloudNoteCandidate,
+        CloudNoteConflict,
+        CloudNote,
+        CloudAssignment,
+        LineageMetadata,
+        CloudTag,
+        TagVocabulary,
+        MetadataLimit;
 export 'src/sync/portable_source.dart';
 export 'src/sync/sync_workspace.dart';
 export 'src/sync/sync_state_store.dart';
+export 'src/sync/sync_metadata_state.dart' show SyncMetadataState;
 export 'src/sync/sync_outcome.dart';
 export 'src/sync/reconciler.dart';

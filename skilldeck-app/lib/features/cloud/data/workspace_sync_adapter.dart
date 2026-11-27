@@ -72,6 +72,140 @@ final class WorkspaceSyncAdapter implements cloud.SyncWorkspace {
       _read(await _repository.refresh());
 
   @override
+  Future<cloud.WorkspaceMetadataSnapshot> inspectMetadata() async {
+    final snapshot = _repository.current ?? await _refresh();
+    return cloud.WorkspaceMetadataSnapshot(
+      revision: snapshot.revision.toString(),
+      skills: {
+        for (final skill in snapshot.skills)
+          skill.id.value: cloud.WorkspaceSkillMetadata(
+            favorite: skill.isFavorite,
+            note: skill.note,
+            tagIds: skill.personalTagIds,
+          ),
+      },
+      tags: {
+        for (final tag in snapshot.personalTags)
+          tag.id: cloud.WorkspaceTag(
+            id: tag.id,
+            name: tag.name,
+            normalizedName: tag.normalizedName,
+            color: tag.color,
+          ),
+      },
+    );
+  }
+
+  @override
+  String tagClientKey(String localTagId) =>
+      _deviceIdentity.tagCreationKey(localTagId);
+
+  @override
+  Future<cloud.WorkspaceApply> applyMetadata({
+    required String managedSkillId,
+    required String expectedRevision,
+    required bool favorite,
+    required String? note,
+    required Set<String> tagIds,
+  }) async {
+    final id = WorkspaceSkillId(managedSkillId);
+    final selection = await _repository.inspectRevisionSelections({
+      id,
+    }).completed;
+    final WorkspaceRevisionSelections current;
+    try {
+      current = _read(selection);
+    } on WorkspaceSyncReadFailure catch (error) {
+      return cloud.WorkspaceApplyFailed(error.code);
+    }
+    if (current.revision.toString() != expectedRevision) {
+      return const cloud.WorkspaceApplyFailed(
+        cloud.WorkspaceFailureCode.staleSnapshot,
+      );
+    }
+    final head = current.heads[id];
+    if (head == null) {
+      return const cloud.WorkspaceApplyFailed(
+        cloud.WorkspaceFailureCode.skillNotFound,
+      );
+    }
+    return _apply(
+      () => WorkspaceRemoteMetadata(
+        skillId: id,
+        expectedRevision: current.revision,
+        expectedEffective: head.effective,
+        favorite: favorite,
+        note: note,
+        tagIds: tagIds,
+      ),
+    );
+  }
+
+  @override
+  Future<cloud.WorkspaceTagApply> ensureTag({
+    required String expectedRevision,
+    required String name,
+    required String? color,
+  }) => _applyTag(
+    expectedRevision,
+    (revision) => WorkspaceRemoteTagEnsure(revision, name, color),
+  );
+
+  @override
+  Future<cloud.WorkspaceTagApply> updateTag({
+    required String expectedRevision,
+    required String localTagId,
+    required String name,
+    required String? color,
+  }) => _applyTag(
+    expectedRevision,
+    (revision) => WorkspaceRemoteTagUpdate(revision, localTagId, name, color),
+  );
+
+  @override
+  Future<cloud.WorkspaceTagApply> deleteTag({
+    required String expectedRevision,
+    required String localTagId,
+  }) => _applyTag(
+    expectedRevision,
+    (revision) => WorkspaceRemoteTagDelete(revision, localTagId),
+  );
+
+  @override
+  Future<cloud.WorkspaceTagApply> renameTags({
+    required String expectedRevision,
+    required Map<String, String> names,
+  }) => _applyTag(
+    expectedRevision,
+    (revision) => WorkspaceRemoteTagRenameMany(revision, names),
+  );
+
+  Future<cloud.WorkspaceTagApply> _applyTag(
+    String expectedRevision,
+    WorkspaceRemoteTag Function(int revision) change,
+  ) async {
+    final revision = int.tryParse(expectedRevision);
+    if (revision == null || revision < 0) {
+      return const cloud.WorkspaceTagApplyFailed(
+        cloud.WorkspaceFailureCode.staleSnapshot,
+      );
+    }
+    return switch (await _repository
+        .applyRemoteState(change(revision))
+        .completed) {
+      WorkspaceCompleted(:final value) => cloud.WorkspaceTagApplied(
+        localTagId: value.tagId,
+      ),
+      WorkspaceFailed(:final failure) => cloud.WorkspaceTagApplyFailed(
+        _failureCode(failure),
+      ),
+      WorkspaceCommittedPending() => const cloud.WorkspaceTagApplyFailed(
+        cloud.WorkspaceFailureCode.operationFailed,
+      ),
+    };
+  }
+
+  @override
   Future<cloud.WorkspaceChanges> inspectCommittedChanges(String? cursor) async {
     final since = cursor == null ? 0 : int.tryParse(cursor);
     if (since == null || since < 0) {
@@ -93,11 +227,13 @@ final class WorkspaceSyncAdapter implements cloud.SyncWorkspace {
           for (final skill in snapshot.skills) skill.id.value,
         },
         cursor: restored.revision.toString(),
+        vocabularyChanged: true,
       );
     }
     return cloud.WorkspaceChanges(
       skillIds: changes.skillIds.map((id) => id.value),
       cursor: changes.revision.toString(),
+      vocabularyChanged: changes.vocabularyChanged,
     );
   }
 
@@ -227,7 +363,9 @@ final class WorkspaceSyncAdapter implements cloud.SyncWorkspace {
           WorkspaceRemoteResultKind.removed => const cloud.WorkspaceRemoved(),
           WorkspaceRemoteResultKind.sourceReplaced =>
             cloud.WorkspaceSourceReplaced(sourceEpoch: value.sourceEpoch),
-          WorkspaceRemoteResultKind.unsupported =>
+          WorkspaceRemoteResultKind.metadataApplied =>
+            const cloud.WorkspaceNoChange(),
+          WorkspaceRemoteResultKind.tagApplied =>
             const cloud.WorkspaceApplyFailed(
               cloud.WorkspaceFailureCode.operationFailed,
             ),

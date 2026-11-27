@@ -1,4 +1,5 @@
 import '../api/cloud_result.dart';
+import '../api/metadata_values.dart';
 
 sealed class SyncOutcome {
   const SyncOutcome();
@@ -17,7 +18,8 @@ final class SkillRemoved extends SyncOutcome {
 }
 
 final class WaitingToUpload extends SyncOutcome {
-  const WaitingToUpload();
+  const WaitingToUpload({this.retryAfter});
+  final Duration? retryAfter;
 }
 
 enum AttentionReason {
@@ -39,4 +41,19 @@ final class SyncNeedsAttention extends SyncOutcome {
 final class SyncAccountCondition extends SyncOutcome {
   const SyncAccountCondition(this.condition);
   final CloudApiError condition;
+}
+
+enum MetadataAttentionReason { noteConflict, noteTooLarge }
+
+final class SyncMetadataAttention {
+  const SyncMetadataAttention(
+    this.reason, {
+    this.note,
+    this.localNote,
+    this.hasUnsubmittedLocalNote = false,
+  });
+  final MetadataAttentionReason reason;
+  final CloudNote? note;
+  final String? localNote;
+  final bool hasUnsubmittedLocalNote;
 }

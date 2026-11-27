@@ -15,14 +15,21 @@ PortableSource git([String name = 'repo']) =>
 Future<
   ({Reconciler sync, FakeSyncWorkspace workspace, InMemorySyncStateStore state})
 >
-device(FakeCloudService service, String name, {http.Client? client}) async {
-  final workspace = FakeSyncWorkspace(),
-      state = InMemorySyncStateStore(),
-      sessions = InMemoryCloudSessionStore();
+device(
+  FakeCloudService service,
+  String name, {
+  http.Client? client,
+  String account = 'owner',
+  FakeSyncWorkspace? existingWorkspace,
+  InMemorySyncStateStore? existingState,
+}) async {
+  final workspace = existingWorkspace ?? FakeSyncWorkspace();
+  final state = existingState ?? InMemorySyncStateStore();
+  final sessions = InMemoryCloudSessionStore();
   await sessions.write(
     StoredCloudSession(
       origin: origin,
-      token: service.session('owner', deviceName: name),
+      token: service.session(account, deviceName: name),
     ),
   );
   final dir = await Directory.systemTemp.createTemp('reconcile-');

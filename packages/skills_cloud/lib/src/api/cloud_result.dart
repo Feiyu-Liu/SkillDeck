@@ -1,5 +1,6 @@
 import '../sign_in/cloud_sign_in.dart';
 import 'cloud_values.dart';
+import 'metadata_values.dart';
 
 sealed class CloudApiResult<T> {
   const CloudApiResult();
@@ -35,6 +36,35 @@ final class ApiInvalidRequest extends CloudApiError {
 
 final class ApiNotFound extends CloudApiError {
   const ApiNotFound();
+}
+
+final class ApiStaleFieldVersion extends CloudApiError {
+  const ApiStaleFieldVersion(this.current);
+  final Object current;
+}
+
+final class ApiNoteConflict extends CloudApiError {
+  const ApiNoteConflict(this.current);
+  final CloudNote current;
+}
+
+final class ApiNoNoteConflict extends CloudApiError {
+  const ApiNoNoteConflict(this.current);
+  final CloudNote current;
+}
+
+final class ApiTagDeleted extends CloudApiError {
+  const ApiTagDeleted();
+}
+
+final class ApiTagMerged extends CloudApiError {
+  const ApiTagMerged(this.replacementTagId);
+  final String replacementTagId;
+}
+
+final class ApiMetadataTooLarge extends CloudApiError {
+  const ApiMetadataTooLarge(this.field);
+  final MetadataLimit field;
 }
 
 final class ApiCursorExpired extends CloudApiError {

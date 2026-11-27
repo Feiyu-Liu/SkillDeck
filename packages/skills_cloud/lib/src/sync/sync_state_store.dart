@@ -1,4 +1,5 @@
 import 'sync_outcome.dart';
+import 'sync_metadata_state.dart';
 
 /// Local mapping and observation cursors only; never an operation outbox.
 abstract interface class SyncStateStore {
@@ -11,6 +12,8 @@ abstract interface class SyncStateStore {
   Future<void> setWorkspaceCursor(String cursor);
   Future<Set<String>> exclusions();
   Future<void> setExcluded(String lineageId, bool excluded);
+  Future<SyncMetadataState> metadataState();
+  Future<void> setMetadataState(SyncMetadataState state);
 }
 
 final class SyncLink {
@@ -43,6 +46,14 @@ final class InMemorySyncStateStore implements SyncStateStore {
   final _links = <String, SyncLink>{};
   final _excluded = <String>{};
   String? _feed, _workspace;
+  SyncMetadataState _metadata = const SyncMetadataState();
+  @override
+  Future<SyncMetadataState> metadataState() async => _metadata;
+  @override
+  Future<void> setMetadataState(SyncMetadataState state) async {
+    _metadata = state;
+  }
+
   @override
   Future<List<SyncLink>> links() async => List.unmodifiable(_links.values);
   @override

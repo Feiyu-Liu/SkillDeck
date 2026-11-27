@@ -7,11 +7,15 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:skilldeck_cli/skilldeck_protocol.dart';
 import 'package:skills_cloud/skills_cloud.dart';
 import 'package:skills_cloud/testing.dart';
 import 'package:skills_manager/features/cloud/data/cloud_device_identity.dart';
+import 'package:skills_manager/features/cloud/data/file_sync_state_store.dart';
 import 'package:skills_manager/features/cloud/data/workspace_sync_adapter.dart';
 import 'package:skills_manager/features/cloud/data/cloud_sync_runtime.dart';
+import 'package:skills_manager/features/command_host/data/command_host_dispatcher.dart';
+import 'package:skills_manager/features/command_host/data/write_command_handlers.dart';
 import 'package:skills_manager/features/skills/agent_root_ownership_coordinator.dart';
 import 'package:skills_manager/features/skills/data/repositories/diagnostic_skills_workspace_repository.dart';
 import 'package:skills_manager/features/skills/data/repositories/ownership_gated_skills_workspace_repository.dart';
@@ -20,6 +24,7 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/data/services/agent_root_ownership_repair_service.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/updates/skill_update_status_coordinator.dart';
 import 'package:skills_manager/shared/diagnostics/app_diagnostics.dart';
 import 'package:skills_manager/shared/failures/app_failure_reporter.dart';
 import 'package:skills_workspace/skills_workspace.dart' as backend;
@@ -582,6 +587,81 @@ void main() {
     );
   });
 
+  test(
+    'metadata and vocabulary applies cannot overwrite intervening local edits',
+    () async {
+      final fixture = await _open(temporary, 'metadata-guard');
+      final value = await _install(
+        fixture,
+        await _source(temporary, 'guarded'),
+      );
+      final tag = _appValue(
+        await fixture.app.createPersonalTag(name: 'Ｓtraße').completed,
+      );
+      final old = await fixture.adapter.inspectMetadata();
+      expect(old.tags[tag.id]?.normalizedName, 'STRAßE');
+      final commandHost = CommandHostDispatcher(
+        writeCommandHandlers(
+          snapshot: () => fixture.app.current,
+          repository: () => fixture.app,
+          updates: () => const SkillUpdateStatus(),
+          agents: () async => [],
+          members: () async => {},
+        ),
+      );
+      final edit = await commandHost.dispatch(
+        CommandRequest(
+          command: 'note',
+          arguments: {
+            'selection': SkillSelection(all: true).toJson(),
+            'note': {'set': 'Edited here'},
+          },
+        ),
+      );
+      expect(edit.ok, isTrue);
+      _appValue(
+        await fixture.app
+            .updatePersonalTag(tagId: tag.id, name: 'Local tag')
+            .completed,
+      );
+      final before = await fixture.adapter.inspectMetadata();
+      expect(
+        await fixture.adapter.applyMetadata(
+          managedSkillId: value,
+          expectedRevision: old.revision,
+          favorite: true,
+          note: 'Cloud note',
+          tagIds: {},
+        ),
+        isA<WorkspaceApplyFailed>().having(
+          (result) => result.code,
+          'code',
+          WorkspaceFailureCode.staleSnapshot,
+        ),
+      );
+      expect(
+        await fixture.adapter.deleteTag(
+          expectedRevision: old.revision,
+          localTagId: tag.id,
+        ),
+        isA<WorkspaceTagApplyFailed>().having(
+          (result) => result.code,
+          'code',
+          WorkspaceFailureCode.staleSnapshot,
+        ),
+      );
+      final after = await fixture.adapter.inspectMetadata();
+      expect(after.revision, before.revision);
+      expect(after.skills[value]?.note, 'Edited here');
+      expect(after.tags[tag.id]?.name, 'Local tag');
+      final changes = await fixture.adapter.inspectCommittedChanges(
+        old.revision,
+      );
+      expect(changes.vocabularyChanged, isTrue);
+      expect(changes.skillIds, {value});
+    },
+  );
+
   final serviceOrigin = Platform.environment['SKILLDECK_CLOUD_TEST_ORIGIN'];
   test(
     'M4-7 real service round-trips a Workspace pack',
@@ -618,6 +698,246 @@ void main() {
       );
     },
   );
+
+  test(
+    'M6 real service reconciles metadata and protects notes on two Workspaces',
+    skip: serviceOrigin == null
+        ? 'Set SKILLDECK_CLOUD_TEST_ORIGIN to opt in'
+        : false,
+    () async {
+      final token = Platform.environment['SKILLDECK_CLOUD_TEST_TOKEN'];
+      if (token == null || token.isEmpty) {
+        fail('No test Cloud session supplied');
+      }
+      final client = http.Client();
+      addTearDown(client.close);
+      final origin = CloudServiceOrigin.parse(serviceOrigin!);
+      final a = await _open(temporary, 'm6-a');
+      final b = await _open(temporary, 'm6-b');
+      final aApi = await _api(client, origin, token);
+      final aSync = _reconciler(a, aApi);
+      FileSyncStateStore stateB() => FileSyncStateStore(
+        supportDirectory: temporary.path,
+        origin: origin,
+        accountId: 'fixture-account',
+        deviceId: 'b',
+        onDiagnostic: (code) => fail(code.name),
+      );
+      final hook = _MetadataClient(client);
+      final bToken = Platform.environment['SKILLDECK_CLOUD_TEST_TOKEN_B'];
+      final bApi = await _api(hook, origin, bToken ?? token);
+      Future<void> requireEmptyAccount(CloudApi api) async {
+        final tags = await api.readTags();
+        final library = await api.listLibrary();
+        if (tags is! CloudApiSuccess<TagVocabulary> ||
+            tags.value.tags.isNotEmpty ||
+            library is! CloudApiSuccess<LibraryPage> ||
+            library.value.next != null ||
+            library.value.lineages.any(
+              (lineage) =>
+                  lineage.state == LineageState.live && lineage.head != null,
+            )) {
+          fail('The metadata test requires a dedicated empty Cloud account.');
+        }
+      }
+
+      await requireEmptyAccount(aApi);
+      if (bToken != null) await requireEmptyAccount(bApi);
+      Reconciler syncB() => Reconciler(
+        api: bApi,
+        workspace: b.adapter,
+        state: stateB(),
+        scratchDirectory: b.scratch,
+      );
+      var bSync = syncB();
+      final aId = await _install(
+        a,
+        await _source(temporary, 'm6-roundtrip', name: 'm6-synced'),
+      );
+      final aSkill = WorkspaceSkillId(aId);
+      _appValue(
+        await a.app.setFavorite(skillId: aSkill, isFavorite: true).completed,
+      );
+      Future<void> save(_Fixture fixture, String id, String note) async {
+        _appValue(
+          await fixture.app
+              .saveNote(skillId: WorkspaceSkillId(id), note: note)
+              .completed,
+        );
+      }
+
+      await save(a, aId, 'Original note');
+      final tag = _appValue(
+        await a.app.createPersonalTag(name: 'Research').completed,
+      );
+      _appValue(
+        await a.app.createPersonalTag(name: 'Unused local tag').completed,
+      );
+      _appValue(
+        await a.app.assignPersonalTag(skillId: aSkill, tagId: tag.id).completed,
+      );
+
+      expect(await aSync.startSyncing(aId), isA<SkillSynced>());
+      addTearDown(() => aSync.stopSyncing(aId));
+      Future<void> sync(Reconciler reconciler) async {
+        await reconciler.checkLocalChanges();
+        await reconciler.feedCheck();
+      }
+
+      await sync(aSync);
+      final lineage = (await aSync.state.links()).single.lineageId!;
+      final bootstrap = await bSync.bootstrap();
+      expect(bootstrap.completed, isTrue);
+      final bId = bootstrap.installedSkillIds.single;
+      await sync(bSync);
+      var bMetadata = await b.adapter.inspectMetadata();
+      expect(bMetadata.skills[bId]?.favorite, isTrue);
+      expect(bMetadata.skills[bId]?.note, 'Original note');
+      final bTag = bMetadata.skills[bId]!.tagIds.single;
+      expect(bMetadata.tags[bTag]?.name, 'Research');
+      expect(
+        bMetadata.tags.values.map((record) => record.name),
+        isNot(contains('Unused local tag')),
+      );
+
+      final localOnly = WorkspaceSkillId(
+        await _install(
+          b,
+          await _source(temporary, 'm6-device-only', name: 'm6-device-only'),
+        ),
+      );
+      _appValue(
+        await b.app
+            .assignPersonalTag(skillId: localOnly, tagId: bTag)
+            .completed,
+      );
+      _appValue(
+        await a.app.updatePersonalTag(tagId: tag.id, name: 'Reading').completed,
+      );
+      await sync(aSync);
+      await sync(bSync);
+      bMetadata = await b.adapter.inspectMetadata();
+      expect(bMetadata.tags[bTag]?.name, 'Reading');
+      expect(bMetadata.skills[localOnly.value]?.tagIds, {bTag});
+
+      final priority = _appValue(
+        await a.app.createPersonalTag(name: 'Priority').completed,
+      );
+      _appValue(
+        await a.app
+            .assignPersonalTag(skillId: aSkill, tagId: priority.id)
+            .completed,
+      );
+      await sync(aSync);
+      await sync(bSync);
+      final bPriority = (await b.adapter.inspectMetadata()).tags.values
+          .singleWhere((tag) => tag.name == 'Priority')
+          .id;
+      final vocabulary =
+          (await aApi.readTags() as CloudApiSuccess<TagVocabulary>).value;
+      final readingCloud = vocabulary.tags.values.singleWhere(
+        (tag) => tag.name == 'Reading',
+      );
+      final priorityCloud = vocabulary.tags.values.singleWhere(
+        (tag) => tag.name == 'Priority',
+      );
+      Future<CloudTag> rename(CloudTag tag, String name) async =>
+          (await aApi.renameTag(
+            tag.id,
+            expectedVersion: tag.nameVersion,
+            name: name,
+          ) as CloudApiSuccess<CloudTag>).value;
+      final temporaryName = await rename(readingCloud, 'Intermediate');
+      await rename(priorityCloud, 'Reading');
+      await rename(temporaryName, 'Priority');
+      await sync(bSync);
+      bMetadata = await b.adapter.inspectMetadata();
+      expect(bMetadata.tags[bTag]?.name, 'Priority');
+      expect(bMetadata.tags[bPriority]?.name, 'Reading');
+      expect(bMetadata.skills[bId]?.tagIds, {bTag, bPriority});
+      expect(bMetadata.skills[localOnly.value]?.tagIds, {bTag});
+      await sync(aSync);
+
+      await save(a, aId, 'Accepted note');
+      await save(b, bId, 'Offline note');
+      bSync = syncB();
+      await sync(aSync);
+      await sync(bSync);
+      final pair = bSync.metadataAttention[bId]!.note!.conflict!;
+      expect(
+        [pair.accepted.text, pair.incoming.text],
+        ['Accepted note', 'Offline note'],
+      );
+      await save(b, bId, 'Third local candidate');
+      await sync(bSync);
+      final review = bSync.metadataAttention[bId]!;
+      expect(review.hasUnsubmittedLocalNote, isTrue);
+      expect(review.localNote, 'Third local candidate');
+
+      const selected = 'Accepted note\n\nThird local candidate';
+      hook.failResolution = true;
+      expect(
+        await bSync.resolveNoteConflict(
+          bId,
+          expectedVersion: review.note!.version,
+          expectedLocalNote: review.localNote,
+          value: selected,
+        ),
+        isNot(isA<SkillSynced>()),
+      );
+      expect((await b.adapter.inspectMetadata()).skills[bId]?.note, selected);
+      final current = bSync.metadataAttention[bId]!;
+      expect(current.localNote, selected);
+      hook.beforeResolve = () => save(b, bId, 'Edit while resolving');
+      await bSync.resolveNoteConflict(
+        bId,
+        expectedVersion: current.note!.version,
+        expectedLocalNote: current.localNote,
+        value: selected,
+      );
+      final remoteNote = await aApi.readNote(lineage);
+      expect(remoteNote, isA<CloudApiSuccess<CloudNote>>());
+      expect((remoteNote as CloudApiSuccess<CloudNote>).value.value, selected);
+      expect(
+        (await b.adapter.inspectMetadata()).skills[bId]?.note,
+        'Edit while resolving',
+      );
+      expect(bSync.metadataAttention[bId]?.localNote, 'Edit while resolving');
+
+      _appValue(await a.app.deletePersonalTag(tag.id).completed);
+      await sync(aSync);
+      await sync(bSync);
+      bMetadata = await b.adapter.inspectMetadata();
+      expect(bMetadata.tags.containsKey(bTag), isFalse);
+      expect(bMetadata.skills[bId]?.tagIds, {bPriority});
+      expect(bMetadata.skills[localOnly.value]?.tagIds, isEmpty);
+    },
+  );
+}
+
+T _appValue<T>(WorkspaceCompletion<T> result) =>
+    (result as WorkspaceCompleted<T>).value;
+
+final class _MetadataClient extends http.BaseClient {
+  _MetadataClient(this._delegate);
+
+  final http.Client _delegate;
+  Future<void> Function()? beforeResolve;
+  bool failResolution = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.url.path.endsWith('/metadata/note/resolve')) {
+      if (failResolution) {
+        failResolution = false;
+        return http.StreamedResponse(const Stream.empty(), 503);
+      }
+      final action = beforeResolve;
+      beforeResolve = null;
+      await action?.call();
+    }
+    return _delegate.send(request);
+  }
 }
 
 Future<CloudSyncState> _nextSyncState(
@@ -735,11 +1055,15 @@ Future<_Fixture> _open(
   );
 }
 
-Future<String> _source(Directory temporary, String slug) async {
+Future<String> _source(
+  Directory temporary,
+  String slug, {
+  String name = 'cloud-fixture',
+}) async {
   final source = await Directory(p.join(temporary.path, 'source-$slug'))
       .create();
   await File(p.join(source.path, 'SKILL.md')).writeAsString(
-    '---\nname: cloud-fixture\ndescription: Native pack sync fixture\n---\n# Fixture $slug\n',
+    '---\nname: $name\ndescription: Native pack sync fixture\n---\n# Fixture $slug\n',
   );
   return source.path;
 }
@@ -758,6 +1082,9 @@ Future<String> _install(
         ),
       )
       .completed;
+  if (result case WorkspaceFailed(:final failure)) {
+    fail('Fixture install failed: ${failure.code.name}');
+  }
   return ((result as WorkspaceCompleted<WorkspaceInstallAttempt>).value
           as WorkspaceInstallCompleted)
       .receipt

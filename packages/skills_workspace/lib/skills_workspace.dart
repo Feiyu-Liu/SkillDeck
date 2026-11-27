@@ -4,6 +4,7 @@ export 'create_skills_repository.dart';
 export 'src/api/cancellation.dart';
 export 'src/api/configuration.dart';
 export 'src/api/destructive_intent.dart';
+export 'src/api/personal_tag_name.dart';
 export 'src/api/requests.dart';
 export 'src/api/result.dart';
 export 'src/api/skills_repository.dart';

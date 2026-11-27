@@ -91,7 +91,7 @@ final class CloudSyncRuntimeController
     final repository = ref.watch(skillsWorkspaceRepositoryProvider);
     final device = ref.watch(cloudDeviceProvider);
 
-    void changeAccount(String? accountId) {
+    void changeAccount(String? accountId, {required bool explicitSignIn}) {
       final epoch = ++_epoch;
       final old = _current;
       _current = null;
@@ -130,6 +130,7 @@ final class CloudSyncRuntimeController
           late final CloudSyncRuntime runtime;
           runtime = CloudSyncRuntime(
             accountId: accountId,
+            rebaselineTagsOnStart: explicitSignIn,
             reconciler: Reconciler(
               api: api,
               state: store,
@@ -165,16 +166,19 @@ final class CloudSyncRuntimeController
 
     // Listen for account identity changes without rebuilding when Settings
     // updates the same verified account or when a Workspace snapshot arrives.
-    ref.listen(
-      cloudSignInViewModelProvider.select((s) => s.value?.verifiedAccount?.id),
-      (previous, accountId) => changeAccount(accountId),
-    );
-    final initial = ref
-        .read(cloudSignInViewModelProvider)
-        .value
-        ?.verifiedAccount
-        ?.id;
-    if (initial != null) changeAccount(initial);
+    ref.listen(cloudSignInViewModelProvider, (previous, current) {
+      final accountId = current.value?.verifiedAccount?.id;
+      if (previous?.value?.verifiedAccount?.id != accountId) {
+        changeAccount(
+          accountId,
+          explicitSignIn: current.value?.explicitSignIn ?? false,
+        );
+      }
+    });
+    final initial = ref.read(cloudSignInViewModelProvider).value;
+    if (initial?.verifiedAccount case final account?) {
+      changeAccount(account.id, explicitSignIn: initial!.explicitSignIn);
+    }
     ref.listen(workspaceSnapshotProvider.select((s) => s.value?.revision), (
       previous,
       revision,

@@ -606,13 +606,15 @@ final class WorkspacePersonalTag {
   const WorkspacePersonalTag({
     required this.id,
     required this.name,
+    String? normalizedName,
     this.color,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : normalizedName = normalizedName ?? name;
 
   final String id;
   final String name;
+  final String normalizedName;
   final String? color;
   final DateTime createdAt;
   final DateTime updatedAt;

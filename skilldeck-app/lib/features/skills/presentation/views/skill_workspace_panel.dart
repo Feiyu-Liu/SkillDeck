@@ -1728,6 +1728,7 @@ class _ActivationsBody extends ConsumerStatefulWidget {
 class _ActivationsBodyState extends ConsumerState<_ActivationsBody> {
   SkillScopeSelection _selection = const GlobalSkillScope();
   bool _duplicateActivationDialogOpen = false;
+  final _noteEditor = GlobalKey<_SkillNoteEditorState>();
 
   @override
   void didUpdateWidget(covariant _ActivationsBody oldWidget) {
@@ -1822,6 +1823,7 @@ class _ActivationsBodyState extends ConsumerState<_ActivationsBody> {
           CloudSkillSyncTile(
             skillId: skill.id,
             enabled: !widget.mutationsBlocked,
+            onEditNote: () => _noteEditor.currentState?.focus(),
           ),
           if (!widget.mutationsBlocked)
             CloudAttentionActions(skillId: skill.id),
@@ -1909,6 +1911,7 @@ class _ActivationsBodyState extends ConsumerState<_ActivationsBody> {
                 ),
                 const SizedBox(height: 10),
                 _SkillNoteEditor(
+                  key: _noteEditor,
                   note: widget.note,
                   enabled: !widget.mutationsBlocked,
                   onSave: widget.onSaveNote,
@@ -1987,6 +1990,7 @@ class _SkillNoteEditor extends StatefulWidget {
     required this.note,
     required this.enabled,
     required this.onSave,
+    super.key,
   });
 
   final String note;
@@ -2000,6 +2004,7 @@ class _SkillNoteEditor extends StatefulWidget {
 class _SkillNoteEditorState extends State<_SkillNoteEditor> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  bool _edited = false;
 
   @override
   void initState() {
@@ -2011,7 +2016,7 @@ class _SkillNoteEditorState extends State<_SkillNoteEditor> {
   @override
   void didUpdateWidget(covariant _SkillNoteEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_focusNode.hasFocus && oldWidget.note != widget.note) {
+    if (!_edited && oldWidget.note != widget.note) {
       _controller.text = widget.note;
     }
   }
@@ -2025,7 +2030,18 @@ class _SkillNoteEditorState extends State<_SkillNoteEditor> {
   }
 
   void _onFocusChanged() {
-    if (!_focusNode.hasFocus) widget.onSave(_controller.text.trim());
+    if (!_focusNode.hasFocus) _save();
+  }
+
+  void _save() {
+    if (!_edited) return;
+    _edited = false;
+    widget.onSave(_controller.text.trim());
+  }
+
+  void focus() {
+    _focusNode.requestFocus();
+    unawaited(Scrollable.ensureVisible(context, alignment: 0.5));
   }
 
   @override
@@ -2048,7 +2064,8 @@ class _SkillNoteEditorState extends State<_SkillNoteEditor> {
       decoration: const BoxDecoration(),
       placeholder: context.l10n.workspaceAddNote,
       style: AppTypography.of(context).control.copyWith(height: 1.4),
-      onSubmitted: (_) => widget.onSave(_controller.text.trim()),
+      onChanged: (_) => _edited = true,
+      onSubmitted: (_) => _save(),
     ),
   );
 }

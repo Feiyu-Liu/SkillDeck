@@ -12,6 +12,10 @@ final class CloudSyncState {
     this.accountId,
     this.links = const {},
     this.outcomes = const {},
+    this.metadataAttention = const {},
+    this.metadataWaitingSkillIds = const {},
+    this.vocabularyAttention = const {},
+    this.metadataUnavailable = false,
     this.exclusions = const {},
     this.applying = const {},
     this.installedSkillIds = const {},
@@ -22,6 +26,10 @@ final class CloudSyncState {
   final String? accountId;
   final Map<String, SyncLink> links;
   final Map<String, SyncOutcome> outcomes;
+  final Map<String, SyncMetadataAttention> metadataAttention;
+  final Set<String> metadataWaitingSkillIds;
+  final Map<String, MetadataLimit> vocabularyAttention;
+  final bool metadataUnavailable;
   final Set<String> exclusions, applying, installedSkillIds;
   final bool bootstrapCompleted;
   final CloudSyncNotice? notice;
@@ -67,14 +75,19 @@ final class CloudSyncRuntime {
     required Reconciler reconciler,
     required AppDiagnostics diagnostics,
     required void Function() onSignInRequired,
+    bool rebaselineTagsOnStart = false,
+    Duration Function()? elapsed,
     Timer Function(Duration, void Function()) createTimer = Timer.new,
   }) : _reconciler = reconciler,
        _diagnostics = diagnostics,
        _onSignInRequired = onSignInRequired,
+       _rebaselineTags = rebaselineTagsOnStart,
+       _elapsed = elapsed ?? _monotonicClock(),
        _createTimer = createTimer {
     _snapshot = CloudSyncState(accountId: accountId);
     _scheduler = FeedCheckScheduler(
       check: _feedCheck,
+      elapsed: _elapsed,
       createTimer: createTimer,
     );
   }
@@ -83,6 +96,7 @@ final class CloudSyncRuntime {
   final Reconciler _reconciler;
   final AppDiagnostics _diagnostics;
   final void Function() _onSignInRequired;
+  final Duration Function() _elapsed;
   final Timer Function(Duration, void Function()) _createTimer;
   late final FeedCheckScheduler _scheduler;
   final _updates = StreamController<CloudSyncState>.broadcast();
@@ -93,7 +107,9 @@ final class CloudSyncRuntime {
   late CloudSyncState _snapshot;
   CloudSyncNotice? _notice;
   Timer? _debounce;
+  Duration _retryNotBefore = Duration.zero;
   bool _bootstrapped = false;
+  bool _rebaselineTags;
   bool _stopped = false;
 
   Stream<CloudSyncState> watch() => Stream.multi((controller) {
@@ -130,10 +146,29 @@ final class CloudSyncRuntime {
   Future<SyncOutcome> reconcileSkill(String skillId) =>
       runAction((reconciler) => reconciler.reconcileSkill(skillId));
 
+  Future<SyncOutcome> resolveNoteConflict(
+    String skillId, {
+    required int expectedVersion,
+    required String? expectedLocalNote,
+    required String? value,
+  }) => runAction((reconciler) async {
+    final remaining = _retryNotBefore - _elapsed();
+    if (remaining > Duration.zero) {
+      return WaitingToUpload(retryAfter: remaining);
+    }
+    return reconciler.resolveNoteConflict(
+      skillId,
+      expectedVersion: expectedVersion,
+      expectedLocalNote: expectedLocalNote,
+      value: value,
+    );
+  });
+
   Future<T> runAction<T>(Future<T> Function(Reconciler) action) =>
       _enqueue(() async {
         final result = await action(_reconciler);
         if (result is SyncAccountCondition) _account(result);
+        if (result is WaitingToUpload) _respectRetryAfter(result.retryAfter);
         return result;
       });
 
@@ -149,6 +184,7 @@ final class CloudSyncRuntime {
           'cloud_protocol' => 'cloud_protocol',
           'cloud_workspace_contract' => 'cloud_workspace_contract',
           'sync_state_quarantine_failed' => 'sync_state_quarantine_failed',
+          'local_state_io' => 'local_state_io',
           _ => 'unexpected_state',
         };
         _diagnostics.info('cloud.sync.stopped', context: {'code': code});
@@ -166,39 +202,69 @@ final class CloudSyncRuntime {
     if (!_bootstrapped || _stopped) return;
     try {
       await _enqueue(() async {
-        await _reconciler.checkLocalChanges();
+        if (_retryNotBefore > _elapsed()) return;
+        final result = await _reconciler.checkLocalChanges();
+        _respectRetryAfter(result.retryAfter);
         _account(_reconciler.accountCondition);
       });
     } on Object {
-      // The periodic check retries an uncommitted cursor.
+      // The periodic check retries an uncommitted cursor while still active.
     }
   }
 
   Future<FeedCheckResult> _feedCheck() => _enqueue(() async {
+    final remaining = _retryNotBefore - _elapsed();
+    if (remaining > Duration.zero) {
+      return FeedCheckResult.failure(retryAfter: remaining);
+    }
+    if (_rebaselineTags) {
+      await _reconciler.rebaselineTagEligibility();
+      _rebaselineTags = false;
+    }
     if (!_bootstrapped) {
       if (await _reconciler.state.feedCursor() == null) {
         final result = await _reconciler.bootstrap();
         _installed.addAll(result.installedSkillIds);
+        _respectRetryAfter(result.retryAfter);
         _account(_reconciler.accountCondition);
         if (!result.completed || _stopped) {
           return _stopped
               ? const FeedCheckResult.success()
-              : const FeedCheckResult.failure();
+              : FeedCheckResult.failure(retryAfter: result.retryAfter);
+        }
+        if (result.retryAfter case final delay?) {
+          _bootstrapped = true;
+          return FeedCheckResult.success(retryAfter: delay);
         }
       }
       _bootstrapped = true;
     }
     // Workspace cursors also retry on reconnect or the next scheduled check.
     final local = await _reconciler.checkLocalChanges();
+    _respectRetryAfter(local.retryAfter);
     final account = _reconciler.accountCondition;
-    if (_stopped || account?.condition is ApiSignInRequired) {
+    if (_stopped ||
+        account?.condition is ApiSignInRequired ||
+        local.retryAfter != null) {
       _account(account);
       return local;
     }
     final result = await _reconciler.feedCheck();
+    _respectRetryAfter(result.retryAfter);
     _account(_reconciler.accountCondition ?? account);
     return local.followedBy(result);
   });
+
+  void _respectRetryAfter(Duration? delay) {
+    if (delay == null) return;
+    final deadline = _elapsed() + delay;
+    if (deadline > _retryNotBefore) _retryNotBefore = deadline;
+  }
+
+  static Duration Function() _monotonicClock() {
+    final clock = Stopwatch()..start();
+    return () => clock.elapsed;
+  }
 
   void _account(SyncAccountCondition? outcome) {
     switch (outcome?.condition) {
@@ -223,6 +289,12 @@ final class CloudSyncRuntime {
       accountId: accountId,
       links: Map.unmodifiable(links),
       outcomes: _reconciler.outcomes,
+      metadataAttention: Map.unmodifiable(_reconciler.metadataAttention),
+      metadataWaitingSkillIds: Set.unmodifiable(
+        _reconciler.metadataWaitingSkillIds,
+      ),
+      vocabularyAttention: Map.unmodifiable(_reconciler.vocabularyAttention),
+      metadataUnavailable: _reconciler.metadataUnavailable,
       exclusions: Set.unmodifiable(exclusions),
       applying: Set.unmodifiable(_applying),
       bootstrapCompleted: _bootstrapped,

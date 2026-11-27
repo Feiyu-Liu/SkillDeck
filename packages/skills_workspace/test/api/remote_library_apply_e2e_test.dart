@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as path;
 import 'package:skills_workspace/skills_workspace.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
 import '../support/drift_facade_fixture.dart';
@@ -123,6 +124,63 @@ void main() {
   });
 
   group('remote metadata', () {
+    test(
+      'rejects an old library snapshot after local metadata edits',
+      () async {
+        final work = await localTag('Work');
+        final read = repository.snapshot.revision;
+        final head = await effective();
+        await driftSuccess(
+          repository.saveNote(
+            SaveNoteRequest(managedSkillId: skillId, text: 'Local'),
+          ),
+        );
+        await driftSuccess(
+          repository.setFavorite(
+            SetFavoriteRequest(managedSkillId: skillId, isFavorite: true),
+          ),
+        );
+        await assign(skillId, work);
+        final before = repository.snapshot;
+        final history = await operationHistory();
+        for (final note in ['Incoming', 'Local']) {
+          await driftFailure(
+            repository.applyRemoteState(
+              RemoteSkillMetadata(
+                managedSkillId: skillId,
+                expectedEffective: head,
+                expectedRepositoryRevision: read,
+                favorite: note == 'Local',
+                note: note,
+                tagIds: note == 'Local' ? {work} : {},
+              ),
+            ),
+            SkillsErrorCode.staleSnapshot,
+            reason: 'staleRepositoryRevision',
+          );
+        }
+        expect(skill().note?.text, 'Local');
+        expect(skill().favorite.isFavorite, isTrue);
+        expect(skill().personalTagIds, [work]);
+        await expectNoCommit(before, history);
+
+        expect(
+          await apply(
+            RemoteSkillMetadata(
+              managedSkillId: skillId,
+              expectedEffective: head,
+              expectedRepositoryRevision: before.revision,
+              favorite: false,
+              note: 'Incoming',
+              tagIds: {},
+            ),
+          ),
+          isA<RemoteApplyMetadataApplied>(),
+        );
+        await expectOneCommit(before.revision, metadata: {skillId});
+      },
+    );
+
     for (final removed in [false, true]) {
       test(
         'rejects metadata for ${removed ? 'a removed' : 'an unknown'} Skill without writes',
@@ -316,6 +374,159 @@ void main() {
   });
 
   group('remote vocabulary', () {
+    test(
+      'swaps names without merging tags and rolls back the whole swap',
+      () async {
+        final alpha = await ensure('Alpha', '#010203');
+        final beta = await ensure('Beta', '#040506');
+        final outside = await localTag('Outside');
+        await assign(skillId, alpha);
+        await assign(skillId, beta);
+        final before = repository.snapshot;
+        final history = await operationHistory();
+        const swap = {'Alpha': 'Beta', 'Beta': 'Alpha'};
+        RemoteTagVocabulary rename(RepositoryRevision revision) =>
+            RemoteTagVocabulary.renameMany(
+              names: {alpha: swap['Alpha']!, beta: swap['Beta']!},
+              expectedRepositoryRevision: revision,
+            );
+        await driftFailure(
+          repository.applyRemoteState(
+            RemoteTagVocabulary.renameMany(
+              names: {alpha: 'outside'},
+              expectedRepositoryRevision: before.revision,
+            ),
+          ),
+          SkillsErrorCode.duplicatePersonalTag,
+        );
+        await driftFailure(
+          repository.applyRemoteState(
+            RemoteTagVocabulary.renameMany(
+              names: {alpha: 'Ｓame', beta: 'same'},
+              expectedRepositoryRevision: before.revision,
+            ),
+          ),
+          SkillsErrorCode.duplicatePersonalTag,
+        );
+        await driftFailure(
+          repository.applyRemoteState(
+            RemoteTagVocabulary.renameMany(
+              names: {'missing': 'Unused'},
+              expectedRepositoryRevision: before.revision,
+            ),
+          ),
+          SkillsErrorCode.personalTagNotFound,
+        );
+        await expectNoCommit(before, history);
+
+        final database = sqlite3.open(
+          path.join(fixture.workspacePath, 'workspace.sqlite'),
+        );
+        addTearDown(database.close);
+        database.execute("""
+        CREATE TRIGGER fail_late_tag_swap
+        BEFORE UPDATE OF normalized_key ON personal_tags
+        WHEN NEW.normalized_key = 'ALPHA'
+        BEGIN SELECT RAISE(ABORT, 'fixture'); END
+      """);
+        await driftFailure(
+          repository.applyRemoteState(rename(before.revision)),
+          SkillsErrorCode.operationFailed,
+          reason: 'businessCommitFailed',
+        );
+        final afterFailure = await feed(before.revision);
+        expect(afterFailure.current, before.revision);
+        expect(afterFailure.vocabularyChanged, isFalse);
+        expect(afterFailure.entries, isEmpty);
+
+        database.execute('DROP TRIGGER fail_late_tag_swap');
+        await driftSuccess(repository.close());
+        repository = fixture.createRepository();
+        await driftSuccess(repository.open());
+        expect(repository.snapshot.findPersonalTag(alpha)?.name, 'Alpha');
+        expect(repository.snapshot.findPersonalTag(beta)?.name, 'Beta');
+        expect(skill().personalTagIds, unorderedEquals([alpha, beta]));
+        expect(
+          database
+              .select('SELECT normalized_key FROM personal_tags')
+              .map((row) => row['normalized_key']),
+          unorderedEquals(['ALPHA', 'BETA', 'OUTSIDE']),
+        );
+        expect(
+          await apply(rename(before.revision)),
+          isA<RemoteApplyMetadataApplied>(),
+        );
+        expect(
+          repository.snapshot.personalTags.map(
+            (tag) => (tag.id, tag.name, tag.color),
+          ),
+          unorderedEquals([
+            (alpha, 'Beta', '#010203'),
+            (beta, 'Alpha', '#040506'),
+            (outside, 'Outside', null),
+          ]),
+        );
+        expect(skill().personalTagIds, unorderedEquals([alpha, beta]));
+        await expectOneCommit(before.revision, vocabularyChanged: true);
+
+        final applied = repository.snapshot;
+        final appliedHistory = await operationHistory();
+        await driftFailure(
+          repository.applyRemoteState(rename(before.revision)),
+          SkillsErrorCode.staleSnapshot,
+        );
+        expect(
+          await apply(rename(applied.revision)),
+          isA<RemoteApplyNoChange>(),
+        );
+        await expectNoCommit(applied, appliedHistory);
+      },
+    );
+
+    test(
+      'rejects stale vocabulary changes, including a missing delete',
+      () async {
+        final work = await localTag('Work');
+        final read = repository.snapshot.revision;
+        await driftSuccess(
+          repository.updatePersonalTag(
+            UpdatePersonalTagRequest(tagId: work, name: 'Local'),
+          ),
+        );
+        final before = repository.snapshot;
+        final history = await operationHistory();
+        for (final request in [
+          RemoteTagVocabulary.ensure(
+            name: 'Local',
+            color: null,
+            expectedRepositoryRevision: read,
+          ),
+          RemoteTagVocabulary.update(
+            tagId: work,
+            name: 'Cloud',
+            color: null,
+            expectedRepositoryRevision: read,
+          ),
+          RemoteTagVocabulary.delete(
+            tagId: work,
+            expectedRepositoryRevision: read,
+          ),
+          RemoteTagVocabulary.delete(
+            tagId: 'missing',
+            expectedRepositoryRevision: read,
+          ),
+        ]) {
+          await driftFailure(
+            repository.applyRemoteState(request),
+            SkillsErrorCode.staleSnapshot,
+            reason: 'staleRepositoryRevision',
+          );
+        }
+        expect(repository.snapshot.findPersonalTag(work)?.name, 'Local');
+        await expectNoCommit(before, history);
+      },
+    );
+
     test(
       'ensures one normalized identity with the final display name and color',
       () async {
