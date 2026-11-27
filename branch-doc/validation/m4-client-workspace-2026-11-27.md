@@ -4,7 +4,7 @@
 
 Implemented T22–T26 on `claude/amazing-keller-unt4dd`, based on `1d97987`.
 T19 was already present. The corresponding T18/T20/T21 implementation and
-service/native qualification are in the private skilldeck-cloud repository.
+service/native qualification are in the private service repository.
 
 The approved contract additions are recorded in cloud-api-contract-v0.1.md:
 24-hour unadvanced-Lineage cleanup releases the creation key; malformed

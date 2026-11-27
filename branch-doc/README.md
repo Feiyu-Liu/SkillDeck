@@ -48,12 +48,15 @@ New development documents for this work go in this folder.
 | `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |
 | `tasks/T17-service-device-sign-in.md` | M3, service side: contract v0 sign-in on `wrangler dev`. Runs in the private service repository | Implemented in the service repository (`9de140b`), reviewed, and accepted; follow-ups T18 and T19 |
 | `reviews/2026-11-27-m3-review.md` | Review of T17, with T16 driven against the dev service | T17 accepted. T17-1 and T17-3: T18. T17-2 fixed in T19 |
-| `tasks/T18-service-approval-rate-limit.md` | Fix T17-1 (approval page limit) and T17-3 (lockfile registry). Runs in the private service repository | Ready for Codex in the service repository |
+| `tasks/T18-service-approval-rate-limit.md` | Fix T17-1 (approval page limit) and T17-3 (lockfile registry). Runs in the private service repository | Implemented in the service repository, reviewed, and accepted |
 | `tasks/T19-contract-429.md` | Fix T17-2: HTTP 429 in contract v0 and the sign-in client | Implemented by Claude (gates on Linux x64) |
-| `tasks/T20-service-library-and-feed.md` | M4 service 1/2: account-sharded Lineages, library, ending, feed, Device description on sessions. Runs in the private service repository | Ready for Codex in the service repository |
-| `tasks/T21-service-packs-and-head-advance.md` | M4 service 2/2: Head Packs, Head Advance, Generation change, retention. After T20 | Ready for Codex in the service repository, after T20 |
-| `tasks/T22-client-api-and-fake-service.md` | M4 client 1/3: v0.1 API client and an in-memory fake service | Ready for Codex |
-| `tasks/T23-client-reconciliation.md` | M4 client 2/3: Reconciliation, Upload, Download, Removal and Stop Syncing for linked Skills. After T22 | Ready for Codex, after T22 |
-| `tasks/T24-client-bootstrap-and-reset.md` | M4 client 3/3: new-Device bootstrap, reset, Device Exclusions. After T23 | Ready for Codex, after T23 |
-| `tasks/T25-apply-remote-source-replacement.md` | Workspace: `RemoteSkillSourceReplacement`, applying a remote Generation change (decided 2026-11-27) | Ready for Codex |
-| `tasks/T26-client-generation-change.md` | M4 client: Generation change in both directions. After T23; needs T25's contract only | Ready for Codex, after T23 |
+| `tasks/T20-service-library-and-feed.md` | M4 service 1/2: account-sharded Lineages, library, ending, feed, Device description on sessions. Runs in the private service repository | Implemented in the service repository, reviewed, and accepted |
+| `tasks/T21-service-packs-and-head-advance.md` | M4 service 2/2: Head Packs, Head Advance, Generation change, retention. After T20 | Implemented in the service repository, reviewed, and accepted. Staging deployed for email sign-in |
+| `tasks/T22-client-api-and-fake-service.md` | M4 client 1/3: v0.1 API client and an in-memory fake service | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
+| `tasks/T23-client-reconciliation.md` | M4 client 2/3: Reconciliation, Upload, Download, Removal and Stop Syncing for linked Skills. After T22 | Implemented, reviewed, and accepted; M4-1 to M4-5 go to T27 |
+| `tasks/T24-client-bootstrap-and-reset.md` | M4 client 3/3: new-Device bootstrap, reset, Device Exclusions. After T23 | Implemented, reviewed, and accepted |
+| `tasks/T25-apply-remote-source-replacement.md` | Workspace: `RemoteSkillSourceReplacement`, applying a remote Generation change (decided 2026-11-27) | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
+| `tasks/T26-client-generation-change.md` | M4 client: Generation change in both directions. After T23; needs T25's contract only | Implemented, reviewed, and accepted |
+| `validation/m4-client-workspace-2026-11-27.md` | Codex's gate results and coverage for T22–T26 | Record |
+| `reviews/2026-11-27-m4-review.md` | Review of T18 and T20–T26 | Accepted. M4-1 to M4-5: T27. M4-6 for the M7 adapter. M4-7 for the maintainer |
+| `tasks/T27-m4-review-fixes.md` | Fix M4-1 to M4-5 in the Reconciler | Ready for Codex |
