@@ -60,3 +60,8 @@ New development documents for this work go in this folder.
 | `validation/m4-client-workspace-2026-11-27.md` | Codex's gate results and coverage for T22–T26 | Record |
 | `reviews/2026-11-27-m4-review.md` | Review of T18 and T20–T26 | Accepted. M4-1 to M4-5: T27. M4-6 for the M7 adapter. M4-7 for the maintainer |
 | `tasks/T27-m4-review-fixes.md` | Fix M4-1 to M4-5 in the Reconciler | Ready for Codex |
+| `tasks/T28-contract-v0.2-metadata.md` | M6: Codex drafts contract v0.2 for metadata, tags, and Note Conflict. Design only | Ready for Codex; the draft then awaits the maintainer, and T33 (service) and T34 (client) follow |
+| `tasks/T29-app-sync-workspace-adapter.md` | M7 1/4: the real `SyncWorkspace` adapter through the App seam, and durable per-account sync state. Covers M4-6 and an opt-in M4-7 | Ready for Codex, after T27 |
+| `tasks/T30-app-cloud-sign-in.md` | M7 2/4: Cloud sign-in in Settings, secure session storage, `cupertino_http`, Cloud off without an origin or off macOS | Ready for Codex; can run in parallel with T29 |
+| `tasks/T31-app-sync-runtime-and-status.md` | M7 3/4: the serialized sync runtime, Feed Check triggers, per-Skill Sync Status, Start and Stop Syncing | Ready for Codex, after T27, T29, and T30 |
+| `tasks/T32-app-attention-actions-and-bootstrap.md` | M7 4/4: actions for every content Attention Reason, Device Exclusions in Settings, the new-Device activation step | Ready for Codex, after T31 |
