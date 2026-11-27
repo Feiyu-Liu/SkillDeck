@@ -71,6 +71,7 @@ coordinator, with the usual journal, recovery, and finalization.
 | `RemoteSkillMetadata` | `managedSkillId`, `expectedEffective`, `favorite`, `note` (null clears it), `tagIds` (the complete set of local tag IDs) | T09 |
 | `RemoteSkillRemoval` | `managedSkillId`, `expectedEffective` | T09 |
 | `RemoteTagVocabulary` | one of `ensure(name, color)`, `update(tagId, name, color)`, or `delete(tagId)`; `color` is `#RRGGBB` or null | T09 |
+| `RemoteSkillSourceReplacement` | `managedSkillId`, `expectedEffective`, `packPath`, `effective`, optional `upstream`, `source` (Git, Well-known, or Synced Origin descriptor) | T25 (added 2026-11-27) |
 
 `expectedEffective`, `effective`, and `upstream` are `RevisionId`s.
 
@@ -96,6 +97,7 @@ answering two questions raised while implementing T08).
 | `metadataApplied` | Metadata changed the Favorite, Note, or Tag Assignments (added 2026-11-25) |
 | `removed` | Removal succeeded, or Vocabulary `delete` removed the tag |
 | `tag(tagId)` | Vocabulary `ensure` and `update` return the resulting local tag |
+| `sourceReplaced` | Source Replacement from a remote Generation change succeeded (added 2026-11-27, T25) |
 
 **Deviation from R11, confirmed 2026-11-24:** R11 lists six outcomes. `installed`,
 `removed`, and `tag` are added, because their callers need the resulting
@@ -170,6 +172,27 @@ Let L be the local Effective Revision and R the target `effective`.
   - a Dirty Draft or an Update Candidate Session returns
     `draftResolutionRequired`. That becomes the R10 Attention Reason "Removed on
     another Device while a Draft exists here".
+- **Source Replacement (T25, decided by the maintainer on 2026-11-27):**
+  - Applies a remote Generation change: the same Managed Skill ID gets a new
+    Source and an unrelated history from the pack. It follows the existing
+    Source Replacement path, with the content taken from the verified pack, as
+    Install does.
+  - It is guarded by `expectedEffective` instead of a `DestructiveIntent`, as
+    Removal is. The other Device's user already confirmed it; R4 applies
+    Generation changes without asking.
+  - It keeps everything that a local Source Replacement keeps, and deletes the
+    previous Source lineage after finalization, as a local one does.
+  - `source` and `upstream` follow Install's rules. A Local or Adopted Snapshot
+    descriptor is rejected, and a null `upstream` is allowed only with a Synced
+    Origin of `originSourceType: adoptedSnapshot`.
+  - A Dirty Draft or an Update Candidate Session returns
+    `draftResolutionRequired`.
+  - A changed Declared Skill Name whose Skill Slot holds a different Skill
+    returns `skillSlotOccupied(occupant)`.
+  - On retry, it returns `noChange` when the Skill already has the requested
+    Source Descriptor, Effective, and Upstream.
+  - The Workspace does not decide whether this Device has unsynced revisions;
+    `skills_cloud` does, before it calls (see the table below).
 - **Vocabulary:**
   - `ensure` and `update` leave the resulting tag with exactly the given
     display name and color;
@@ -192,12 +215,13 @@ Let L be the local Effective Revision and R the target `effective`.
 | Note Conflict | none, because `skills_cloud` detects it |
 | Skill Slot occupied by a different local Skill | `skillSlotOccupied` |
 | Removed on another Device while a Draft exists here | `draftResolutionRequired` on Removal |
-| Source replaced on another Device while this Device has unsynced revisions | none in M5, because it is a Generation change and Generation changes are not in this contract |
+| Source replaced on another Device while this Device has unsynced revisions | none: `skills_cloud` detects the unsynced revisions before it applies `RemoteSkillSourceReplacement` (T26) |
 | Missing from the Cloud Library after a reset | none, because `skills_cloud` detects it |
 
-Generation changes, which represent Source Replacement, are not covered by this
-contract (confirmed 2026-11-24). They are left for a later card once M4 has fixed how `skills_cloud`
-detects them.
+Generation changes, which represent Source Replacement, were left out of this
+contract on 2026-11-24. On 2026-11-27 the maintainer added
+`RemoteSkillSourceReplacement` for them (T25), and `skills_cloud` handles both
+directions in T26.
 
 ## Seam 4: current revisions (T12)
 

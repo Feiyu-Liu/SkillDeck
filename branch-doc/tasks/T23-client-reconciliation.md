@@ -153,8 +153,8 @@ Each item is a test with T22's fake service and the fake Workspace.
 
 - **In scope:** `packages/skills_cloud/`, and its `CONTEXT.md`.
 - **Out of scope:**
-  - **Generation change, in either direction.** The Workspace has no apply
-    variant for it yet; this is a follow-up.
+  - **Generation change, in either direction:** T25 adds the Workspace
+    variant, and T26 the client side.
   - New-Device bootstrap, reset, Device Exclusions, and linking a local Skill
     to an existing Lineage (T24).
   - Metadata and tags (v0.2, M6).
