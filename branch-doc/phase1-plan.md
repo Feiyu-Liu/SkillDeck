@@ -123,7 +123,7 @@ Ordered by dependency. Dates are not part of this plan.
 | M1 | Workspace seams 1, 2, and 5 with the revision identifier: T01–T03 | Now |
 | M2 | `skills_cloud` package and Feed Check scheduling: T04 | Now |
 | M3 | Cloud API contract v0 and Device Authorization sign-in. Contract: `cloud-api-contract-v0.md`; cards T16 (client) and T17 (service) | Now: the contract is drafted here and the service implements it |
-| M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | Now: the prototype decision is made (2026-11-27). Contract: `cloud-api-contract-v0.1.md` |
+| M4 | Reconciliation, Upload, and Download against an in-memory fake of the API | Now: the prototype decision is made (2026-11-27). Contract: `cloud-api-contract-v0.1.md`; cards T20, T21 (service) and T22–T24 (client). Open: applying a Generation change in the Workspace |
 | M5 | Seams 3 and 4: the Sync apply contract and the committed-change feed. Contract: `m5-sync-apply-contract.md`; cards T06, T07, T11 (review fixes), T12 (current-revision read), T08, T13 (Recovery Bundle fix), T09, then T14 (Recovery Bundle history) | After M1 |
 | M6 | Metadata, tag vocabulary, and Note Conflict | After M4 and M5 |
 | M7 | App integration, Sync Status, every Attention Reason, new-Device bootstrap | After M6 |

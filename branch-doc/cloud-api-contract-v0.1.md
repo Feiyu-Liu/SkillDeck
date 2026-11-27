@@ -1,6 +1,6 @@
 # SkillDeck Cloud API contract v0.1: Personal Sync data API
 
-Status: draft, 2026-11-27. Milestone M4. Extends `cloud-api-contract-v0.md`:
+Status: accepted 2026-11-27 (open points decided). Milestone M4. Extends `cloud-api-contract-v0.md`:
 every convention there still applies here, sign-in is unchanged, and so is
 HTTP 429. The private service repository implements this contract; the
 `skills_cloud` client implements the client side.
@@ -176,7 +176,7 @@ of the named roots.
 | 404 | `notFound` | Lineage unknown or not the caller's | reconcile the Lineage |
 | 409 | `wrongGeneration` | `generation` is neither current nor next; body has `"generation": <current>` | reconcile the Lineage |
 | 410 | `lineageEnded` | the Lineage is `removed` or `stopped` | reconcile the Lineage |
-| 413 | `packTooLarge` | over 16 MiB packed, or over 64 MiB inflated; body has `"limit": "packed"` or `"inflated"` | Attention Reason, see Open points |
+| 413 | `packTooLarge` | over 16 MiB packed, or over 64 MiB inflated; body has `"limit": "packed"` or `"inflated"` | Attention Reason "Too large to sync" |
 | 422 | `packRejected` | body has `"reason"`: `digestMismatch`, `packChecksum`, `packFormat`, `missingRoot`, or `missingObject` | an export defect: do not retry this pack |
 | 403 | `storageLimitReached` | account quota | account condition |
 
@@ -399,13 +399,10 @@ This section is for the M4 client card. It does not bind the service.
   is a follow-up to T17.
 - Never log session tokens, `source` contents, declared names, or Device names.
 
-## Open points (recommendations, for the maintainer)
+## Decided points (maintainer, 2026-11-27)
 
-1. **A Head Pack over the bound** (`packTooLarge`) needs an Attention Reason
-   that R10 does not list yet: "Too large to sync".
-   - Recommended actions: keep it here as Device Only; Stop Syncing.
-   - R10's rule is that every status is resolvable, so this belongs in R10.
-2. **Ending wins over a concurrent advance:** recommended as above. The other
-   Device's newest revision survives only on that Device, as Device Only or
-   behind a Draft.
-3. **`clientKey` retention:** 30 days, as above.
+1. **A Head Pack over the bound** (`packTooLarge`) is the new Attention Reason
+   "Too large to sync". Its actions are keep it here as Device Only, and Stop
+   Syncing. R10 gains this row; the private ADR-0105 needs the same amendment.
+2. **Ending wins over a concurrent advance,** as specified above.
+3. **`clientKey` retention** is 30 days.
