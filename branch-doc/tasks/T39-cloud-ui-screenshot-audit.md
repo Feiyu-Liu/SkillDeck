@@ -97,10 +97,18 @@ nothing is fixed.
 
 ### Progress
 
+- [x] Captured 62 Cloud states in English/Chinese and light/dark, with real native App fonts. Wrote the complete inventory and rule notes; made no UI fixes.
+
 ### Decision Log
+
+- Use existing fake service, repository, session store and real App shell. Screenshots are native-rendered, not widget-test font goldens.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Delivered 248 PNGs and capture-inventory.json under ../screenshots/T39/, and ../reviews/2026-11-28-cloud-ui-inventory.md. The full native capture and focused new-Device recapture passed. All four variants exist for every listed state. Product behavior/look are unchanged by this card. Native AX stress-harness limitations are documented in ../validation/t35-t39-2026-11-28.md.
+
+Changes are committed separately by task; no push or deployment is included.
