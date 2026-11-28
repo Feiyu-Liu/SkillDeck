@@ -19,6 +19,10 @@ import '../test/support/skills_manager_test_app.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   const unreachable = bool.fromEnvironment('SKILLDECK_NATIVE_UNREACHABLE');
+  const serviceOrigin = String.fromEnvironment(
+    'SKILLDECK_NATIVE_ORIGIN',
+    defaultValue: 'http://127.0.0.1:8787',
+  );
   tearDownAll(binding.platformDispatcher.clearSemanticsEnabledTestValue);
   setUpAll(() async {
     binding.platformDispatcher.semanticsEnabledTestValue = false;
@@ -41,7 +45,7 @@ void main() {
           overrides: [
             cloudIsMacOSProvider.overrideWithValue(true),
             cloudOriginDefineProvider.overrideWithValue(
-              unreachable ? 'http://127.0.0.1:8786' : 'http://127.0.0.1:8787',
+              unreachable ? 'http://127.0.0.1:8786' : serviceOrigin,
             ),
             cloudSessionStoreProvider.overrideWithValue(store),
             cloudDeviceProvider.overrideWithValue(
@@ -77,12 +81,21 @@ void main() {
       }
       if (!unreachable) {
         await tester.tap(find.text('Sign out'));
+        await tester.pump();
+        while (container.read(cloudSignInViewModelProvider).value?.phase ==
+            CloudSignInPhase.signingOut) {
+          await tester.pump(const Duration(milliseconds: 200));
+        }
         await tester.pumpAndSettle();
+        expect(
+          container.read(cloudSignInViewModelProvider).value?.phase,
+          CloudSignInPhase.signedOut,
+        );
       }
       expect(
         await store.read(
           CloudServiceOrigin.parse(
-            unreachable ? 'http://127.0.0.1:8786' : 'http://127.0.0.1:8787',
+            unreachable ? 'http://127.0.0.1:8786' : serviceOrigin,
           ),
         ),
         isNull,
