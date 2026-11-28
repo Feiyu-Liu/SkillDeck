@@ -84,4 +84,5 @@ New development documents for this work go in this folder.
 | `tasks/T43-sync-attention-rework.md` | Sync attention states, confirmations, review dialogs, notices, and Settings rows rewritten with exact text; five behaviour facts to verify first | Implemented and verified; see T41–T44 validation |
 | `tasks/T44-notes-new-device-rework.md` | Note conflict dialog, new-Device sheet, and limit messages rewritten with exact text | Implemented and verified; screenshots captured |
 | `validation/t41-t44-2026-11-28.md` | T41–T44 implementation, staging and native evidence | Complete; approved history wording deviation documented |
+| `reviews/2026-11-28-t41-t44-review.md` | Review of T41–T44 (sign-in precheck and language, service sign-in page, sync attention and note/new-Device rework) | T41 code accepted, but two screenshots expose personal data (F-1). T42 accepted. T43 rework: F-3, F-4. T44 accepted with follow-ups; F-6 needs planner text |
 | `follow-ups/source-replacement-history.md` | Preserve old history after accepting a new remote source | Maintainer-approved follow-up; needs engine contract |
