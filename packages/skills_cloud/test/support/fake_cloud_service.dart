@@ -75,6 +75,8 @@ final class FakeCloudService {
   List<Reply> tokenReplies = [(_) => jsonResponse(tokenBody)];
   int _polls = 0;
 
+  Reply appToken = (_) => jsonResponse(tokenBody);
+
   Reply session = (_) => jsonResponse(sessionBody);
   Reply signOut = (_) => jsonResponse({'success': true});
 
@@ -82,6 +84,8 @@ final class FakeCloudService {
     requests.add(request);
     if (_elapsed case final elapsed?) requestTimes.add(elapsed());
     switch ((request.method, request.url.path)) {
+      case ('POST', '/app/token'):
+        return appToken(request);
       case ('POST', '/api/auth/device/code'):
         return deviceCode(request);
       case ('POST', '/api/auth/device/token'):

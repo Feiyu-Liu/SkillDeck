@@ -82,10 +82,20 @@ Tests with the package's fake service, extended for `/app/sign-in` and
 
 ### Progress
 
+- [x] Implemented and verified PKCE generation, callback validation, error redaction, concurrency guard and shared session finishing.
+
 ### Decision Log
+
+- Reuse the existing crypto dependency and existing session finishing. The native port may throw platform exceptions; the client drops their text and maps them to the existing protocol failure, shown as other by the App.
+
+- The authenticator fake represents the browser page and callback; the HTTP fake serves /app/token. The package itself never fetches /app/sign-in, because that URL belongs to the App-provided system window.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Cloud package: 150 tests passed, strict analysis/format passed. cloud_sign_in.dart line coverage is 99.15%; full package 92.51%. Existing Device Authorization remains supported. See ../validation/t35-t39-2026-11-28.md.
+
+Changes are committed separately by task; no push or deployment is included.

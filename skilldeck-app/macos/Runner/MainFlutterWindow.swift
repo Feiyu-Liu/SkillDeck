@@ -1,7 +1,13 @@
+import AuthenticationServices
 import Cocoa
 import FlutterMacOS
 
-class MainFlutterWindow: NSWindow {
+class MainFlutterWindow: NSWindow, ASWebAuthenticationPresentationContextProviding {
+  private var webAuthSession: ASWebAuthenticationSession?
+
+  func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+    return self
+  }
   private var wakeObserver: NSObjectProtocol?
 
   override func awakeFromNib() {
@@ -41,6 +47,57 @@ class MainFlutterWindow: NSWindow {
       queue: .main
     ) { _ in
       cloudLifecycle.invokeMethod("wake", arguments: nil)
+    }
+
+    FlutterMethodChannel(
+      name: "skilldeck/web_auth",
+      binaryMessenger: flutterViewController.engine.binaryMessenger
+    ).setMethodCallHandler { [weak self] call, result in
+      guard call.method == "authenticate" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      guard let self = self else {
+        result(FlutterError(code: "unavailable", message: nil, details: nil))
+        return
+      }
+      guard self.webAuthSession == nil else {
+        result(FlutterError(code: "busy", message: nil, details: nil))
+        return
+      }
+      guard let arguments = call.arguments as? [String: Any],
+            let rawURL = arguments["url"] as? String,
+            let url = URL(string: rawURL),
+            let scheme = arguments["callbackScheme"] as? String else {
+        result(FlutterError(code: "unavailable", message: nil, details: nil))
+        return
+      }
+      let session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) {
+        [weak self] callback, error in
+        DispatchQueue.main.async {
+          self?.webAuthSession = nil
+          if let error = error {
+            let nativeError = error as NSError
+            if nativeError.domain == ASWebAuthenticationSessionError.errorDomain &&
+                nativeError.code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
+              result(nil)
+            } else {
+              result(FlutterError(code: "unavailable", message: nil, details: nil))
+            }
+          } else if let callback = callback {
+            result(callback.absoluteString)
+          } else {
+            result(FlutterError(code: "unavailable", message: nil, details: nil))
+          }
+        }
+      }
+      session.prefersEphemeralWebBrowserSession = true
+      session.presentationContextProvider = self
+      self.webAuthSession = session
+      if !session.start() {
+        self.webAuthSession = nil
+        result(FlutterError(code: "unavailable", message: nil, details: nil))
+      }
     }
 
     // A command-line approval needs the user without taking their keyboard:

@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:skilldeck_cli/skilldeck_protocol.dart';
-import 'package:skills_cloud/skills_cloud.dart';
+import 'package:skills_cloud/skills_cloud.dart' hide WorkspaceSkill;
 import 'package:skills_cloud/testing.dart';
 import 'package:skills_manager/features/cloud/data/cloud_device_identity.dart';
 import 'package:skills_manager/features/cloud/data/file_sync_state_store.dart';
@@ -24,6 +24,7 @@ import 'package:skills_manager/features/skills/data/repositories/skills_workspac
 import 'package:skills_manager/features/skills/data/services/agent_root_ownership_repair_service.dart';
 import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/models/workspace_review.dart';
+import 'package:skills_manager/features/skills/models/workspace_sync.dart';
 import 'package:skills_manager/features/updates/skill_update_status_coordinator.dart';
 import 'package:skills_manager/shared/diagnostics/app_diagnostics.dart';
 import 'package:skills_manager/shared/failures/app_failure_reporter.dart';
@@ -43,6 +44,118 @@ void main() {
       await temporary.delete(recursive: true);
     });
   });
+
+  test(
+    'renamed Mac keeps source identity and bootstrap links without replacement',
+    () async {
+      final a = await _open(temporary, 'rename-A');
+      final b = await _open(temporary, 'rename-B');
+      final source = await _source(temporary, 'rename-source');
+      final id = await _install(a, source);
+      final service = FakeCloudService(acceptRealPacks: true);
+      addTearDown(service.client.close);
+      final origin = CloudServiceOrigin.parse('https://cloud.example.invalid');
+      final aApi = await _api(
+        service.client,
+        origin,
+        service.session('owner', deviceName: 'A'),
+      );
+      final bSync = _reconciler(
+        b,
+        await _api(
+          service.client,
+          origin,
+          service.session('owner', deviceName: 'B'),
+        ),
+      );
+      final state = InMemorySyncStateStore();
+      final original = Reconciler(
+        api: aApi,
+        workspace: a.adapter,
+        state: state,
+        scratchDirectory: a.scratch,
+      );
+      expect(await original.startSyncing(id), isA<SkillSynced>());
+      await bSync.bootstrap();
+      final before = (await a.adapter.inspectRevisionSelections(id))!;
+      final bBefore = (await b.adapter.listSkills()).single;
+      final identity = await CloudDeviceIdentity.load(
+        p.join(temporary.path, 'support-rename-A'),
+      );
+      final renamedAdapter = WorkspaceSyncAdapter(
+        repository: a.app,
+        deviceLabel: 'Renamed Mac',
+        deviceIdentity: identity,
+      );
+      final renamed = (await renamedAdapter.inspectRevisionSelections(id))!;
+      expect(
+        renamed.source.toJson()['originSourceId'],
+        before.source.toJson()['originSourceId'],
+      );
+      expect(renamed.source, isNot(before.source));
+      final sync = Reconciler(
+        api: aApi,
+        workspace: renamedAdapter,
+        state: state,
+        scratchDirectory: a.scratch,
+      );
+      service.requests.clear();
+      expect(await sync.reconcileSkill(id), isA<SkillSynced>());
+      expect((await state.links()).single.generation, 1);
+      expect(
+        service.requests.where((request) => request.method != 'GET'),
+        isEmpty,
+      );
+      await bSync.feedCheck();
+      final bAfter = (await b.adapter.listSkills()).single;
+      expect(bAfter.effective, bBefore.effective);
+      expect(bAfter.sourceEpoch, bBefore.sourceEpoch);
+      final reset = Reconciler(
+        api: aApi,
+        workspace: renamedAdapter,
+        state: InMemorySyncStateStore(),
+        scratchDirectory: a.scratch,
+      );
+      final bootstrap = await reset.bootstrap();
+      expect(bootstrap.completed, isTrue);
+      expect(bootstrap.installedSkillIds, isEmpty);
+      expect(await renamedAdapter.listSkills(), hasLength(1));
+      await _publish(a, id, 'publish after rename');
+      expect(
+        (await renamedAdapter.inspectRevisionSelections(id))!.source
+            .toJson()['originSourceId'],
+        before.source.toJson()['originSourceId'],
+      );
+      expect(await sync.reconcileSkill(id), isA<SkillSynced>());
+      expect((await state.links()).single.generation, 1);
+      await bSync.feedCheck();
+      expect(
+        (await b.adapter.listSkills()).single.source
+            .toJson()['originDeviceLabel'],
+        'rename-A',
+      );
+      final renamedRead = WorkspaceSyncAdapter(
+        repository: _RenamedSourceRead(a.app, 'Renamed Skill'),
+        deviceLabel: 'Renamed Mac',
+        deviceIdentity: identity,
+      );
+      final priorRead = WorkspaceSyncAdapter(
+        repository: _RenamedSourceRead(a.app, 'Original Skill'),
+        deviceLabel: 'Renamed Mac',
+        deviceIdentity: identity,
+      );
+      final priorSkill = (await priorRead.inspectRevisionSelections(id))!;
+      final renamedSkill = (await renamedRead.inspectRevisionSelections(id))!;
+      expect(renamedSkill.declaredName, 'Renamed Skill');
+      expect(renamedSkill.source.toJson()['displayLabel'], 'Renamed Skill');
+      expect(priorSkill.source.toJson()['displayLabel'], 'Original Skill');
+      expect(
+        renamedSkill.source.toJson()['originSourceId'],
+        priorSkill.source.toJson()['originSourceId'],
+      );
+      expect(renamedSkill.source.sameSourceAs(priorSkill.source), isTrue);
+    },
+  );
 
   test(
     'real Workspaces sync a publish, wait behind a Draft, then replace Source',
@@ -1139,4 +1252,43 @@ final class _NoRepair
   @override
   Future<Set<String>?> review(WorkspaceAgentRootOwnershipAudit audit) async =>
       throw StateError('Ownership review not part of this fixture');
+}
+
+// Read fixture only: Workspace intentionally forbids renaming via Draft publish.
+// Empty locator exercises the adapter's declared-name display-label fallback.
+final class _RenamedSourceRead implements SkillsWorkspaceRepository {
+  _RenamedSourceRead(this.delegate, this.name);
+  final SkillsWorkspaceRepository delegate;
+  final String name;
+  @override
+  SkillsWorkspaceSnapshot get current {
+    final original = delegate.current!;
+    return SkillsWorkspaceSnapshot(
+      revision: original.revision,
+      projectRoots: original.projectRoots,
+      skills: [
+        for (final skill in original.skills)
+          WorkspaceSkill(
+            id: skill.id,
+            slotKey: skill.slotKey,
+            declaredName: name,
+            displayName: skill.displayName,
+            description: skill.description,
+            source: const SkillSourceProvenance(
+              kind: WorkspaceSourceKind.local,
+              locator: '',
+            ),
+            currentRevision: skill.currentRevision,
+            activations: skill.activations,
+          ),
+      ],
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  @override
+  WorkspaceTask<WorkspaceRevisionSelections> inspectRevisionSelections(
+    Set<WorkspaceSkillId> ids,
+  ) => delegate.inspectRevisionSelections(ids);
 }

@@ -157,10 +157,22 @@ outside the button, or code appears.
 
 ### Progress
 
+- [x] Implemented the system sign-in channel, port, exact localized Settings states and native acceptance/capture fixtures. Deleted the replaced device-code UI, helpers and strings.
+
 ### Decision Log
 
+- No URL scheme registration or entitlement was added. Capture uses the existing native integration-test approach and the real App shell at its default 800x600 window size. Capture-only bindings suppress native semantics during rapid root replacement; product accessibility settings are unchanged.
+
+- The required existing desktop E2E gate gained only a setup-time platform semantics request and teardown reset. This retains semantic coverage while preventing the first native window from adding a handle after leak tracking starts. All six E2E cases then passed.
+
 ### Surprises
+
+- The native AX traversal and capture teardown findings are recorded in the validation report. Normal native email sign-in passed; capture results are not an accessibility qualification.
 
 ### Follow-ups
 
 ### Outcome
+
+App: 1,323 tests passed with two existing opt-in skips; 6 desktop E2E tests passed. Local native email sign-in, both cancellation paths and the approved unreachable-service substitute passed. 24 App captures and 4 separate system-window captures are under ../screenshots/T37/. Formal source/test analysis passed; the five unrelated Windows-probe infos remain per approval. See ../validation/t35-t39-2026-11-28.md.
+
+Changes are committed separately by task; no push or deployment is included.

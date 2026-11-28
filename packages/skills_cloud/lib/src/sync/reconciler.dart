@@ -472,7 +472,7 @@ final class Reconciler {
       // bytes can acknowledge a Generation change whose response was lost.
       if (head != null &&
           (newerGeneration ? localSourceReplaced : !localSourceReplaced) &&
-          local.source == source &&
+          local.source.sameSourceAs(source) &&
           local.effective == head.effective &&
           local.upstream == head.upstream) {
         await _remember(link, remote, local.sourceEpoch);
@@ -494,7 +494,8 @@ final class Reconciler {
             ? _rememberAttention(link, remote.version, local, outcome)
             : outcome;
       }
-      final sourceChanged = local.source != source || localSourceReplaced;
+      final sourceChanged =
+          !local.source.sameSourceAs(source) || localSourceReplaced;
       if (head != null && !sourceChanged) {
         final applied = await _download(
           remote,
@@ -667,7 +668,7 @@ final class Reconciler {
       // Re-read to avoid combining an exported revision with a concurrently replaced Source/name.
       final current = await workspace.inspectRevisionSelections(local.id);
       if (current == null ||
-          current.source != local.source ||
+          !current.source.sameSourceAs(local.source) ||
           current.sourceEpoch != local.sourceEpoch ||
           current.effective != export.effective ||
           current.upstream != export.upstream) {
@@ -918,7 +919,7 @@ final class Reconciler {
     final existing = (await workspace.listSkills())
         .where(
           (s) =>
-              s.source == source &&
+              s.source.sameSourceAs(source) &&
               s.slotKey == workspace.slotKeyForName(head.declaredName) &&
               s.effective == head.effective,
         )

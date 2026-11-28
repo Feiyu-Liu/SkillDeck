@@ -70,9 +70,11 @@ New development documents for this work go in this folder.
 | `tasks/T33-service-metadata.md` | M6 service: metadata CAS, Note Conflict, tag identity and bounded Feed/library projection | Implemented and verified locally; see M6 validation |
 | `tasks/T34-metadata-reconciliation-and-app.md` | M6 client, guarded Workspace metadata and macOS App integration | Implemented and verified locally; see M6 validation |
 | `validation/m6-metadata-sync-2026-11-28.md` | M6 implementation, final gates and remaining acceptance boundaries | Record |
-| `tasks/T35-service-app-sign-in.md` | App sign-in, service side: `/app/sign-in` and `/app/token` with an authorization code and PKCE (R14 amended 2026-11-28). Runs in the private service repository | Ready for Codex in the service repository |
-| `tasks/T36-client-app-sign-in.md` | App sign-in, client side: `signInWithBrowser` over a web-authentication port | Ready for Codex; can run in parallel with T35 |
-| `tasks/T37-app-sign-in-window.md` | App sign-in, App side: the system sign-in window, with exact states and text; Device Authorization removed from the App | Ready for Codex, after T36 |
-| `tasks/T38-device-bound-source-identity.md` | Fix from the 2026-11-28 spot check: renaming a Mac started a Generation change for every Device-Bound Skill | Ready for Codex |
-| `tasks/T39-cloud-ui-screenshot-audit.md` | Screenshots and an inventory of every Cloud UI state, flagged against the UI rules; no fixes | Ready for Codex; rework cards follow its review |
+| `tasks/T35-service-app-sign-in.md` | App sign-in, service side: `/app/sign-in` and `/app/token` with an authorization code and PKCE (R14 amended 2026-11-28). Runs in the private service repository | Implemented and validated locally; see T35–T39 validation (no deployment) |
+| `tasks/T36-client-app-sign-in.md` | App sign-in, client side: `signInWithBrowser` over a web-authentication port | Implemented and validated locally; see T35–T39 validation (no deployment) |
+| `tasks/T37-app-sign-in-window.md` | App sign-in, App side: the system sign-in window, with exact states and text; Device Authorization removed from the App | Implemented and validated locally; see T35–T39 validation (no deployment) |
+| `tasks/T38-device-bound-source-identity.md` | Fix from the 2026-11-28 spot check: renaming a Mac started a Generation change for every Device-Bound Skill | Implemented and validated locally; see T35–T39 validation (no deployment) |
+| `tasks/T39-cloud-ui-screenshot-audit.md` | Screenshots and an inventory of every Cloud UI state, flagged against the UI rules; no fixes | Delivered: 62 states, 248 native PNGs and UI inventory; no UI rework |
+| `validation/t35-t39-2026-11-28.md` | T35–T39 implementation, approvals, native/browser evidence and gates | Complete local evidence; no deployment |
+| `reviews/2026-11-28-cloud-ui-inventory.md` | T39 Cloud UI state inventory and UI-rule observations | 62 states, 248 PNGs; ready for maintainer review |
 | T40 (card kept in the private service repository) | Move the marketing site into the private service repository as it is; the whole website, including the web Marketplace at a path on the main site, is built there (decision of 2026-11-28) | Ready for Codex in the service repository |

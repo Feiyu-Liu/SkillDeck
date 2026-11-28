@@ -36,11 +36,13 @@ class CloudSignInSettings extends ConsumerWidget {
       String label,
       VoidCallback callback, {
       bool primary = false,
+      bool loading = false,
     }) => AppButton(
       label: label,
       size: NeoButtonSize.small,
       style: primary ? NeoButtonVariant.primary : NeoButtonVariant.secondary,
       onPressed: callback,
+      loading: loading,
     );
 
     final (title, description, action, additionalAction) = switch (phase) {
@@ -51,30 +53,20 @@ class CloudSignInSettings extends ConsumerWidget {
         button(l10n.cloudSignIn, vm.startSignIn, primary: true),
         null,
       ),
-      CloudSignInPhase.starting => (
+      CloudSignInPhase.signingIn => (
         l10n.cloudAccount,
-        l10n.cloudRequestingCode,
-        null,
+        l10n.cloudSigningIn,
+        button(l10n.cloudSignIn, vm.startSignIn, primary: true, loading: true),
         null,
       ),
-      CloudSignInPhase.waiting => (
-        l10n.cloudVerificationCode(state!.userCode!),
-        state.browserOpenFailed
-            ? l10n.cloudBrowserOpenFailed
-            : l10n.cloudVerifyInBrowser,
-        button(l10n.cloudOpenBrowser, vm.openVerificationPage, primary: true),
-        button(l10n.commonCancel, vm.cancelSignIn),
-      ),
-      CloudSignInPhase.denied ||
-      CloudSignInPhase.expired ||
       CloudSignInPhase.failed => (
         l10n.cloudAccount,
-        switch (phase) {
-          CloudSignInPhase.denied => l10n.cloudSignInDenied,
-          CloudSignInPhase.expired => l10n.cloudSignInExpired,
-          _ => l10n.cloudSignInFailed,
+        switch (state?.failure) {
+          CloudSignInFailure.network => l10n.cloudSignInNetworkFailed,
+          CloudSignInFailure.busy => l10n.cloudSignInBusy,
+          _ => l10n.cloudSignInOtherFailed,
         },
-        button(l10n.cloudTryAgain, vm.startSignIn, primary: true),
+        button(l10n.cloudSignIn, vm.startSignIn, primary: true),
         null,
       ),
       CloudSignInPhase.sessionCheckFailed => (

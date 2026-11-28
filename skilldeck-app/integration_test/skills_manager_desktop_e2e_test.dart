@@ -30,10 +30,16 @@ import 'package:window_manager/window_manager.dart';
 import '../test/support/fake_app_translation_repository.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   // main.dart does this; without it the shell's window-button calls reach
   // window_manager before it has a main window and abort the process.
-  setUpAll(windowManager.ensureInitialized);
+  setUpAll(() async {
+    await windowManager.ensureInitialized();
+    // Native accessibility may otherwise add its handle during the first test.
+    // Enable it before leak tracking; retain semantics coverage in this suite.
+    binding.platformDispatcher.semanticsEnabledTestValue = true;
+  });
+  tearDownAll(binding.platformDispatcher.clearSemanticsEnabledTestValue);
 
   testWidgets(
     'real desktop UI acquires, activates, updates, and removes a local Skill',

@@ -187,56 +187,8 @@ abstract class AppLocalizations {
   /// No description provided for @cloudSignedOut.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to your SkillDeck Cloud account.'**
+  /// **'Sign in to sync your Skills between your Macs.'**
   String get cloudSignedOut;
-
-  /// No description provided for @cloudRequestingCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Requesting a verification code…'**
-  String get cloudRequestingCode;
-
-  /// No description provided for @cloudVerificationCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Verification code: {code}'**
-  String cloudVerificationCode(String code);
-
-  /// No description provided for @cloudVerifyInBrowser.
-  ///
-  /// In en, this message translates to:
-  /// **'Verify that this code matches the one in your browser before approving this device.'**
-  String get cloudVerifyInBrowser;
-
-  /// No description provided for @cloudOpenBrowser.
-  ///
-  /// In en, this message translates to:
-  /// **'Open browser'**
-  String get cloudOpenBrowser;
-
-  /// No description provided for @cloudBrowserOpenFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not open the browser. Try again.'**
-  String get cloudBrowserOpenFailed;
-
-  /// No description provided for @cloudSignInDenied.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign-in was denied in the browser.'**
-  String get cloudSignInDenied;
-
-  /// No description provided for @cloudSignInExpired.
-  ///
-  /// In en, this message translates to:
-  /// **'The verification code expired.'**
-  String get cloudSignInExpired;
-
-  /// No description provided for @cloudSignInFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not sign in.'**
-  String get cloudSignInFailed;
 
   /// No description provided for @cloudSessionCheckFailed.
   ///
@@ -5450,6 +5402,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 Skill} other{{count} Skills}}'**
   String browserGroupSkillCount(int count);
+
+  /// No description provided for @cloudSigningIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue in the sign-in window.'**
+  String get cloudSigningIn;
+
+  /// No description provided for @cloudSignInNetworkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach SkillDeck Cloud. Check your connection and try again.'**
+  String get cloudSignInNetworkFailed;
+
+  /// No description provided for @cloudSignInBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'SkillDeck Cloud is busy right now. Try again in a minute.'**
+  String get cloudSignInBusy;
+
+  /// No description provided for @cloudSignInOtherFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in didn\'t finish. Try again.'**
+  String get cloudSignInOtherFailed;
 }
 
 class _AppLocalizationsDelegate

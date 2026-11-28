@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../api/cloud_values.dart';
 
-/// Versioned, credential-free provenance. Device-bound sources contain labels only.
+/// Versioned, credential-free provenance with portable source identity.
 final class PortableSource {
   PortableSource.git({
     required String locator,
@@ -80,6 +80,20 @@ final class PortableSource {
       _ => throw const FormatException('source_type'),
     };
   }
+
+  /// Compares source identity without treating display labels as replacement.
+  /// Legacy device-bound values without an ID retain full-value comparison.
+  bool sameSourceAs(PortableSource other) {
+    if (isDeviceBound &&
+        other.isDeviceBound &&
+        _json['originSourceId'] != null &&
+        other._json['originSourceId'] != null) {
+      return _json['originSourceType'] == other._json['originSourceType'] &&
+          _json['originSourceId'] == other._json['originSourceId'];
+    }
+    return this == other;
+  }
+
   @override
   bool operator ==(Object other) =>
       other is PortableSource && jsonEncode(_json) == jsonEncode(other._json);

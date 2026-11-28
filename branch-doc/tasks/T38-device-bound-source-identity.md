@@ -107,10 +107,20 @@ Workspace:
 
 ### Progress
 
+- [x] Implemented all four source-identity comparisons and verified device/display label changes, bootstrap, legacy Generation behavior, real Source Replacement and real Workspace identity stability.
+
 ### Decision Log
+
+- Comparisons changed: synced short-circuit, sourceChanged generation decision, post-upload reread, bootstrap exact match. Maintainer accepted legacy Synced Origin values without IDs retaining full-value equality. Draft publish rejects declared-name changes; a read-only repository fixture tests changed name/fallback labels without changing Workspace domain rules.
 
 ### Surprises
 
 ### Follow-ups
 
+- Display labels on other Devices stay unchanged until a real Generation change, per the card.
+
 ### Outcome
+
+Package and App gates passed with the agreed analysis scope. Fake Reconciler cases explicitly prove no upload/no apply for both labels and preserved legacy behavior; a real temporary Workspace verifies rename, seed reload, publish and bootstrap. No Workspace or service domain code changed. See ../validation/t35-t39-2026-11-28.md.
+
+Changes are committed separately by task; no push or deployment is included.

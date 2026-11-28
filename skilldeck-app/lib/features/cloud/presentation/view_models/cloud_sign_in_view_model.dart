@@ -4,10 +4,7 @@ import 'package:skills_manager/features/cloud/cloud_providers.dart';
 
 enum CloudSignInPhase {
   signedOut,
-  starting,
-  waiting,
-  denied,
-  expired,
+  signingIn,
   failed,
   sessionCheckFailed,
   offline,
@@ -16,19 +13,19 @@ enum CloudSignInPhase {
   signOutFailed,
 }
 
+enum CloudSignInFailure { network, busy, other }
+
 final class CloudSignInState {
   const CloudSignInState._(
     this.phase, {
     this.account,
-    this.userCode,
-    this.browserOpenFailed = false,
+    this.failure,
     this.explicitSignIn = false,
   });
 
   final CloudSignInPhase phase;
   final CloudAccount? account;
-  final String? userCode;
-  final bool browserOpenFailed;
+  final CloudSignInFailure? failure;
   final bool explicitSignIn;
 
   CloudAccount? get verifiedAccount =>
@@ -41,22 +38,15 @@ final cloudSignInViewModelProvider =
     );
 
 final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
-  PendingSignIn? _pending;
-
   @override
   Future<CloudSignInState> build() async {
-    ref.onDispose(() {
-      _pending?.cancel();
-      _pending = null;
-    });
     return _readSession(ref.watch(cloudSignInProvider));
   }
 
   Future<void> refreshSession() async {
     final status = state.value?.phase;
     if (state.isLoading ||
-        status == CloudSignInPhase.starting ||
-        status == CloudSignInPhase.waiting ||
+        status == CloudSignInPhase.signingIn ||
         status == CloudSignInPhase.signingOut) {
       return;
     }
@@ -93,72 +83,40 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
   Future<void> startSignIn() async {
     final phase = state.value?.phase;
     if (phase != CloudSignInPhase.signedOut &&
-        phase != CloudSignInPhase.denied &&
-        phase != CloudSignInPhase.expired &&
         phase != CloudSignInPhase.failed) {
       return;
     }
     final signIn = ref.read(cloudSignInProvider);
     if (signIn == null) return;
-
-    _set(CloudSignInPhase.starting);
+    _set(CloudSignInPhase.signingIn);
     final readDevice = ref.read(cloudDeviceProvider);
+    final authenticator = ref.read(cloudWebAuthenticatorProvider);
     try {
       final device = await readDevice();
       if (!ref.mounted) return;
-      final result = await signIn.start(device);
-      if (result is! PendingSignIn) {
-        _set(CloudSignInPhase.failed);
-        return;
-      }
-      if (!ref.mounted) {
-        result.cancel();
-        return;
-      }
-      _pending = result;
-      _set(CloudSignInPhase.waiting, userCode: result.userCode);
-      switch (await signIn.complete(result)) {
+      switch (await signIn.signInWithBrowser(device, authenticator)) {
         case CloudSignInSucceeded(:final account):
           _set(
             CloudSignInPhase.signedIn,
             account: account,
             explicitSignIn: true,
           );
-        case CloudSignInDenied():
-          _set(CloudSignInPhase.denied);
-        case CloudSignInExpired():
-          _set(CloudSignInPhase.expired);
-        case CloudSignInFailed():
-          _set(CloudSignInPhase.failed);
-        case CloudSignInCancelled():
+        case CloudSignInCancelled() || CloudSignInDenied():
           _set(CloudSignInPhase.signedOut);
+        case CloudSignInFailed(:final code):
+          _set(
+            CloudSignInPhase.failed,
+            failure: switch (code) {
+              CloudFailureCode.network => CloudSignInFailure.network,
+              CloudFailureCode.server => CloudSignInFailure.busy,
+              CloudFailureCode.protocol => CloudSignInFailure.other,
+            },
+          );
+        case CloudSignInExpired():
+          _set(CloudSignInPhase.failed, failure: CloudSignInFailure.other);
       }
     } on Object {
-      _set(CloudSignInPhase.failed);
-    } finally {
-      _pending = null;
-    }
-  }
-
-  void cancelSignIn() => _pending?.cancel();
-
-  Future<void> openVerificationPage() async {
-    final pending = _pending;
-    if (pending == null) return;
-    var opened = false;
-    try {
-      opened = await ref.read(cloudBrowserLauncherProvider)(
-        pending.verificationUriComplete,
-      );
-    } on Object {
-      // Show a generic result in Settings without reporting the URL.
-    }
-    if (identical(_pending, pending)) {
-      _set(
-        CloudSignInPhase.waiting,
-        userCode: pending.userCode,
-        browserOpenFailed: !opened,
-      );
+      _set(CloudSignInPhase.failed, failure: CloudSignInFailure.other);
     }
   }
 
@@ -200,8 +158,7 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
   void _set(
     CloudSignInPhase phase, {
     CloudAccount? account,
-    String? userCode,
-    bool browserOpenFailed = false,
+    CloudSignInFailure? failure,
     bool explicitSignIn = false,
   }) {
     if (!ref.mounted) return;
@@ -209,8 +166,7 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
       CloudSignInState._(
         phase,
         account: account,
-        userCode: userCode,
-        browserOpenFailed: browserOpenFailed,
+        failure: failure,
         explicitSignIn: explicitSignIn,
       ),
     );

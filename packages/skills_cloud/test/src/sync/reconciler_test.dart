@@ -51,6 +51,77 @@ device(
 }
 
 void main() {
+  for (final label in ['originDeviceLabel', 'displayLabel']) {
+    test(
+      '$label changes neither upload nor replace a stable Device-Bound source',
+      () async {
+        final service = FakeCloudService();
+        addTearDown(service.client.close);
+        final a = await device(service, 'A'), b = await device(service, 'B');
+        final skill = a.workspace.seed(
+          source: PortableSource.deviceBound(
+            originSourceType: 'local',
+            originDeviceLabel: 'Mac A',
+            displayLabel: 'Skill',
+            originSourceId: 'a' * 64,
+          ),
+        );
+        await a.sync.startSyncing(skill.id);
+        await b.sync.bootstrap();
+        final reads = _RelabelledWorkspace(a.workspace, {label: 'Renamed'});
+        final renamed = Reconciler(
+          api: a.sync.api,
+          workspace: reads,
+          state: a.state,
+          scratchDirectory: a.sync.scratchDirectory,
+        );
+        service.requests.clear();
+        expect(await renamed.reconcileSkill(skill.id), isA<SkillSynced>());
+        expect((await a.state.links()).single.generation, 1);
+        expect(service.requests.where((r) => r.method != 'GET'), isEmpty);
+        final applied = b.workspace.applyCount;
+        await b.sync.feedCheck();
+        expect(b.workspace.applyCount, applied);
+        final fresh = InMemorySyncStateStore();
+        final boot = await Reconciler(
+          api: a.sync.api,
+          workspace: reads,
+          state: fresh,
+          scratchDirectory: a.sync.scratchDirectory,
+        ).bootstrap();
+        expect(boot.completed, isTrue);
+        expect(boot.installedSkillIds, isEmpty);
+        expect((await fresh.links()).single.managedSkillId, skill.id);
+      },
+    );
+  }
+  test(
+    'legacy Device-Bound label comparison still changes Generation',
+    () async {
+      final service = FakeCloudService();
+      addTearDown(service.client.close);
+      final a = await device(service, 'A');
+      final skill = a.workspace.seed(
+        source: PortableSource.deviceBound(
+          originSourceType: 'local',
+          originDeviceLabel: 'Mac A',
+          displayLabel: 'Skill',
+        ),
+      );
+      await a.sync.startSyncing(skill.id);
+      final renamed = Reconciler(
+        api: a.sync.api,
+        workspace: _RelabelledWorkspace(a.workspace, {
+          'displayLabel': 'Renamed',
+        }),
+        state: a.state,
+        scratchDirectory: a.sync.scratchDirectory,
+      );
+      expect(await renamed.reconcileSkill(skill.id), isA<SkillSynced>());
+      expect((await a.state.links()).single.generation, 2);
+    },
+  );
+
   test('two devices fast-forward, upload local changes, merge offline divergence and attribute conflicts', () async {
     final service = FakeCloudService();
     addTearDown(service.client.close);
@@ -803,4 +874,43 @@ Future<String> _digest(
   final bytes = await File(path).readAsBytes();
   await File(path).delete();
   return sha256.convert(bytes).toString();
+}
+
+// Relabel only read results, without pretending an actual Source Replacement
+// happened. Unsupported mutations fail so the no-apply assertions are meaningful.
+final class _RelabelledWorkspace implements SyncWorkspace {
+  _RelabelledWorkspace(this.delegate, this.labels);
+  final SyncWorkspace delegate;
+  final Map<String, String> labels;
+  WorkspaceSkill _read(WorkspaceSkill value) => WorkspaceSkill(
+    id: value.id,
+    effective: value.effective,
+    upstream: value.upstream,
+    source: PortableSource.fromJson({...value.source.toJson(), ...labels}),
+    declaredName: value.declaredName,
+    slotKey: value.slotKey,
+    sourceEpoch: value.sourceEpoch,
+  );
+  @override
+  String? slotKeyForName(String name) => delegate.slotKeyForName(name);
+  @override
+  Future<List<WorkspaceSkill>> listSkills() async =>
+      (await delegate.listSkills()).map(_read).toList();
+  @override
+  Future<WorkspaceSkill?> inspectRevisionSelections(String id) async {
+    final value = await delegate.inspectRevisionSelections(id);
+    return value == null ? null : _read(value);
+  }
+
+  @override
+  Future<WorkspaceMetadataSnapshot> inspectMetadata() =>
+      delegate.inspectMetadata();
+  @override
+  Future<WorkspaceChanges> inspectCommittedChanges(String? cursor) =>
+      delegate.inspectCommittedChanges(cursor);
+  @override
+  Future<WorkspaceExport> exportRevisionPack(String id, String path) =>
+      delegate.exportRevisionPack(id, path);
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
