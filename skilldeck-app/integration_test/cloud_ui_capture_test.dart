@@ -159,11 +159,11 @@ void main() {
         ('tag-limit', 'name'),
         ('tag-limit', 'vocabulary'),
         for (final name in [
-          'incomingDraft--discardDraft',
           'removedWithDraft--remove',
           'sourceReplacedWithLocalChanges--acceptReplacement',
           'slotOccupied--replaceOccupied',
-          'missingAfterReset--remove',
+          'missingAfterReset--keepDeviceOnly',
+          'tooLarge--stop',
         ])
           ('confirmation', name),
         ('conflict-review', 'syncMergeConflict'),
@@ -179,6 +179,7 @@ void main() {
           for (final (item, state) in scenarios.where(
             (entry) => captureItem.isEmpty || entry.$1 == captureItem,
           )) {
+            debugPrint('CLOUD_CAPTURE: $item/$state $locale ${mode.name}');
             final service = FakeCloudService();
             final workspace = FakeSyncWorkspace();
             final local = workspace.seed(
@@ -743,7 +744,9 @@ void main() {
             }
             await tester.pumpWidget(const SizedBox.shrink());
             await tester.pumpAndSettle();
-            await changes.close();
+            // Some Settings states never subscribe; closing an unlistened
+            // single-subscription stream must not block the next capture.
+            unawaited(changes.close());
             await runtime.close();
             await scratch.delete(recursive: true);
             await repository.close();

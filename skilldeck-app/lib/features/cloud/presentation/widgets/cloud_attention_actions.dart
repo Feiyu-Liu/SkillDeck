@@ -12,10 +12,8 @@ import 'package:skills_manager/features/skills/models/skills_workspace.dart';
 import 'package:skills_manager/features/skills/models/workspace_review.dart';
 import 'package:skills_manager/features/skills/skills_providers.dart';
 import 'package:skills_manager/features/skills/workspace_finalization_coordinator.dart';
-import 'package:skills_manager/features/skills/workspace_snapshot_providers.dart';
 import 'package:skills_manager/l10n/l10n.dart';
 import 'package:skills_manager/shared/theme/app_theme.dart';
-import 'package:skills_manager/shared/platform/file_location_opener.dart';
 import 'package:skills_manager/shared/widgets/app_dialog.dart';
 import 'package:skills_manager/shared/widgets/app_dialog_motion.dart';
 import 'package:skills_manager/shared/widgets/app_selection_area.dart';
@@ -64,29 +62,27 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
     final l10n = context.l10n;
     final actions = switch (reason) {
       AttentionReason.incomingDraft => [
-        _Action.publishDraft,
         _Action.reviewIncoming,
-        _Action.discardDraft,
+        _Action.publishDraft,
       ],
       AttentionReason.syncMergeConflict => [_Action.reviewConflict],
       AttentionReason.removedWithDraft => [
-        _Action.remove,
         _Action.keepDeviceOnly,
+        _Action.remove,
       ],
       AttentionReason.sourceReplacedWithLocalChanges => [
         _Action.acceptReplacement,
         _Action.keepDeviceOnly,
       ],
       AttentionReason.slotOccupied when lineageId != null => [
-        _Action.replaceOccupied,
         _Action.exclude,
+        _Action.replaceOccupied,
       ],
       AttentionReason.slotOccupied => <_Action>[],
-      AttentionReason.tooLarge => [_Action.keepDeviceOnly, _Action.stop],
+      AttentionReason.tooLarge => [_Action.stop],
       AttentionReason.missingAfterReset => [
-        _Action.remove,
-        _Action.keepDeviceOnly,
         _Action.uploadAsNew,
+        _Action.keepDeviceOnly,
       ],
     };
     if (actions.isEmpty) return const SizedBox.shrink();
@@ -96,8 +92,8 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
       children: [
         if (reason == AttentionReason.slotOccupied)
           Text(
-            l10n.cloudOccupiedLocalSlot,
-            style: AppTypography.of(context).caption,
+            l10n.cloudSyncSlotOccupied,
+            style: AppTypography.of(context).bodyMuted,
           ),
         Wrap(
           spacing: AppSpacing.sm,
@@ -108,6 +104,9 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
                 key: Key('cloud-attention-${action.name}'),
                 label: _label(l10n, action),
                 size: NeoButtonSize.small,
+                style: action == actions.first
+                    ? NeoButtonVariant.primary
+                    : NeoButtonVariant.secondary,
                 onPressed: _busy
                     ? null
                     : () => unawaited(_run(runtime, attention, action)),
@@ -134,24 +133,48 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
     final workspace = ref.read(skillsWorkspaceRepositoryProvider);
     final confirmedRevision = workspace.current?.revision;
     final confirmedLineageVersion = _observedVersion(skillId, lineageId);
-    final message = switch (action) {
-      _Action.discardDraft => l10n.cloudConfirmDiscardDraft,
-      _Action.remove when reason == AttentionReason.removedWithDraft =>
+    final confirmation = switch (action) {
+      _Action.remove => (
+        l10n.cloudConfirmRemoveTitle,
         l10n.cloudConfirmRemoveDraft,
-      _Action.remove => l10n.cloudConfirmRemoveSkill,
-      _Action.acceptReplacement => l10n.cloudConfirmReplacement,
-      _Action.replaceOccupied => l10n.cloudConfirmReplaceSlot,
+        l10n.cloudConfirmRemoveAction,
+      ),
+      _Action.keepDeviceOnly => (
+        l10n.cloudConfirmKeepTitle,
+        l10n.cloudConfirmKeep,
+        l10n.cloudKeepDeviceOnly,
+      ),
+      _Action.acceptReplacement => (
+        l10n.cloudConfirmReplacementTitle,
+        l10n.cloudConfirmReplacement,
+        l10n.cloudConfirmNewSourceAction,
+      ),
+      _Action.replaceOccupied => (
+        l10n.cloudConfirmReplaceTitle,
+        l10n.cloudConfirmReplaceSlot,
+        l10n.cloudConfirmReplaceAction,
+      ),
+      _Action.stop => (
+        l10n.cloudConfirmStopTitle,
+        l10n.cloudConfirmStop,
+        l10n.cloudStopSyncingAction,
+      ),
       _ => null,
     };
+    final message = confirmation?.$2;
+    final dangerous =
+        action == _Action.remove || action == _Action.replaceOccupied;
     if (message != null) {
       final confirmed = await showAppConfirmDialog(
         context: context,
         icon: LucideIcons.triangleAlert,
-        title: _label(l10n, action),
+        title: confirmation!.$1,
         message: message,
-        tone: AppDialogTone.danger,
-        confirmLabel: _label(l10n, action),
-        confirmStyle: NeoButtonVariant.danger,
+        tone: dangerous ? AppDialogTone.danger : AppDialogTone.info,
+        confirmLabel: confirmation.$3,
+        confirmStyle: dangerous
+            ? NeoButtonVariant.danger
+            : NeoButtonVariant.primary,
         confirmKey: const Key('cloud-attention-confirm'),
         cancelKey: const Key('cloud-attention-cancel'),
       );
@@ -176,7 +199,17 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
         );
         if (!mounted || !_stillCurrent(runtime, skillId, attention)) return;
         if (diff is WorkspaceRevisionPackDiff) {
-          await _showIncomingDiff(context, diff);
+          final discard = await _showIncomingDiff(context, diff);
+          if (discard == true &&
+              mounted &&
+              _stillCurrent(runtime, skillId, attention)) {
+            if (workspace.current?.revision != confirmedRevision ||
+                _observedVersion(skillId, lineageId) !=
+                    confirmedLineageVersion) {
+              throw const FormatException('cloud_confirmation_stale');
+            }
+            await _run(runtime, attention, _Action.discardDraft);
+          }
         } else {
           setState(() => _failed = true);
         }
@@ -196,19 +229,7 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
           setState(() => _failed = true);
           return;
         }
-        final draftPath = ref
-            .read(workspaceSkillByIdProvider(skillId))
-            .value
-            ?.draft
-            ?.path;
-        final opener = ref.read(fileLocationOpenerProvider);
-        final choice = await _showConflictReview(
-          context,
-          review,
-          openDraft: draftPath == null
-              ? null
-              : () => unawaited(opener.reveal(draftPath)),
-        );
+        final choice = await _showConflictReview(context, review);
         if (choice == null || !_stillCurrent(runtime, skillId, attention)) {
           return;
         }
@@ -420,7 +441,7 @@ class _CloudAttentionActionsState extends ConsumerState<CloudAttentionActions> {
 
 String _label(AppLocalizations l10n, _Action action) => switch (action) {
   _Action.publishDraft => l10n.cloudPublishDraft,
-  _Action.discardDraft => l10n.cloudDiscardDraft,
+  _Action.discardDraft => l10n.cloudDiscardDraftAndUpdate,
   _Action.reviewIncoming => l10n.cloudReviewIncoming,
   _Action.reviewConflict => l10n.cloudReviewConflict,
   _Action.remove => l10n.cloudRemoveHere,
@@ -432,10 +453,10 @@ String _label(AppLocalizations l10n, _Action action) => switch (action) {
   _Action.uploadAsNew => l10n.cloudUploadAsNew,
 };
 
-Future<void> _showIncomingDiff(
+Future<bool?> _showIncomingDiff(
   BuildContext context,
   WorkspaceRevisionPackDiff diff,
-) => AppDialogMotion.show<void>(
+) => AppDialogMotion.show<bool>(
   context: context,
   builder: (context) {
     final l10n = context.l10n;
@@ -444,7 +465,8 @@ Future<void> _showIncomingDiff(
       width: 620,
       onEscape: () => Navigator.pop(context),
       header: AppDialogHeader(
-        title: l10n.cloudReviewIncoming,
+        title: l10n.cloudIncomingReviewTitle,
+        subtitle: l10n.cloudIncomingDraftWarning,
         icon: LucideIcons.fileDiff,
       ),
       sections: [
@@ -498,10 +520,16 @@ Future<void> _showIncomingDiff(
           ),
       ],
       footer: AppDialogFooter(
+        equalWidth: true,
         actions: [
           AppButton(
-            label: l10n.commonClose,
+            label: l10n.commonCancel,
             onPressed: () => Navigator.pop(context),
+          ),
+          AppButton(
+            label: l10n.cloudDiscardDraftAndUpdate,
+            style: NeoButtonVariant.danger,
+            onPressed: () => Navigator.pop(context, true),
           ),
         ],
       ),
@@ -511,17 +539,16 @@ Future<void> _showIncomingDiff(
 
 Future<_ConflictAction?> _showConflictReview(
   BuildContext context,
-  WorkspaceUpdateCandidateReview review, {
-  required VoidCallback? openDraft,
-}) => AppDialogMotion.show<_ConflictAction>(
+  WorkspaceUpdateCandidateReview review,
+) => AppDialogMotion.show<_ConflictAction>(
   context: context,
   builder: (context) {
     final l10n = context.l10n;
     return AppDialogScaffold(
-      width: 560,
+      width: 620,
       onEscape: () => Navigator.pop(context),
       header: AppDialogHeader(
-        title: l10n.cloudReviewConflict,
+        title: l10n.cloudConflictTitle,
         subtitle: review.hasUnresolvedConflicts
             ? l10n.cloudConflictChooseVersion
             : l10n.cloudConflictReviewDraft,
@@ -534,24 +561,31 @@ Future<_ConflictAction?> _showConflictReview(
           ),
       ],
       footer: AppDialogFooter(
-        equalWidth: true,
         actions: [
           AppButton(
-            label: l10n.commonCancel,
+            label: review.hasUnresolvedConflicts
+                ? l10n.commonCancel
+                : l10n.commonClose,
             onPressed: () => Navigator.pop(context),
           ),
           if (review.hasUnresolvedConflicts) ...[
-            AppButton(
-              label: l10n.cloudConflictKeepThis,
-              onPressed: () => Navigator.pop(context, _ConflictAction.current),
+            Flexible(
+              flex: 4,
+              child: AppButton(
+                label: l10n.cloudConflictKeepOther,
+                onPressed: () =>
+                    Navigator.pop(context, _ConflictAction.incoming),
+              ),
             ),
-            AppButton(
-              label: l10n.cloudConflictKeepOther,
-              onPressed: () => Navigator.pop(context, _ConflictAction.incoming),
+            Flexible(
+              flex: 4,
+              child: AppButton(
+                label: l10n.cloudConflictKeepThis,
+                onPressed: () =>
+                    Navigator.pop(context, _ConflictAction.current),
+              ),
             ),
           ] else ...[
-            if (openDraft != null)
-              AppButton(label: l10n.cloudRevealDraft, onPressed: openDraft),
             AppButton(
               label: l10n.cloudPublishResolved,
               style: NeoButtonVariant.primary,

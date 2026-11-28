@@ -83,7 +83,7 @@ class CloudSignInSettings extends ConsumerWidget {
       CloudSignInPhase.offline => (
         email ?? l10n.cloudAccount,
         l10n.cloudOffline,
-        button(l10n.cloudTryAgain, vm.refreshSession),
+        button(l10n.cloudTryAgain, vm.refreshSession, primary: true),
         button(l10n.cloudSignOut, vm.signOut),
       ),
       CloudSignInPhase.signedIn => (

@@ -259,7 +259,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudMetadataUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'This server can sync Skill content. It does not yet support syncing favorites, notes, or tags.'**
+  /// **'Favorites, notes, and tags don\'t sync with this server yet. Skills still sync.'**
   String get cloudMetadataUnavailable;
 
   /// No description provided for @cloudNoteConflict.
@@ -379,55 +379,55 @@ abstract class AppLocalizations {
   /// No description provided for @cloudSyncIncomingDraft.
   ///
   /// In en, this message translates to:
-  /// **'An incoming change is waiting for this Draft.'**
+  /// **'Another device updated this Skill. You have a Draft here, so the update is waiting.'**
   String get cloudSyncIncomingDraft;
 
   /// No description provided for @cloudSyncMergeConflict.
   ///
   /// In en, this message translates to:
-  /// **'Changes from two Devices need to be merged.'**
+  /// **'This Skill was changed on two devices.'**
   String get cloudSyncMergeConflict;
 
   /// No description provided for @cloudSyncRemovedWithDraft.
   ///
   /// In en, this message translates to:
-  /// **'This Skill was removed on another Device while a Draft exists here.'**
+  /// **'Another device removed this Skill. You have an unpublished Draft here.'**
   String get cloudSyncRemovedWithDraft;
 
   /// No description provided for @cloudSyncTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'This Skill is too large to sync.'**
+  /// **'This Skill is too large to sync. Make it smaller, or stop syncing it.'**
   String get cloudSyncTooLarge;
 
   /// No description provided for @cloudSyncSlotOccupied.
   ///
   /// In en, this message translates to:
-  /// **'A different local Skill occupies this slot.'**
+  /// **'A synced Skill has the same name as this Skill.'**
   String get cloudSyncSlotOccupied;
 
   /// No description provided for @cloudSyncMissingAfterReset.
   ///
   /// In en, this message translates to:
-  /// **'Missing from the Cloud Library after a reset.'**
+  /// **'This Skill is no longer in your SkillDeck Cloud library.'**
   String get cloudSyncMissingAfterReset;
 
   /// No description provided for @cloudSyncSourceReplaced.
   ///
   /// In en, this message translates to:
-  /// **'The Source was replaced on another Device while this Device has unsynced changes.'**
+  /// **'Another device switched this Skill to a new source. Changes on this device haven\'t synced.'**
   String get cloudSyncSourceReplaced;
 
   /// No description provided for @cloudSyncStorageLimit.
   ///
   /// In en, this message translates to:
-  /// **'Your Cloud account reached its storage limit.'**
+  /// **'Your SkillDeck Cloud storage is full. New changes stay on this device until there\'s room.'**
   String get cloudSyncStorageLimit;
 
   /// No description provided for @cloudSyncStopped.
   ///
   /// In en, this message translates to:
-  /// **'Sync stopped because of an error.'**
+  /// **'Sync stopped because of a problem on this device. Your Skills here are safe.'**
   String get cloudSyncStopped;
 
   /// No description provided for @cloudPublishDraft.
@@ -436,106 +436,82 @@ abstract class AppLocalizations {
   /// **'Publish Draft'**
   String get cloudPublishDraft;
 
-  /// No description provided for @cloudDiscardDraft.
-  ///
-  /// In en, this message translates to:
-  /// **'Discard Draft'**
-  String get cloudDiscardDraft;
-
   /// No description provided for @cloudReviewIncoming.
   ///
   /// In en, this message translates to:
-  /// **'Review incoming changes'**
+  /// **'Review update'**
   String get cloudReviewIncoming;
 
   /// No description provided for @cloudReviewConflict.
   ///
   /// In en, this message translates to:
-  /// **'Review sync conflict'**
+  /// **'Resolve'**
   String get cloudReviewConflict;
 
   /// No description provided for @cloudRemoveHere.
   ///
   /// In en, this message translates to:
-  /// **'Remove here'**
+  /// **'Remove from this device'**
   String get cloudRemoveHere;
 
   /// No description provided for @cloudKeepDeviceOnly.
   ///
   /// In en, this message translates to:
-  /// **'Keep on this Device only'**
+  /// **'Keep on this device'**
   String get cloudKeepDeviceOnly;
 
   /// No description provided for @cloudAcceptReplacement.
   ///
   /// In en, this message translates to:
-  /// **'Accept replacement'**
+  /// **'Use the new source'**
   String get cloudAcceptReplacement;
 
   /// No description provided for @cloudReplaceLocalSkill.
   ///
   /// In en, this message translates to:
-  /// **'Replace local Skill'**
+  /// **'Replace with synced Skill'**
   String get cloudReplaceLocalSkill;
 
   /// No description provided for @cloudKeepAndHide.
   ///
   /// In en, this message translates to:
-  /// **'Keep local Skill and hide synced copy'**
+  /// **'Keep this Skill'**
   String get cloudKeepAndHide;
 
   /// No description provided for @cloudStopSyncingAction.
   ///
   /// In en, this message translates to:
-  /// **'Stop Syncing'**
+  /// **'Stop syncing'**
   String get cloudStopSyncingAction;
 
   /// No description provided for @cloudUploadAsNew.
   ///
   /// In en, this message translates to:
-  /// **'Upload as new Cloud Lineage'**
+  /// **'Upload again'**
   String get cloudUploadAsNew;
-
-  /// No description provided for @cloudOccupiedLocalSlot.
-  ///
-  /// In en, this message translates to:
-  /// **'A Cloud Skill needs the slot occupied by this local Skill.'**
-  String get cloudOccupiedLocalSlot;
 
   /// No description provided for @cloudAttentionActionFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not finish this action. Try again.'**
+  /// **'Couldn\'t finish. Try again.'**
   String get cloudAttentionActionFailed;
-
-  /// No description provided for @cloudConfirmDiscardDraft.
-  ///
-  /// In en, this message translates to:
-  /// **'Discard your unpublished changes?'**
-  String get cloudConfirmDiscardDraft;
 
   /// No description provided for @cloudConfirmRemoveDraft.
   ///
   /// In en, this message translates to:
-  /// **'Remove this Skill from this Device and discard its unpublished changes?'**
+  /// **'The Skill, its Draft, and its history are removed from this device. This can\'t be undone.'**
   String get cloudConfirmRemoveDraft;
-
-  /// No description provided for @cloudConfirmRemoveSkill.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove this Skill and its local history from this Device?'**
-  String get cloudConfirmRemoveSkill;
 
   /// No description provided for @cloudConfirmReplacement.
   ///
   /// In en, this message translates to:
-  /// **'Apply the Cloud Source and discard this Device’s unsynced revisions?'**
+  /// **'This device\'s unsynced changes and previous history will be removed and replaced by the new source\'s history.'**
   String get cloudConfirmReplacement;
 
   /// No description provided for @cloudConfirmReplaceSlot.
   ///
   /// In en, this message translates to:
-  /// **'Replace this local Skill with the synced copy?'**
+  /// **'This Skill and its history are removed from this device, and the synced Skill takes its place.'**
   String get cloudConfirmReplaceSlot;
 
   /// No description provided for @cloudIncomingNoFileChanges.
@@ -553,37 +529,31 @@ abstract class AppLocalizations {
   /// No description provided for @cloudConflictChooseVersion.
   ///
   /// In en, this message translates to:
-  /// **'Choose which Device’s version to use for the files in conflict.'**
+  /// **'The same files were changed on two devices. Choose which version to keep. The other version stays in this Skill\'s history.'**
   String get cloudConflictChooseVersion;
 
   /// No description provided for @cloudConflictReviewDraft.
   ///
   /// In en, this message translates to:
-  /// **'Review the resolved Draft before publishing it.'**
+  /// **'Check the merged Draft, then publish it.'**
   String get cloudConflictReviewDraft;
-
-  /// No description provided for @cloudRevealDraft.
-  ///
-  /// In en, this message translates to:
-  /// **'Show Draft in Finder'**
-  String get cloudRevealDraft;
 
   /// No description provided for @cloudPublishResolved.
   ///
   /// In en, this message translates to:
-  /// **'Publish resolved Draft'**
+  /// **'Publish'**
   String get cloudPublishResolved;
 
   /// No description provided for @cloudConflictKeepThis.
   ///
   /// In en, this message translates to:
-  /// **'Keep this Device’s version'**
+  /// **'Keep this device\'s version'**
   String get cloudConflictKeepThis;
 
   /// No description provided for @cloudConflictKeepOther.
   ///
   /// In en, this message translates to:
-  /// **'Keep the other Device’s version'**
+  /// **'Keep the other device\'s version'**
   String get cloudConflictKeepOther;
 
   /// No description provided for @cloudHiddenSkills.
@@ -5426,6 +5396,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign-in didn\'t finish. Try again.'**
   String get cloudSignInOtherFailed;
+
+  /// No description provided for @cloudConfirmKeepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep on this device only?'**
+  String get cloudConfirmKeepTitle;
+
+  /// No description provided for @cloudConfirmKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'This Skill stops syncing on this device. If you turn sync on again later, it\'s uploaded as a separate Skill.'**
+  String get cloudConfirmKeep;
+
+  /// No description provided for @cloudConfirmRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from this device?'**
+  String get cloudConfirmRemoveTitle;
+
+  /// No description provided for @cloudConfirmReplacementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the new source?'**
+  String get cloudConfirmReplacementTitle;
+
+  /// No description provided for @cloudConfirmReplaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace with the synced Skill?'**
+  String get cloudConfirmReplaceTitle;
+
+  /// No description provided for @cloudConfirmStopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop syncing this Skill?'**
+  String get cloudConfirmStopTitle;
+
+  /// No description provided for @cloudConfirmStop.
+  ///
+  /// In en, this message translates to:
+  /// **'It stays on this device and your other devices, but changes no longer sync.'**
+  String get cloudConfirmStop;
+
+  /// No description provided for @cloudConfirmRemoveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get cloudConfirmRemoveAction;
+
+  /// No description provided for @cloudConfirmReplaceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get cloudConfirmReplaceAction;
+
+  /// No description provided for @cloudConfirmNewSourceAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use new source'**
+  String get cloudConfirmNewSourceAction;
+
+  /// No description provided for @cloudIncomingReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update from another device'**
+  String get cloudIncomingReviewTitle;
+
+  /// No description provided for @cloudIncomingDraftWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating replaces your Draft with this version. Your Draft can\'t be recovered.'**
+  String get cloudIncomingDraftWarning;
+
+  /// No description provided for @cloudDiscardDraftAndUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Draft and update'**
+  String get cloudDiscardDraftAndUpdate;
+
+  /// No description provided for @cloudConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve conflict'**
+  String get cloudConflictTitle;
 }
 
 class _AppLocalizationsDelegate

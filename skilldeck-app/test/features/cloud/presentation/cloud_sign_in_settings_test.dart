@@ -3,6 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
+import 'package:skills_manager/features/settings/settings_providers.dart';
+import 'package:skills_manager/features/settings/data/skills_manager_runtime.dart';
+import 'package:skills_manager/shared/failures/app_failure_reporter.dart';
+
+import '../../../support/fake_skills_workspace_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skills_manager/app/app_router.dart';
 import 'package:skills_manager/features/cloud/presentation/view_models/cloud_sign_in_view_model.dart';
@@ -33,6 +40,80 @@ final _signInButton = find.text('Sign in');
 final _signOutButton = find.text('Sign out');
 
 void main() {
+  testWidgets(
+    'stopped notice retries startup and remains recoverable after another failure',
+    (tester) async {
+      var startups = 0;
+      const pathChannel = MethodChannel('plugins.flutter.io/path_provider');
+      const connectivity = MethodChannel(
+        'dev.fluttercommunity.plus/connectivity_status',
+      );
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        pathChannel,
+        (_) async {
+          startups++;
+          throw PlatformException(code: 'synthetic_failure');
+        },
+      );
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        connectivity,
+        (_) async => null,
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          pathChannel,
+          null,
+        );
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          connectivity,
+          null,
+        );
+      });
+      final store = InMemoryCloudSessionStore();
+      await store.write(
+        StoredCloudSession(origin: _originValue, token: _token),
+      );
+      final client = MockClient(
+        (_) async => _json({
+          'user': {'id': 'retry-account', 'email': _email},
+          'session': {'expiresAt': '2027-12-01T00:00:00Z'},
+        }),
+      );
+      addTearDown(client.close);
+      final workspace = FakeSkillsWorkspaceRepository();
+      final localRuntime = SkillsManagerRuntime(
+        repositoryRoot: '/synthetic',
+        settings: const AppSettings(),
+        diagnostics: AppDiagnostics.disabled(),
+        failureReporter: AppFailureReporter(AppDiagnostics.disabled()),
+        workspace: workspace,
+      );
+      addTearDown(() => unawaited(localRuntime.close()));
+      await tester.pumpWidget(
+        skillsManagerTestApp(
+          browserRepository: FakeSkillBrowserRepository(),
+          initialLocation: '/settings?section=cloud',
+          overrides: [
+            skillsManagerRuntimeProvider.overrideWithValue(localRuntime),
+            cloudIsMacOSProvider.overrideWithValue(true),
+            cloudOriginDefineProvider.overrideWithValue(_origin),
+            cloudSessionStoreProvider.overrideWithValue(store),
+            cloudHttpClientProvider.overrideWithValue(client),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(startups, 1);
+      final retry = find.byKey(const Key('cloud-sync-retry'));
+      expect(retry, findsOneWidget);
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(startups, 2);
+      expect(retry, findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
   for (final (name, origin, isMacOS) in [
     ('without an origin', '', true),
     ('with an invalid origin', 'https://cloud.example.test/path', true),
