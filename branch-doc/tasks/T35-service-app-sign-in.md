@@ -102,10 +102,24 @@ Tests in workerd, as T20 and T21 did:
 
 ### Progress
 
+- [x] Implemented and verified the App auth routes, migration, atomic session adapter, expiry and browser navigation policies. All service gates and real Chromium/native email checks passed.
+
 ### Decision Log
 
+- Maintainer approved direct session-table creation in one D1 batch, isolated in the exchange adapter, because Better Auth 1.7.28 has no public session-creation API participating in that batch. Its one-time-token plugin reuses a live session and does not implement the required PKCE/new-session/replay contract. Shared HTTP helpers serve both routes; legacy Device Authorization behavior remains unchanged.
+
+- Maintainer accepted preserving the existing get-session response: verify bearer validity through Better Auth and device name/platform in D1, rather than exposing fields currently marked returned:false.
+
+- Official Better Auth 1.7 OAuth Provider documentation describes separate OAuth access tokens and resource-server verification, not the existing Better Auth bearer-session contract: https://better-auth.com/docs/plugins/oauth-provider . Its PKCE support therefore does not by itself replace this flow.
+
 ### Surprises
+
+- Native Safari initially issued a code but did not return to the App because the inherited form-action CSP omitted the callback scheme. App-only CSP now allows cc.skilldeck.signin:, while the server still validates the exact redirect URI. Native cancellation and email sign-in subsequently passed.
 
 ### Follow-ups
 
 ### Outcome
+
+Service: 471 tests passed; strict typecheck and format passed. Local native email sign-in, cancellation and sign-out passed. GitHub was exercised with the provider double. Staging/production deployment was not run. Apply migration 0003 before deployment; see ../validation/t35-t39-2026-11-28.md.
+
+Service implementation committed as `8c4e779` in the private service repository. This task record is included with the cross-repository validation documentation. No push or deployment is included.
