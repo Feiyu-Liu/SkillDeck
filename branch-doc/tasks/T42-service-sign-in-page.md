@@ -151,10 +151,22 @@ Write it as inline CSS in the page, with no external fonts or files.
 
 ### Progress
 
+- Implemented and validated on 2026-11-28; see the combined report below.
+
 ### Decision Log
+
+- Maintainer approved a SHA-256 CSP allowlist for the fixed submit-disable
+  script, only on `/app/sign-in`. The legacy `/device` policy is unchanged.
+- Use a separate App page renderer so the Device Authorization page is not
+  changed. Preserve the clicked submitter's action in a hidden field before
+  disabling it; disabled submitters otherwise disappear from form data.
+- Staging migration 0004 adds only the attempt language column.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Implemented. See `../validation/t41-t44-2026-11-28.md` for per-command gates,
+native and staging acceptance, screenshot paths, approved deviations and limits.
