@@ -360,6 +360,12 @@ from caller-outcome bookkeeping.
 
 ### R13. Phases (revises decision 12; user decision 2026-11-23)
 
+> **Revised 2026-11-28 (user decision).** Steps 2–5 below are replaced. The new
+> order is: 1 Personal Sync (unchanged); 2 an official first-party store with
+> paid plans; 3 Team Distribution; 4 the open Marketplace, with Individual
+> Sharing if still wanted. The full decision is recorded in the private service
+> repository.
+
 1. **Personal Sync**, including bootstrapping a new Device.
 2. **Individual Sharing:** the smallest end-to-end Distribution path. It proves
    Channels, Releases, recipient install and update, Revocation, and Withdrawal
