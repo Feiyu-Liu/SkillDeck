@@ -60,6 +60,7 @@ New development documents for this work go in this folder.
 | `tasks/T26-client-generation-change.md` | M4 client: Generation change in both directions. After T23; needs T25's contract only | Implemented, reviewed, and accepted |
 | `validation/m4-client-workspace-2026-11-27.md` | Codex's gate results and coverage for T22–T26 | Record |
 | `reviews/2026-11-27-m4-review.md` | Review of T18 and T20–T26 | Accepted. M4-1 to M4-5: T27. M4-6 for the M7 adapter. M4-7 for the maintainer |
+| `reviews/2026-11-28-t35-t39-review.md` | Review of T35–T39 (App sign-in, source identity, Cloud UI audit) | Accepted. R-1/R-2 sign-in follow-ups; T39 rework ordered by severity, item 2 needs the maintainer |
 | `tasks/T27-m4-review-fixes.md` | Fix M4-1 to M4-5 in the Reconciler | Implemented and verified locally; see the M7 validation report |
 | `tasks/T28-contract-v0.2-metadata.md` | M6: Codex drafts contract v0.2 for metadata, tags, and Note Conflict. Design only | Draft accepted and revised; implementation in T33/T34 |
 | `tasks/T29-app-sync-workspace-adapter.md` | M7 1/4: the real `SyncWorkspace` adapter through the App seam, and durable per-account sync state. Covers M4-6 and an opt-in M4-7 | Implemented and verified locally, including real Worker pack round trip |
