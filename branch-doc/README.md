@@ -77,4 +77,4 @@ New development documents for this work go in this folder.
 | `tasks/T39-cloud-ui-screenshot-audit.md` | Screenshots and an inventory of every Cloud UI state, flagged against the UI rules; no fixes | Delivered: 62 states, 248 native PNGs and UI inventory; no UI rework |
 | `validation/t35-t39-2026-11-28.md` | T35–T39 implementation, approvals, native/browser evidence and gates | Complete local evidence; no deployment |
 | `reviews/2026-11-28-cloud-ui-inventory.md` | T39 Cloud UI state inventory and UI-rule observations | 62 states, 248 PNGs; ready for maintainer review |
-| T40 (card kept in the private service repository) | Move the marketing site into the private service repository as it is; the whole website, including the web Marketplace at a path on the main site, is built there (decision of 2026-11-28) | Ready for Codex in the service repository |
+| T40 (withdrawn) | Was: move the marketing site into the private service repository. Withdrawn on 2026-11-28: the whole website, including the web Marketplace at a path on the main site, stays in its own private repository and uses the Cloud API only | Withdrawn before any work |
