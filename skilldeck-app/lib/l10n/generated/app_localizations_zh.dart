@@ -93,25 +93,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudMetadataUnavailable => '此服务器暂不同步收藏、备注和标签，Skill 本身仍会同步。';
 
   @override
-  String get cloudNoteConflict => '备注冲突';
+  String get cloudNoteConflict => '备注在两台设备上都被修改了。';
 
   @override
-  String get cloudNoteReview => '审阅备注冲突';
+  String get cloudNoteReview => '选择备注';
 
   @override
-  String get cloudNoteTooLarge => '将备注缩短至 4 KiB 以内即可同步。';
+  String get cloudNoteTooLarge => '备注太长，无法同步。缩短后即可同步。';
 
   @override
   String get cloudNoteEdit => '编辑备注';
 
   @override
-  String get cloudNoteCloudVersion => '云端备注';
+  String get cloudNoteCloudVersion => '已同步的备注';
 
   @override
-  String get cloudNoteOtherVersion => '传入的笔记';
-
-  @override
-  String get cloudNoteLocalVersion => '此设备上尚未同步的备注';
+  String get cloudNoteLocalVersion => '这台设备上的';
 
   @override
   String get cloudNoteEmpty => '无备注';
@@ -123,25 +120,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudNoteResolution => '要保存的备注';
 
   @override
-  String get cloudNoteCombine => '合并版本';
+  String get cloudNoteVersionsChanged => '此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。';
 
   @override
-  String get cloudNoteReviewLatest => '查看最新版本';
+  String get cloudNoteConflictGone => '此冲突已在另一台设备上处理。';
 
   @override
-  String get cloudNoteVersionsChanged => '备注版本已变更。请审阅最新版本后再保存，已编辑的文字会保留在这里。';
+  String get cloudNoteResolutionFailed => '未能保存备注，请检查网络后重试。';
 
   @override
-  String get cloudNoteConflictGone => '目前没有待处理的备注冲突，已编辑的文字会保留在这里。';
+  String get cloudNoteSaveResolution => '保存备注';
 
   @override
-  String get cloudNoteResolutionFailed => '未能同步处理结果，选定的文字会保留在这里。';
-
-  @override
-  String get cloudNoteSaveResolution => '保存处理结果';
-
-  @override
-  String get cloudTagNameTooLarge => '将标签名称缩短至 64 个 Unicode 字符以内即可同步。';
+  String get cloudTagNameTooLarge => '标签名称太长，无法同步。缩短后即可同步。';
 
   @override
   String get cloudTagVocabularyFull => '此账号最多可同步 256 个标签。删除一个已同步标签即可腾出空间。';
@@ -253,10 +244,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudShowAgain => '重新显示';
 
   @override
-  String get cloudNewDeviceTitle => '同步的 Skills 已就绪';
+  String get cloudNewDeviceTitle => '你同步的 Skill 已就绪';
 
   @override
-  String get cloudNewDeviceSubtitle => '选择要启用的 Skills 和使用它们的 Agent。';
+  String get cloudNewDeviceSubtitle => '选择这台设备上哪些 Agent 可以使用它们。';
 
   @override
   String get cloudActivationLoading => '正在加载 Agent…';
@@ -2937,6 +2928,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cloudSignInOtherFailed => '登录没有完成，请重试。';
+
+  @override
+  String get cloudNoteReviewTitle => '选择要保留的备注';
+
+  @override
+  String get cloudNoteEditorTooLarge => '备注太长，无法同步。请缩短后再保存。';
+
+  @override
+  String cloudNoteFromDevice(String device) {
+    return '来自 $device';
+  }
 
   @override
   String get cloudConfirmKeepTitle => '仅保留在这台设备？';

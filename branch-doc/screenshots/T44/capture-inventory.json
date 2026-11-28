@@ -1,0 +1,4478 @@
+[
+  {
+    "item": "new-device",
+    "state": "three-skills",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/three-skills-en-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "some-selected",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/some-selected-en-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "after-activating",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "1/1",
+      "Workspace",
+      "Synced"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "new-device/after-activating-en-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "loading-agents",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Loading Agents…",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/loading-agents-en-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "no-agents",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "No Agents are available for this scope.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/no-agents-en-light.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "name",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Edit tag",
+      "This tag name is too long to sync. Shorten it to sync it.",
+      "Tag name",
+      "Delete",
+      "Global",
+      "No skills yet",
+      "Workspace"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/name-en-light.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "vocabulary",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Edit tag",
+      "Your account can sync up to 256 tags. Delete a synced tag to make room.",
+      "Tag name",
+      "Delete",
+      "Global",
+      "No skills yet",
+      "Workspace"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/vocabulary-en-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "three-skills",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/three-skills-en-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "some-selected",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/some-selected-en-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "after-activating",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "1/1",
+      "Workspace",
+      "Synced"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "new-device/after-activating-en-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "loading-agents",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "Loading Agents…",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/loading-agents-en-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "no-agents",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Global",
+      "No skills yet",
+      "Workspace",
+      "Your synced Skills are ready",
+      "Choose which Agents can use them on this device.",
+      "No Agents are available for this scope.",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "Later",
+      "Activate selected Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "Later",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Activate selected Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/no-agents-en-dark.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "name",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Edit tag",
+      "This tag name is too long to sync. Shorten it to sync it.",
+      "Tag name",
+      "Delete",
+      "Global",
+      "No skills yet",
+      "Workspace"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/name-en-dark.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "vocabulary",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "All Agents",
+      "Edit tag",
+      "Your account can sync up to 256 tags. Delete a synced tag to make room.",
+      "Tag name",
+      "Delete",
+      "Global",
+      "No skills yet",
+      "Workspace"
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/vocabulary-en-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "three-skills",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/three-skills-zh-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "some-selected",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/some-selected-zh-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "after-activating",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "1/1",
+      "工作区",
+      "已同步"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "new-device/after-activating-zh-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "loading-agents",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "正在加载 Agent…",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/loading-agents-zh-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "no-agents",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "此范围内没有可用的 Agents。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/no-agents-zh-light.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "name",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "编辑标签",
+      "标签名称太长，无法同步。缩短后即可同步。",
+      "标签名称",
+      "删除",
+      "全局",
+      "暂无 Skills",
+      "工作区"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/name-zh-light.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "vocabulary",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "编辑标签",
+      "此账号最多可同步 256 个标签。删除一个已同步标签即可腾出空间。",
+      "标签名称",
+      "删除",
+      "全局",
+      "暂无 Skills",
+      "工作区"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/vocabulary-zh-light.png"
+  },
+  {
+    "item": "new-device",
+    "state": "three-skills",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/three-skills-zh-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "some-selected",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Claude Code",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/some-selected-zh-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "after-activating",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "1/1",
+      "工作区",
+      "已同步"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "new-device/after-activating-zh-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "loading-agents",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "正在加载 Agent…",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/loading-agents-zh-dark.png"
+  },
+  {
+    "item": "new-device",
+    "state": "no-agents",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "全局",
+      "暂无 Skills",
+      "工作区",
+      "你同步的 Skill 已就绪",
+      "选择这台设备上哪些 Agent 可以使用它们。",
+      "此范围内没有可用的 Agents。",
+      "Review",
+      "Reusable guidance for reviewing changes and preparing a release.",
+      "Release",
+      "Research",
+      "稍后",
+      "启用所选 Skills"
+    ],
+    "visibleActions": [
+      {
+        "label": "稍后",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "启用所选 Skills",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "new-device/no-agents-zh-dark.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "name",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "编辑标签",
+      "标签名称太长，无法同步。缩短后即可同步。",
+      "标签名称",
+      "删除",
+      "全局",
+      "暂无 Skills",
+      "工作区"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/name-zh-dark.png"
+  },
+  {
+    "item": "tag-limit",
+    "state": "vocabulary",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "全部 Agents",
+      "编辑标签",
+      "此账号最多可同步 256 个标签。删除一个已同步标签即可腾出空间。",
+      "标签名称",
+      "删除",
+      "全局",
+      "暂无 Skills",
+      "工作区"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      }
+    ],
+    "screenshot": "tag-limit/vocabulary-zh-dark.png"
+  },
+  {
+    "item": "skill-detail",
+    "state": "note-too-large",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note is too long to sync. Shorten it to sync it.",
+      "Edit note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Synced",
+      "This note is too long to sync. Shorten it to sync it."
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "https://example.test/team/skills",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Edit note",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Manage Agents",
+        "enabled": true,
+        "style": "primary"
+      },
+      {
+        "label": "Update available",
+        "enabled": true,
+        "style": "secondary"
+      }
+    ],
+    "screenshot": "skill-detail/note-too-large-en-light.png"
+  },
+  {
+    "item": "skill-detail",
+    "state": "note-too-large",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note is too long to sync. Shorten it to sync it.",
+      "Edit note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Synced",
+      "This note is too long to sync. Shorten it to sync it."
+    ],
+    "visibleActions": [
+      {
+        "label": "Installed",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Favorites",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Updates",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Settings",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "https://example.test/team/skills",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "Edit note",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Manage Agents",
+        "enabled": true,
+        "style": "primary"
+      },
+      {
+        "label": "Update available",
+        "enabled": true,
+        "style": "secondary"
+      }
+    ],
+    "screenshot": "skill-detail/note-too-large-en-dark.png"
+  },
+  {
+    "item": "skill-detail",
+    "state": "note-too-large",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注太长，无法同步。缩短后即可同步。",
+      "编辑备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "已同步",
+      "备注太长，无法同步。缩短后即可同步。"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "https://example.test/team/skills",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "编辑备注",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "管理 Agents",
+        "enabled": true,
+        "style": "primary"
+      },
+      {
+        "label": "可升级",
+        "enabled": true,
+        "style": "secondary"
+      }
+    ],
+    "screenshot": "skill-detail/note-too-large-zh-light.png"
+  },
+  {
+    "item": "skill-detail",
+    "state": "note-too-large",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注太长，无法同步。缩短后即可同步。",
+      "编辑备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "已同步",
+      "备注太长，无法同步。缩短后即可同步。"
+    ],
+    "visibleActions": [
+      {
+        "label": "已安装",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "收藏",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "更新",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "设置",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "https://example.test/team/skills",
+        "enabled": true,
+        "style": "ghost"
+      },
+      {
+        "label": "编辑备注",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "管理 Agents",
+        "enabled": true,
+        "style": "primary"
+      },
+      {
+        "label": "可升级",
+        "enabled": true,
+        "style": "secondary"
+      }
+    ],
+    "screenshot": "skill-detail/note-too-large-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-too-large",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "This note is too long to sync. Shorten it, then save.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-too-large-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-save-failed",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "Couldn't save the note. Check your connection and try again.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-save-failed-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-versions-changed",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "Note to save",
+      "This note changed on another device. The versions above are up to date, and your text is kept.",
+      "Cancel",
+      "Save note",
+      "Device Only",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-versions-changed-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-conflict-gone",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "This conflict was resolved on another device.",
+      "Close",
+      "Device Only"
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Close",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-conflict-gone-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "empty-note",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "No note",
+      "Add a focused test.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/empty-note-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-scrolled",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-scrolled-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-too-large",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "This note is too long to sync. Shorten it, then save.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-too-large-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-save-failed",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Couldn't save the note. Check your connection and try again.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-save-failed-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-versions-changed",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "This note changed on another device. The versions above are up to date, and your text is kept.",
+      "Cancel",
+      "Save note",
+      "Device Only",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-versions-changed-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-conflict-gone",
+    "locale": "en",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "This conflict was resolved on another device.",
+      "Close",
+      "Device Only"
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Close",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-conflict-gone-en-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-too-large",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "This note is too long to sync. Shorten it, then save.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-too-large-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-save-failed",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "Note to save",
+      "Couldn't save the note. Check your connection and try again.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-save-failed-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-versions-changed",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "Note to save",
+      "This note changed on another device. The versions above are up to date, and your text is kept.",
+      "Cancel",
+      "Save note",
+      "Device Only",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-versions-changed-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-conflict-gone",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "This conflict was resolved on another device.",
+      "Close",
+      "Device Only"
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Close",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-conflict-gone-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "empty-note",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "No note",
+      "Add a focused test.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/empty-note-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-scrolled",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-scrolled-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-too-large",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "This note is too long to sync. Shorten it, then save.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-too-large-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-save-failed",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Synced",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Keep changes small.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "Couldn't save the note. Check your connection and try again.",
+      "Cancel",
+      "Save note",
+      "Synced",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-save-failed-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-versions-changed",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "This note was edited on two devices.",
+      "Choose note",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "Note to save",
+      "This note changed on another device. The versions above are up to date, and your text is kept.",
+      "Cancel",
+      "Save note",
+      "Device Only",
+      "This note was edited on two devices."
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Cancel",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Save note",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-versions-changed-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-conflict-gone",
+    "locale": "en",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "Installed",
+      "Favorites",
+      "Updates",
+      "Settings",
+      "SOURCE",
+      "Git",
+      "https://example.test/team/skills",
+      "VERSION",
+      "aaaaaaaa",
+      "Sync to Cloud",
+      "Device Only",
+      "0",
+      "Global",
+      "Claude Code",
+      "/synthetic/agent",
+      "Manage Agents",
+      "NOTES",
+      "Add a note about this skill…",
+      "Update available",
+      "Review",
+      "Preview",
+      "Choose which note to keep",
+      "Synced note",
+      "Use this",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "On this device",
+      "Also verify the release.",
+      "This conflict was resolved on another device.",
+      "Close",
+      "Device Only"
+    ],
+    "visibleActions": [
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Use this",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "Close",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-conflict-gone-en-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-too-large",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "备注太长，无法同步。请缩短后再保存。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-too-large-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-save-failed",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "未能保存备注，请检查网络后重试。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-save-failed-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-versions-changed",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "要保存的备注",
+      "此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。",
+      "取消",
+      "保存备注",
+      "仅此设备",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-versions-changed-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-conflict-gone",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "此冲突已在另一台设备上处理。",
+      "关闭",
+      "仅此设备"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "关闭",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-conflict-gone-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "empty-note",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "无备注",
+      "Add a focused test.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/empty-note-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-scrolled",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-scrolled-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-too-large",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "备注太长，无法同步。请缩短后再保存。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-too-large-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-save-failed",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "未能保存备注，请检查网络后重试。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-save-failed-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-versions-changed",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。",
+      "取消",
+      "保存备注",
+      "仅此设备",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-versions-changed-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-conflict-gone",
+    "locale": "zh",
+    "appearance": "light",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "此冲突已在另一台设备上处理。",
+      "关闭",
+      "仅此设备"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "关闭",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-conflict-gone-zh-light.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-too-large",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "备注太长，无法同步。请缩短后再保存。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-too-large-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-save-failed",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "要保存的备注",
+      "未能保存备注，请检查网络后重试。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-save-failed-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-versions-changed",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "要保存的备注",
+      "此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。",
+      "取消",
+      "保存备注",
+      "仅此设备",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-versions-changed-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "two-texts-conflict-gone",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "此冲突已在另一台设备上处理。",
+      "关闭",
+      "仅此设备"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "关闭",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/two-texts-conflict-gone-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "empty-note",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "无备注",
+      "Add a focused test.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/empty-note-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-scrolled",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-scrolled-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-too-large",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "备注太长，无法同步。请缩短后再保存。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": false,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-too-large-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-save-failed",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "已同步",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Keep changes small.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "未能保存备注，请检查网络后重试。",
+      "取消",
+      "保存备注",
+      "已同步",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-save-failed-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-versions-changed",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "备注在两台设备上都被修改了。",
+      "选择备注",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "要保存的备注",
+      "此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。",
+      "取消",
+      "保存备注",
+      "仅此设备",
+      "备注在两台设备上都被修改了。"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "取消",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "保存备注",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-versions-changed-zh-dark.png"
+  },
+  {
+    "item": "note-review",
+    "state": "three-texts-conflict-gone",
+    "locale": "zh",
+    "appearance": "dark",
+    "text": [
+      "SkillDeck",
+      "已安装",
+      "收藏",
+      "更新",
+      "设置",
+      "来源",
+      "Git",
+      "https://example.test/team/skills",
+      "版本",
+      "aaaaaaaa",
+      "同步到云端",
+      "仅此设备",
+      "0",
+      "全局",
+      "Claude Code",
+      "/synthetic/agent",
+      "管理 Agents",
+      "备注",
+      "为此 Skill 添加备注…",
+      "可升级",
+      "Review",
+      "预览",
+      "选择要保留的备注",
+      "已同步的备注",
+      "使用此版本",
+      "Updated on another Mac.",
+      "Add a focused test.",
+      "这台设备上的",
+      "Also verify the release.",
+      "此冲突已在另一台设备上处理。",
+      "关闭",
+      "仅此设备"
+    ],
+    "visibleActions": [
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "使用此版本",
+        "enabled": true,
+        "style": "secondary"
+      },
+      {
+        "label": "关闭",
+        "enabled": true,
+        "style": "primary"
+      }
+    ],
+    "screenshot": "note-review/three-texts-conflict-gone-zh-dark.png"
+  }
+]

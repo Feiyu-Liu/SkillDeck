@@ -1,4 +1,5 @@
 import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:path/path.dart' as p;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:skills_manager/features/skills/models/activation_location_group.dart';
 import 'package:skills_manager/l10n/l10n.dart';
@@ -63,7 +64,12 @@ class AgentActivationSwitch extends StatelessWidget {
 
 /// Shared identity used by acquisition, detail settings and activation dialogs.
 class AgentActivationGroupLabel extends StatelessWidget {
-  const AgentActivationGroupLabel({required this.group, super.key});
+  const AgentActivationGroupLabel({
+    required this.group,
+    this.showPath = true,
+    super.key,
+  });
+  final bool showPath;
   final ActivationLocationGroup group;
 
   @override
@@ -93,19 +99,25 @@ class AgentActivationGroupLabel extends StatelessWidget {
                 activationAgentGroupTitle(context, group),
                 style: AppTypography.of(context).subtitle,
               ),
-              const SizedBox(height: 3),
-              AppTooltip(
-                message: group.location,
-                maxWidth: 420,
-                maxLines: null,
-                child: Text(
-                  group.location,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.of(context).mono
-                      .copyWith(color: AppPalette.of(context).textSecondary),
+              if (showPath) ...[
+                const SizedBox(height: 3),
+                AppTooltip(
+                  message: group.location,
+                  maxWidth: 420,
+                  maxLines: null,
+                  child: Text(
+                    group.location,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.of(context).mono
+                        .copyWith(color: AppPalette.of(context).textSecondary),
+                  ),
                 ),
-              ),
+              ] else if (group.first.projectRootPath case final root?)
+                Text(
+                  p.basename(root),
+                  style: AppTypography.of(context).caption,
+                ),
               if (group.memberIds != null && !group.canActivate) ...[
                 const SizedBox(height: 3),
                 Text(

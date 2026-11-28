@@ -265,19 +265,19 @@ abstract class AppLocalizations {
   /// No description provided for @cloudNoteConflict.
   ///
   /// In en, this message translates to:
-  /// **'Note conflict'**
+  /// **'This note was edited on two devices.'**
   String get cloudNoteConflict;
 
   /// No description provided for @cloudNoteReview.
   ///
   /// In en, this message translates to:
-  /// **'Review note conflict'**
+  /// **'Choose note'**
   String get cloudNoteReview;
 
   /// No description provided for @cloudNoteTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'Shorten the note to 4 KiB or less to sync it.'**
+  /// **'This note is too long to sync. Shorten it to sync it.'**
   String get cloudNoteTooLarge;
 
   /// No description provided for @cloudNoteEdit.
@@ -289,19 +289,13 @@ abstract class AppLocalizations {
   /// No description provided for @cloudNoteCloudVersion.
   ///
   /// In en, this message translates to:
-  /// **'Cloud note'**
+  /// **'Synced note'**
   String get cloudNoteCloudVersion;
-
-  /// No description provided for @cloudNoteOtherVersion.
-  ///
-  /// In en, this message translates to:
-  /// **'Incoming note'**
-  String get cloudNoteOtherVersion;
 
   /// No description provided for @cloudNoteLocalVersion.
   ///
   /// In en, this message translates to:
-  /// **'Unsynced note on this device'**
+  /// **'On this device'**
   String get cloudNoteLocalVersion;
 
   /// No description provided for @cloudNoteEmpty.
@@ -313,7 +307,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudNoteUseVersion.
   ///
   /// In en, this message translates to:
-  /// **'Use this version'**
+  /// **'Use this'**
   String get cloudNoteUseVersion;
 
   /// No description provided for @cloudNoteResolution.
@@ -322,46 +316,34 @@ abstract class AppLocalizations {
   /// **'Note to save'**
   String get cloudNoteResolution;
 
-  /// No description provided for @cloudNoteCombine.
-  ///
-  /// In en, this message translates to:
-  /// **'Combine versions'**
-  String get cloudNoteCombine;
-
-  /// No description provided for @cloudNoteReviewLatest.
-  ///
-  /// In en, this message translates to:
-  /// **'Show latest versions'**
-  String get cloudNoteReviewLatest;
-
   /// No description provided for @cloudNoteVersionsChanged.
   ///
   /// In en, this message translates to:
-  /// **'A version changed. Review the latest versions before saving. Your edited text stays here.'**
+  /// **'This note changed on another device. The versions above are up to date, and your text is kept.'**
   String get cloudNoteVersionsChanged;
 
   /// No description provided for @cloudNoteConflictGone.
   ///
   /// In en, this message translates to:
-  /// **'There is no conflict to resolve now. Your edited text stays here.'**
+  /// **'This conflict was resolved on another device.'**
   String get cloudNoteConflictGone;
 
   /// No description provided for @cloudNoteResolutionFailed.
   ///
   /// In en, this message translates to:
-  /// **'The resolution couldn’t sync. Your chosen text stays here.'**
+  /// **'Couldn\'t save the note. Check your connection and try again.'**
   String get cloudNoteResolutionFailed;
 
   /// No description provided for @cloudNoteSaveResolution.
   ///
   /// In en, this message translates to:
-  /// **'Save resolution'**
+  /// **'Save note'**
   String get cloudNoteSaveResolution;
 
   /// No description provided for @cloudTagNameTooLarge.
   ///
   /// In en, this message translates to:
-  /// **'Shorten the tag name to 64 Unicode characters or fewer to sync it.'**
+  /// **'This tag name is too long to sync. Shorten it to sync it.'**
   String get cloudTagNameTooLarge;
 
   /// No description provided for @cloudTagVocabularyFull.
@@ -583,7 +565,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudNewDeviceSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose which Skills to activate and where to use them.'**
+  /// **'Choose which Agents can use them on this device.'**
   String get cloudNewDeviceSubtitle;
 
   /// No description provided for @cloudActivationLoading.
@@ -5396,6 +5378,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign-in didn\'t finish. Try again.'**
   String get cloudSignInOtherFailed;
+
+  /// No description provided for @cloudNoteReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which note to keep'**
+  String get cloudNoteReviewTitle;
+
+  /// No description provided for @cloudNoteEditorTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This note is too long to sync. Shorten it, then save.'**
+  String get cloudNoteEditorTooLarge;
+
+  /// No description provided for @cloudNoteFromDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'From {device}'**
+  String cloudNoteFromDevice(String device);
 
   /// No description provided for @cloudConfirmKeepTitle.
   ///

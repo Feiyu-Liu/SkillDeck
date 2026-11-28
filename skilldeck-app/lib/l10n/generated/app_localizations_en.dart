@@ -96,60 +96,51 @@ class AppLocalizationsEn extends AppLocalizations {
       'Favorites, notes, and tags don\'t sync with this server yet. Skills still sync.';
 
   @override
-  String get cloudNoteConflict => 'Note conflict';
+  String get cloudNoteConflict => 'This note was edited on two devices.';
 
   @override
-  String get cloudNoteReview => 'Review note conflict';
+  String get cloudNoteReview => 'Choose note';
 
   @override
   String get cloudNoteTooLarge =>
-      'Shorten the note to 4 KiB or less to sync it.';
+      'This note is too long to sync. Shorten it to sync it.';
 
   @override
   String get cloudNoteEdit => 'Edit note';
 
   @override
-  String get cloudNoteCloudVersion => 'Cloud note';
+  String get cloudNoteCloudVersion => 'Synced note';
 
   @override
-  String get cloudNoteOtherVersion => 'Incoming note';
-
-  @override
-  String get cloudNoteLocalVersion => 'Unsynced note on this device';
+  String get cloudNoteLocalVersion => 'On this device';
 
   @override
   String get cloudNoteEmpty => 'No note';
 
   @override
-  String get cloudNoteUseVersion => 'Use this version';
+  String get cloudNoteUseVersion => 'Use this';
 
   @override
   String get cloudNoteResolution => 'Note to save';
 
   @override
-  String get cloudNoteCombine => 'Combine versions';
-
-  @override
-  String get cloudNoteReviewLatest => 'Show latest versions';
-
-  @override
   String get cloudNoteVersionsChanged =>
-      'A version changed. Review the latest versions before saving. Your edited text stays here.';
+      'This note changed on another device. The versions above are up to date, and your text is kept.';
 
   @override
   String get cloudNoteConflictGone =>
-      'There is no conflict to resolve now. Your edited text stays here.';
+      'This conflict was resolved on another device.';
 
   @override
   String get cloudNoteResolutionFailed =>
-      'The resolution couldn’t sync. Your chosen text stays here.';
+      'Couldn\'t save the note. Check your connection and try again.';
 
   @override
-  String get cloudNoteSaveResolution => 'Save resolution';
+  String get cloudNoteSaveResolution => 'Save note';
 
   @override
   String get cloudTagNameTooLarge =>
-      'Shorten the tag name to 64 Unicode characters or fewer to sync it.';
+      'This tag name is too long to sync. Shorten it to sync it.';
 
   @override
   String get cloudTagVocabularyFull =>
@@ -275,7 +266,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudNewDeviceSubtitle =>
-      'Choose which Skills to activate and where to use them.';
+      'Choose which Agents can use them on this device.';
 
   @override
   String get cloudActivationLoading => 'Loading Agents…';
@@ -3212,6 +3203,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudSignInOtherFailed => 'Sign-in didn\'t finish. Try again.';
+
+  @override
+  String get cloudNoteReviewTitle => 'Choose which note to keep';
+
+  @override
+  String get cloudNoteEditorTooLarge =>
+      'This note is too long to sync. Shorten it, then save.';
+
+  @override
+  String cloudNoteFromDevice(String device) {
+    return 'From $device';
+  }
 
   @override
   String get cloudConfirmKeepTitle => 'Keep on this device only?';

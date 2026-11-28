@@ -627,6 +627,14 @@ void main() {
             }
 
             await capture(state);
+            if (item == 'note-review' && state == 'three-texts') {
+              await tester.drag(
+                find.text('Keep changes small.'),
+                const Offset(0, -220),
+              );
+              await tester.pumpAndSettle();
+              await capture('$state-scrolled');
+            }
             if (item == 'attention-actions') {
               actionRequest.complete();
               await tester.pumpAndSettle();
@@ -634,14 +642,6 @@ void main() {
             }
 
             if (item == 'note-review' && state != 'empty-note') {
-              final combine = find.text(
-                locale == 'en' ? 'Combine versions' : '合并版本',
-              );
-              await tester.ensureVisible(combine);
-              await tester.pumpAndSettle();
-              await tester.tap(combine);
-              await tester.pumpAndSettle();
-              await capture('$state-combining');
               final editor = find.byKey(
                 const Key('cloud-note-resolution-text'),
               );
@@ -660,7 +660,21 @@ void main() {
                   metadataAttention: {
                     'skill-0': cloud.SyncMetadataAttention(
                       cloud.MetadataAttentionReason.noteConflict,
-                      note: cloud.CloudNote('Updated on another Mac.', 4),
+                      note: cloud.CloudNote(
+                        'Updated on another Mac.',
+                        4,
+                        conflict: const cloud.CloudNoteConflict(
+                          cloud.CloudNoteCandidate(
+                            'Updated on another Mac.',
+                            null,
+                          ),
+                          cloud.CloudNoteCandidate('Add a focused test.', null),
+                        ),
+                      ),
+                      localNote: state == 'three-texts'
+                          ? 'Also verify the release.'
+                          : null,
+                      hasUnsubmittedLocalNote: state == 'three-texts',
                     ),
                   },
                 ),

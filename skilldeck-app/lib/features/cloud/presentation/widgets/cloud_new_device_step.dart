@@ -164,7 +164,15 @@ final class _CloudNewDeviceDialogState
           AppDialogSection(
             title: skill.displayName,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (skill.description.isNotEmpty)
+                  Text(
+                    skill.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.of(context).bodyMuted,
+                  ),
                 for (final group in groups)
                   Row(
                     children: [
@@ -187,7 +195,13 @@ final class _CloudNewDeviceDialogState
                           }),
                         ),
                       ),
-                      Expanded(child: AgentActivationGroupLabel(group: group)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: AgentActivationGroupLabel(
+                          group: group,
+                          showPath: false,
+                        ),
+                      ),
                     ],
                   ),
               ],
