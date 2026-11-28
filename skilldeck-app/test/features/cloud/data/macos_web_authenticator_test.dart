@@ -50,7 +50,7 @@ void main() {
         var requests = 0;
         final client = MockClient((_) async {
           requests++;
-          return http.Response('', 500);
+          return http.Response('', 200);
         });
         addTearDown(client.close);
         final signIn = CloudSignIn(
@@ -64,7 +64,7 @@ void main() {
         );
         expect((result as CloudSignInFailed).code, CloudFailureCode.protocol);
         expect(result.toString(), isNot(contains('private')));
-        expect(requests, 0);
+        expect(requests, 1);
       },
     );
   }

@@ -25,10 +25,12 @@ import '../test/support/skills_manager_test_app.dart';
 final class _Authenticator implements CloudWebAuthenticator {
   _Authenticator(this.complete);
   final bool complete;
+  int calls = 0;
   final pending = Completer<Uri?>();
   final nativeClosed = Completer<void>();
   @override
   Future<Uri?> authenticate(Uri url, {required String callbackScheme}) async {
+    calls++;
     if (!complete &&
         const bool.fromEnvironment('SKILLDECK_CAPTURE_NATIVE_WINDOW')) {
       try {
@@ -95,6 +97,10 @@ void main() {
           }
           final auth = _Authenticator(phase != 'signing-in-app-only');
           final client = MockClient((request) async {
+            if (phase == 'failed-network') {
+              throw http.ClientException('offline');
+            }
+            if (phase == 'failed-busy') return http.Response('{}', 503);
             if (request.url.path == '/api/auth/get-session') {
               return http.Response(
                 jsonEncode({
@@ -106,9 +112,6 @@ void main() {
                 }),
                 200,
               );
-            }
-            if (phase == 'failed-network') {
-              throw http.ClientException('offline');
             }
             return http.Response('{}', phase == 'failed-busy' ? 503 : 400);
           });
@@ -151,6 +154,9 @@ void main() {
             // The loading button intentionally animates continuously.
             await tester.pump(const Duration(milliseconds: 700));
             if (phase.startsWith('failed-')) await tester.pumpAndSettle();
+          }
+          if (phase == 'failed-network' || phase == 'failed-busy') {
+            expect(auth.calls, 0);
           }
           final boundary =
               captureKey.currentContext!.findRenderObject()!

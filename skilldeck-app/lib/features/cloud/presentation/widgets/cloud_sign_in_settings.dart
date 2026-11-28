@@ -20,6 +20,11 @@ class CloudSignInSettings extends ConsumerWidget {
     final l10n = context.l10n;
     final state = ref.watch(cloudSignInViewModelProvider).value;
     final vm = ref.read(cloudSignInViewModelProvider.notifier);
+    void startSignIn() => vm.startSignIn(
+      uiLocale: Localizations.localeOf(context).languageCode == 'zh'
+          ? 'zh'
+          : 'en',
+    );
     final email = state?.account?.email;
     final phase = state?.phase;
     final metadataUnavailable =
@@ -50,13 +55,13 @@ class CloudSignInSettings extends ConsumerWidget {
       CloudSignInPhase.signedOut => (
         l10n.cloudAccount,
         l10n.cloudSignedOut,
-        button(l10n.cloudSignIn, vm.startSignIn, primary: true),
+        button(l10n.cloudSignIn, startSignIn, primary: true),
         null,
       ),
       CloudSignInPhase.signingIn => (
         l10n.cloudAccount,
         l10n.cloudSigningIn,
-        button(l10n.cloudSignIn, vm.startSignIn, primary: true, loading: true),
+        button(l10n.cloudSignIn, startSignIn, primary: true, loading: true),
         null,
       ),
       CloudSignInPhase.failed => (
@@ -66,7 +71,7 @@ class CloudSignInSettings extends ConsumerWidget {
           CloudSignInFailure.busy => l10n.cloudSignInBusy,
           _ => l10n.cloudSignInOtherFailed,
         },
-        button(l10n.cloudSignIn, vm.startSignIn, primary: true),
+        button(l10n.cloudSignIn, startSignIn, primary: true),
         null,
       ),
       CloudSignInPhase.sessionCheckFailed => (

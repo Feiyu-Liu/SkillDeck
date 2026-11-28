@@ -100,6 +100,9 @@ void main() {
             expect(request.bodyFields['client_id'], 'skilldeck-desktop');
             return _json({'access_token': _token, 'token_type': 'bearer'});
           case '/api/auth/get-session':
+            if (!request.headers.containsKey('authorization')) {
+              return http.Response('null', 200);
+            }
             expect(request.headers['authorization'], 'Bearer $_token');
             return _json({
               'user': {'id': 'example-account', 'email': _email},
@@ -226,7 +229,7 @@ void main() {
           InMemoryCloudSessionStore(),
           MockClient((_) async {
             requests++;
-            return _json({}, 500);
+            return _json({}, 200);
           }),
           locale: Locale(locale),
           overrides: [
@@ -242,7 +245,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text(signedOut), findsOneWidget);
         expect(find.text(signInLabel), findsOneWidget);
-        expect(requests, 0);
+        expect(requests, 1);
       });
     }
     for (final (status, en, zh) in [
@@ -268,25 +271,31 @@ void main() {
       ) async {
         final retry = Completer<Uri?>();
         var attempts = 0;
+        var failing = true;
         await _pumpSettings(
           tester,
           InMemoryCloudSessionStore(),
           MockClient((_) async {
+            if (!failing) return _json({}, 200);
             if (status == 0) throw http.ClientException('offline');
             return _json({'error': 'invalid_grant'}, status);
           }),
           locale: Locale(locale),
           overrides: [
             cloudWebAuthenticatorProvider.overrideWithValue(
-              _Authenticator(
-                (url) => ++attempts == 1 ? _callback(url) : retry.future,
-              ),
+              _Authenticator((url) {
+                expect(url.queryParameters['ui_locales'], locale);
+                attempts++;
+                return failing ? _callback(url) : retry.future;
+              }),
             ),
           ],
         );
         await tester.tap(find.text(signInLabel));
         await tester.pumpAndSettle();
         expect(find.text(chinese ? zh : en), findsOneWidget);
+        if (status != 400) expect(attempts, 0);
+        failing = false;
         await tester.tap(find.text(signInLabel));
         await tester.pump();
         expect(find.text(chinese ? zh : en), findsNothing);

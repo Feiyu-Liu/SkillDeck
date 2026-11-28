@@ -92,10 +92,25 @@ be sent to a service without T42. Simplicity rules **and UI rules**: see
 
 ### Progress
 
+- Implemented and validated on 2026-11-28; see the combined report below.
+
 ### Decision Log
+
+- T42 was deployed before adding the App's `ui_locales` parameter. Anonymous
+  staging `get-session` returned 200.
+- Settings supplies the resolved locale directly to its ViewModel; no global
+  locale state or configuration flag is added.
+- Precheck uses `Client.send` with redirects disabled, cancels the stream
+  without reading body bytes, and bounds the wait for response headers to 10 seconds. Cancellation errors
+  are suppressed because an HTTP response already established reachability.
+- Fake-clock coverage checks the deadline and late-response cancellation;
+  native unreachable-origin acceptance uses the existing local-service fixture.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Implemented. See `../validation/t41-t44-2026-11-28.md` for per-command gates,
+native and staging acceptance, screenshot paths, approved deviations and limits.

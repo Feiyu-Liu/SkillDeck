@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:skills_cloud/skills_cloud.dart';
 import 'package:test/test.dart';
 
@@ -28,6 +30,81 @@ Uri callback(
 ).replace(queryParameters: {'state': url.queryParameters['state']!, ...values});
 
 void main() {
+  test('precheck deadline aborts at ten seconds without opening a window', () {
+    fakeAsync((clock) {
+      final pending = Completer<http.StreamedResponse>();
+      final client = MockClient.streaming((request, body) => pending.future);
+      final auth = FakeAuthenticator((_) => null);
+      CloudSignInResult? result;
+      CloudSignIn(
+        client: client,
+        origin: origin,
+        store: InMemoryCloudSessionStore(),
+      ).signInWithBrowser(device, auth).then((value) => result = value);
+      clock.flushMicrotasks();
+      clock.elapse(const Duration(seconds: 9));
+      expect(result, isNull);
+      clock.elapse(const Duration(seconds: 1));
+      expect((result as CloudSignInFailed).code, CloudFailureCode.network);
+      expect(auth.urls, isEmpty);
+      var cancelled = false;
+      final body = StreamController<List<int>>(
+        onCancel: () => cancelled = true,
+      );
+      pending.complete(http.StreamedResponse(body.stream, 200));
+      clock.flushMicrotasks();
+      expect(cancelled, isTrue);
+      unawaited(body.close());
+      client.close();
+    });
+  });
+  for (final status in [200, 204, 301, 400, 401, 404, 429, 500, 503]) {
+    test('anonymous precheck $status', () async {
+      final service = FakeCloudService()
+        ..session = (_) => http.Response('ignored', status);
+      final auth = FakeAuthenticator((_) => null);
+      final result = await service
+          .signIn(InMemoryCloudSessionStore())
+          .signInWithBrowser(device, auth);
+      expect(
+        auth.urls,
+        status == 429 || status >= 500 ? isEmpty : hasLength(1),
+      );
+      if (result is CloudSignInFailed) {
+        expect(result.code, CloudFailureCode.server);
+      }
+      expect(
+        service.requests.single.headers.containsKey('authorization'),
+        isFalse,
+      );
+    });
+  }
+  for (final failure in [
+    networkFailure,
+    (http.Request _) => throw TimeoutException('synthetic deadline'),
+  ]) {
+    test('precheck network or timeout never opens authenticator', () async {
+      final service = FakeCloudService()..session = failure;
+      final auth = FakeAuthenticator((_) => null);
+      final result = await service
+          .signIn(InMemoryCloudSessionStore())
+          .signInWithBrowser(device, auth);
+      expect((result as CloudSignInFailed).code, CloudFailureCode.network);
+      expect(auth.urls, isEmpty);
+    });
+  }
+  for (final locale in [null, 'fr', 'en', 'zh']) {
+    test('sign-in locale $locale', () async {
+      final auth = FakeAuthenticator((_) => null);
+      await FakeCloudService()
+          .signIn(InMemoryCloudSessionStore())
+          .signInWithBrowser(device, auth, uiLocale: locale);
+      expect(
+        auth.urls.single.queryParameters['ui_locales'],
+        ['en', 'zh'].contains(locale) ? locale : null,
+      );
+    });
+  }
   test(
     'success uses fresh PKCE values and existing session finishing',
     () async {
@@ -106,11 +183,18 @@ void main() {
           .signIn(store)
           .signInWithBrowser(device, FakeAuthenticator(entry.value));
       expect((result as CloudSignInFailed).code, CloudFailureCode.protocol);
-      expect(service.requests, isEmpty);
+      expect(
+        service.requests.every(
+          (r) =>
+              r.url.path == '/api/auth/get-session' &&
+              !r.headers.containsKey('authorization'),
+        ),
+        isTrue,
+      );
       expect(await store.read(origin), isNull);
     });
   }
-  test('cancel and denial send nothing', () async {
+  test('cancel and denial send only anonymous prechecks', () async {
     final service = FakeCloudService();
     final signIn = service.signIn(InMemoryCloudSessionStore());
     expect(
@@ -124,7 +208,14 @@ void main() {
       ),
       isA<CloudSignInDenied>(),
     );
-    expect(service.requests, isEmpty);
+    expect(
+      service.requests.every(
+        (r) =>
+            r.url.path == '/api/auth/get-session' &&
+            !r.headers.containsKey('authorization'),
+      ),
+      isTrue,
+    );
   });
   final failures = <String, (Reply, CloudFailureCode)>{
     'invalid grant': (
@@ -184,7 +275,14 @@ void main() {
     ]) {
       expect(result.toString(), isNot(contains(secret)));
     }
-    expect(service.requests, isEmpty);
+    expect(
+      service.requests.every(
+        (r) =>
+            r.url.path == '/api/auth/get-session' &&
+            !r.headers.containsKey('authorization'),
+      ),
+      isTrue,
+    );
     expect(
       await signIn.signInWithBrowser(device, FakeAuthenticator(callback)),
       isA<CloudSignInSucceeded>(),
@@ -205,7 +303,14 @@ void main() {
           );
       expect(result, isA<CloudSignInFailed>());
       expect(result.toString(), isNot(contains('secret-verifier')));
-      expect(service.requests, isEmpty);
+      expect(
+        service.requests.every(
+          (r) =>
+              r.url.path == '/api/auth/get-session' &&
+              !r.headers.containsKey('authorization'),
+        ),
+        isTrue,
+      );
     },
   );
 }
