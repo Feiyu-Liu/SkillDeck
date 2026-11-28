@@ -169,10 +169,22 @@ with T43; if both touch the ARB files, rebase and regenerate. Simplicity rules
 
 ### Progress
 
+- Implemented and validated on 2026-11-28; see the combined report below.
+
 ### Decision Log
+
+- Reuse AppDialogScaffold's existing custom footer slot: the editor and action
+  footer stay fixed, while the existing sections scroll above. No scaffold API
+  or new dialog widget is required.
+- Per-version Use this buttons are content controls, not competing state actions.
+- AgentActivationGroupLabel gains the requested showPath parameter; hidden-path
+  mode shows only a project folder basename when present.
 
 ### Surprises
 
 ### Follow-ups
 
 ### Outcome
+
+Implemented. See `../validation/t41-t44-2026-11-28.md` for per-command gates,
+native and staging acceptance, screenshot paths, approved deviations and limits.

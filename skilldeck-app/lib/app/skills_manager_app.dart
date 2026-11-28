@@ -232,7 +232,22 @@ final class _CloudSyncNoticeBanner extends ConsumerWidget {
             radius: AppRadii.lg,
             side: BorderSide(color: AppPalette.of(context).warningBorder),
           ),
-          child: Text(text, style: AppTypography.of(context).body),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(text, style: AppTypography.of(context).body),
+              if (notice == CloudSyncNotice.stopped)
+                AppButton(
+                  key: const Key('cloud-sync-retry'),
+                  label: context.l10n.cloudTryAgain,
+                  style: NeoButtonVariant.primary,
+                  size: NeoButtonSize.small,
+                  onPressed: () =>
+                      ref.read(cloudSyncLifecycleProvider.notifier).restart(),
+                ),
+            ],
+          ),
         ),
       ),
     );

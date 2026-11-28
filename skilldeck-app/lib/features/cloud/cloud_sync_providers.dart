@@ -79,6 +79,11 @@ final class CloudSyncRuntimeController
   CloudSyncRuntime? _current;
   bool _closing = false;
   int _epoch = 0;
+  void Function()? _restart;
+
+  void restart() {
+    if (ref.mounted && !_closing) _restart?.call();
+  }
 
   @override
   CloudSyncLifecycleState build() {
@@ -163,6 +168,15 @@ final class CloudSyncRuntimeController
         }
       });
     }
+
+    _restart = () {
+      final accountId = ref
+          .read(cloudSignInViewModelProvider)
+          .value
+          ?.verifiedAccount
+          ?.id;
+      if (accountId != null) changeAccount(accountId, explicitSignIn: false);
+    };
 
     // Listen for account identity changes without rebuilding when Settings
     // updates the same verified account or when a Workspace snapshot arrives.

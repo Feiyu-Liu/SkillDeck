@@ -167,13 +167,41 @@ final class CloudSignIn {
   /// Signs in through the App's system authentication window.
   Future<CloudSignInResult> signInWithBrowser(
     CloudDevice device,
-    CloudWebAuthenticator authenticator,
-  ) async {
+    CloudWebAuthenticator authenticator, {
+    String? uiLocale,
+  }) async {
     if (_browserSignInRunning) {
       throw StateError('A browser sign-in is already running.');
     }
     _browserSignInRunning = true;
     try {
+      final abort = Completer<void>();
+      try {
+        final request = http.AbortableRequest(
+          'GET',
+          origin.resolve('/api/auth/get-session'),
+          abortTrigger: abort.future,
+        )..followRedirects = false;
+        final status = await _client
+            .send(request)
+            .then((response) {
+              unawaited(
+                response.stream.listen(null).cancel().catchError((Object _) {}),
+              );
+              return response.statusCode;
+            })
+            .timeout(const Duration(seconds: 10));
+        if (status == 429 || status >= 500) {
+          return const CloudSignInFailed(CloudFailureCode.server);
+        }
+        if (status < 200) {
+          return const CloudSignInFailed(CloudFailureCode.protocol);
+        }
+      } on Object {
+        return const CloudSignInFailed(CloudFailureCode.network);
+      } finally {
+        abort.complete();
+      }
       final random = Random.secure();
       String nonce() => base64Url
           .encode(List<int>.generate(32, (_) => random.nextInt(256)))
@@ -198,6 +226,8 @@ final class CloudSignIn {
                 'state': state,
                 'device_name': device.name,
                 'device_platform': device.platform.wireName,
+                if (uiLocale == 'en' || uiLocale == 'zh')
+                  'ui_locales': uiLocale!,
               },
             ),
         callbackScheme: callbackScheme,

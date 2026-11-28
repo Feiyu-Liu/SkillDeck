@@ -90,28 +90,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudMetadataWaiting => '收藏、备注或标签正在等待同步。';
 
   @override
-  String get cloudMetadataUnavailable => '此服务器可以同步 Skill 内容，暂不支持同步收藏、备注或标签。';
+  String get cloudMetadataUnavailable => '此服务器暂不同步收藏、备注和标签，Skill 本身仍会同步。';
 
   @override
-  String get cloudNoteConflict => '备注冲突';
+  String get cloudNoteConflict => '备注在两台设备上都被修改了。';
 
   @override
-  String get cloudNoteReview => '审阅备注冲突';
+  String get cloudNoteReview => '选择备注';
 
   @override
-  String get cloudNoteTooLarge => '将备注缩短至 4 KiB 以内即可同步。';
+  String get cloudNoteTooLarge => '备注太长，无法同步。缩短后即可同步。';
 
   @override
   String get cloudNoteEdit => '编辑备注';
 
   @override
-  String get cloudNoteCloudVersion => '云端备注';
+  String get cloudNoteCloudVersion => '已同步的备注';
 
   @override
-  String get cloudNoteOtherVersion => '传入的笔记';
-
-  @override
-  String get cloudNoteLocalVersion => '此设备上尚未同步的备注';
+  String get cloudNoteLocalVersion => '这台设备上的';
 
   @override
   String get cloudNoteEmpty => '无备注';
@@ -123,25 +120,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudNoteResolution => '要保存的备注';
 
   @override
-  String get cloudNoteCombine => '合并版本';
+  String get cloudNoteVersionsChanged => '此备注在另一台设备上有更改。上方已显示最新版本，你的文字会保留。';
 
   @override
-  String get cloudNoteReviewLatest => '查看最新版本';
+  String get cloudNoteConflictGone => '此冲突已在另一台设备上处理。';
 
   @override
-  String get cloudNoteVersionsChanged => '备注版本已变更。请审阅最新版本后再保存，已编辑的文字会保留在这里。';
+  String get cloudNoteResolutionFailed => '未能保存备注，请检查网络后重试。';
 
   @override
-  String get cloudNoteConflictGone => '目前没有待处理的备注冲突，已编辑的文字会保留在这里。';
+  String get cloudNoteSaveResolution => '保存备注';
 
   @override
-  String get cloudNoteResolutionFailed => '未能同步处理结果，选定的文字会保留在这里。';
-
-  @override
-  String get cloudNoteSaveResolution => '保存处理结果';
-
-  @override
-  String get cloudTagNameTooLarge => '将标签名称缩短至 64 个 Unicode 字符以内即可同步。';
+  String get cloudTagNameTooLarge => '标签名称太长，无法同步。缩短后即可同步。';
 
   @override
   String get cloudTagVocabularyFull => '此账号最多可同步 256 个标签。删除一个已同步标签即可腾出空间。';
@@ -150,85 +141,76 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudSyncApplying => '正在应用云端更改…';
 
   @override
-  String get cloudSyncIncomingDraft => '请先处理草稿，再应用云端更改。';
+  String get cloudSyncIncomingDraft => '另一台设备更新了此 Skill。这里有草稿，所以更新还在等待。';
 
   @override
-  String get cloudSyncMergeConflict => '两台设备上的更改需要合并。';
+  String get cloudSyncMergeConflict => '此 Skill 在两台设备上都有修改。';
 
   @override
-  String get cloudSyncRemovedWithDraft => '另一台设备已删除此 Skill，这台设备仍有草稿。';
+  String get cloudSyncRemovedWithDraft => '另一台设备已删除此 Skill，这里还有未发布的草稿。';
 
   @override
-  String get cloudSyncTooLarge => '此 Skill 太大，无法同步。';
+  String get cloudSyncTooLarge => '此 Skill 太大，无法同步。请减小它的体积，或停止同步。';
 
   @override
-  String get cloudSyncSlotOccupied => '另一个本地 Skill 已占用此位置。';
+  String get cloudSyncSlotOccupied => '有一个已同步的 Skill 与此 Skill 同名。';
 
   @override
-  String get cloudSyncMissingAfterReset => '重置后，此 Skill 已不在云端资料库中。';
+  String get cloudSyncMissingAfterReset =>
+      '此 Skill 已不在你的 SkillDeck Cloud 资料库中。';
 
   @override
-  String get cloudSyncSourceReplaced => '另一台设备已替换来源，这台设备仍有未同步的更改。';
+  String get cloudSyncSourceReplaced => '另一台设备把此 Skill 换成了新的来源，这台设备上的更改还没有同步。';
 
   @override
-  String get cloudSyncStorageLimit => '你的云端账户已达到存储上限。';
+  String get cloudSyncStorageLimit =>
+      '你的 SkillDeck Cloud 存储空间已满。新的更改会先保存在这台设备上，有空间后再同步。';
 
   @override
-  String get cloudSyncStopped => '同步因错误停止。';
+  String get cloudSyncStopped => '同步因这台设备上的问题而停止。这里的 Skill 不受影响。';
 
   @override
   String get cloudPublishDraft => '发布草稿';
 
   @override
-  String get cloudDiscardDraft => '丢弃草稿';
+  String get cloudReviewIncoming => '查看更新';
 
   @override
-  String get cloudReviewIncoming => '查看云端更改';
-
-  @override
-  String get cloudReviewConflict => '查看同步冲突';
+  String get cloudReviewConflict => '解决冲突';
 
   @override
   String get cloudRemoveHere => '从这台设备移除';
 
   @override
-  String get cloudKeepDeviceOnly => '仅保留在这台设备';
+  String get cloudKeepDeviceOnly => '保留在这台设备';
 
   @override
-  String get cloudAcceptReplacement => '接受来源替换';
+  String get cloudAcceptReplacement => '使用新来源';
 
   @override
-  String get cloudReplaceLocalSkill => '替换本地 Skill';
+  String get cloudReplaceLocalSkill => '换成已同步的 Skill';
 
   @override
-  String get cloudKeepAndHide => '保留本地 Skill 并隐藏同步副本';
+  String get cloudKeepAndHide => '保留此 Skill';
 
   @override
   String get cloudStopSyncingAction => '停止同步';
 
   @override
-  String get cloudUploadAsNew => '作为新的云端记录上传';
+  String get cloudUploadAsNew => '重新上传';
 
   @override
-  String get cloudOccupiedLocalSlot => '云端 Skill 所需的位置已被这个本地 Skill 占用。';
+  String get cloudAttentionActionFailed => '未能完成，请重试。';
 
   @override
-  String get cloudAttentionActionFailed => '无法完成此操作，请重试。';
+  String get cloudConfirmRemoveDraft => '此 Skill、它的草稿和历史记录都会从这台设备移除，且无法撤销。';
 
   @override
-  String get cloudConfirmDiscardDraft => '要丢弃尚未发布的更改吗？';
+  String get cloudConfirmReplacement => '这台设备上未同步的更改和原有历史记录将被移除，由新来源的历史记录代替。';
 
   @override
-  String get cloudConfirmRemoveDraft => '要从这台设备移除此 Skill，并丢弃其尚未发布的更改吗？';
-
-  @override
-  String get cloudConfirmRemoveSkill => '要从这台设备移除此 Skill 及其本地历史吗？';
-
-  @override
-  String get cloudConfirmReplacement => '要应用云端来源并丢弃这台设备尚未同步的版本吗？';
-
-  @override
-  String get cloudConfirmReplaceSlot => '要用同步副本替换这个本地 Skill 吗？';
+  String get cloudConfirmReplaceSlot =>
+      '此 Skill 及其历史记录会从这台设备移除，由已同步的 Skill 代替。';
 
   @override
   String get cloudIncomingNoFileChanges => '没有文件更改。';
@@ -237,16 +219,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudIncomingBinaryFile => '二进制文件有更改。';
 
   @override
-  String get cloudConflictChooseVersion => '为有冲突的文件选择要保留的设备版本。';
+  String get cloudConflictChooseVersion =>
+      '两台设备修改了相同的文件。请选择要保留的版本，另一个版本会留在此 Skill 的历史记录中。';
 
   @override
-  String get cloudConflictReviewDraft => '发布前请检查解决冲突后的草稿。';
+  String get cloudConflictReviewDraft => '请检查合并后的草稿，然后发布。';
 
   @override
-  String get cloudRevealDraft => '在访达中显示草稿';
-
-  @override
-  String get cloudPublishResolved => '发布已解决冲突的草稿';
+  String get cloudPublishResolved => '发布';
 
   @override
   String get cloudConflictKeepThis => '保留这台设备的版本';
@@ -264,10 +244,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudShowAgain => '重新显示';
 
   @override
-  String get cloudNewDeviceTitle => '同步的 Skills 已就绪';
+  String get cloudNewDeviceTitle => '你同步的 Skill 已就绪';
 
   @override
-  String get cloudNewDeviceSubtitle => '选择要启用的 Skills 和使用它们的 Agent。';
+  String get cloudNewDeviceSubtitle => '选择这台设备上哪些 Agent 可以使用它们。';
 
   @override
   String get cloudActivationLoading => '正在加载 Agent…';
@@ -2948,4 +2928,58 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cloudSignInOtherFailed => '登录没有完成，请重试。';
+
+  @override
+  String get cloudNoteReviewTitle => '选择要保留的备注';
+
+  @override
+  String get cloudNoteEditorTooLarge => '备注太长，无法同步。请缩短后再保存。';
+
+  @override
+  String cloudNoteFromDevice(String device) {
+    return '来自 $device';
+  }
+
+  @override
+  String get cloudConfirmKeepTitle => '仅保留在这台设备？';
+
+  @override
+  String get cloudConfirmKeep =>
+      '此 Skill 将在这台设备上停止同步。之后再开启同步，它会作为另一个 Skill 上传。';
+
+  @override
+  String get cloudConfirmRemoveTitle => '从这台设备移除？';
+
+  @override
+  String get cloudConfirmReplacementTitle => '使用新来源？';
+
+  @override
+  String get cloudConfirmReplaceTitle => '换成已同步的 Skill？';
+
+  @override
+  String get cloudConfirmStopTitle => '停止同步此 Skill？';
+
+  @override
+  String get cloudConfirmStop => '它会保留在这台设备和你的其他设备上，但更改不再同步。';
+
+  @override
+  String get cloudConfirmRemoveAction => '移除';
+
+  @override
+  String get cloudConfirmReplaceAction => '替换';
+
+  @override
+  String get cloudConfirmNewSourceAction => '使用新来源';
+
+  @override
+  String get cloudIncomingReviewTitle => '来自另一台设备的更新';
+
+  @override
+  String get cloudIncomingDraftWarning => '更新会用这个版本替换你的草稿，草稿将无法恢复。';
+
+  @override
+  String get cloudDiscardDraftAndUpdate => '丢弃草稿并更新';
+
+  @override
+  String get cloudConflictTitle => '解决冲突';
 }

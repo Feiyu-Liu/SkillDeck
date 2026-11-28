@@ -159,11 +159,11 @@ void main() {
         ('tag-limit', 'name'),
         ('tag-limit', 'vocabulary'),
         for (final name in [
-          'incomingDraft--discardDraft',
           'removedWithDraft--remove',
           'sourceReplacedWithLocalChanges--acceptReplacement',
           'slotOccupied--replaceOccupied',
-          'missingAfterReset--remove',
+          'missingAfterReset--keepDeviceOnly',
+          'tooLarge--stop',
         ])
           ('confirmation', name),
         ('conflict-review', 'syncMergeConflict'),
@@ -179,6 +179,7 @@ void main() {
           for (final (item, state) in scenarios.where(
             (entry) => captureItem.isEmpty || entry.$1 == captureItem,
           )) {
+            debugPrint('CLOUD_CAPTURE: $item/$state $locale ${mode.name}');
             final service = FakeCloudService();
             final workspace = FakeSyncWorkspace();
             final local = workspace.seed(
@@ -626,6 +627,14 @@ void main() {
             }
 
             await capture(state);
+            if (item == 'note-review' && state == 'three-texts') {
+              await tester.drag(
+                find.text('Keep changes small.'),
+                const Offset(0, -220),
+              );
+              await tester.pumpAndSettle();
+              await capture('$state-scrolled');
+            }
             if (item == 'attention-actions') {
               actionRequest.complete();
               await tester.pumpAndSettle();
@@ -633,14 +642,6 @@ void main() {
             }
 
             if (item == 'note-review' && state != 'empty-note') {
-              final combine = find.text(
-                locale == 'en' ? 'Combine versions' : '合并版本',
-              );
-              await tester.ensureVisible(combine);
-              await tester.pumpAndSettle();
-              await tester.tap(combine);
-              await tester.pumpAndSettle();
-              await capture('$state-combining');
               final editor = find.byKey(
                 const Key('cloud-note-resolution-text'),
               );
@@ -659,7 +660,21 @@ void main() {
                   metadataAttention: {
                     'skill-0': cloud.SyncMetadataAttention(
                       cloud.MetadataAttentionReason.noteConflict,
-                      note: cloud.CloudNote('Updated on another Mac.', 4),
+                      note: cloud.CloudNote(
+                        'Updated on another Mac.',
+                        4,
+                        conflict: const cloud.CloudNoteConflict(
+                          cloud.CloudNoteCandidate(
+                            'Updated on another Mac.',
+                            null,
+                          ),
+                          cloud.CloudNoteCandidate('Add a focused test.', null),
+                        ),
+                      ),
+                      localNote: state == 'three-texts'
+                          ? 'Also verify the release.'
+                          : null,
+                      hasUnsubmittedLocalNote: state == 'three-texts',
                     ),
                   },
                 ),
@@ -743,7 +758,9 @@ void main() {
             }
             await tester.pumpWidget(const SizedBox.shrink());
             await tester.pumpAndSettle();
-            await changes.close();
+            // Some Settings states never subscribe; closing an unlistened
+            // single-subscription stream must not block the next capture.
+            unawaited(changes.close());
             await runtime.close();
             await scratch.delete(recursive: true);
             await repository.close();

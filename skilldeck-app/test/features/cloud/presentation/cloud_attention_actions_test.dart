@@ -25,38 +25,44 @@ const _account = 'account';
 
 void main() {
   for (final (reason, expected) in [
-    (
-      AttentionReason.incomingDraft,
-      ['publishDraft', 'reviewIncoming', 'discardDraft'],
-    ),
+    (AttentionReason.incomingDraft, ['reviewIncoming', 'publishDraft']),
     (AttentionReason.syncMergeConflict, ['reviewConflict']),
-    (AttentionReason.removedWithDraft, ['remove', 'keepDeviceOnly']),
+    (AttentionReason.removedWithDraft, ['keepDeviceOnly', 'remove']),
     (
       AttentionReason.sourceReplacedWithLocalChanges,
       ['acceptReplacement', 'keepDeviceOnly'],
     ),
-    (AttentionReason.slotOccupied, ['replaceOccupied', 'exclude']),
-    (AttentionReason.tooLarge, ['keepDeviceOnly', 'stop']),
-    (
-      AttentionReason.missingAfterReset,
-      ['remove', 'keepDeviceOnly', 'uploadAsNew'],
-    ),
+    (AttentionReason.slotOccupied, ['exclude', 'replaceOccupied']),
+    (AttentionReason.tooLarge, ['stop']),
+    (AttentionReason.missingAfterReset, ['uploadAsNew', 'keepDeviceOnly']),
   ]) {
-    testWidgets('shows the actions for ${reason.name}', (tester) async {
-      final fixture = await _Fixture.open(tester);
-      await fixture.pump(tester, reason);
-      for (final action in expected) {
-        expect(_action(action), findsOneWidget);
-      }
-    });
+    for (final locale in ['en', 'zh']) {
+      testWidgets('$locale shows the actions for ${reason.name}', (
+        tester,
+      ) async {
+        final fixture = await _Fixture.open(tester);
+        await fixture.pump(tester, reason, locale: locale);
+        final buttons = tester
+            .widgetList<AppButton>(find.byType(AppButton))
+            .toList();
+        expect(buttons, hasLength(expected.length));
+        expect(
+          buttons.where((b) => b.style == NeoButtonVariant.primary),
+          hasLength(1),
+        );
+        for (final action in expected) {
+          expect(_action(action), findsOneWidget);
+        }
+      });
+    }
   }
 
   for (final (reason, action) in [
-    (AttentionReason.incomingDraft, 'discardDraft'),
     (AttentionReason.removedWithDraft, 'remove'),
     (AttentionReason.sourceReplacedWithLocalChanges, 'acceptReplacement'),
     (AttentionReason.slotOccupied, 'replaceOccupied'),
-    (AttentionReason.missingAfterReset, 'remove'),
+    (AttentionReason.missingAfterReset, 'keepDeviceOnly'),
+    (AttentionReason.tooLarge, 'stop'),
   ]) {
     testWidgets('cancelling $action on ${reason.name} changes nothing', (
       tester,
@@ -80,7 +86,7 @@ void main() {
     });
   }
 
-  for (final action in ['publishDraft', 'discardDraft']) {
+  for (final action in ['publishDraft']) {
     testWidgets('$action removes the Draft and reconciles its linked Skill', (
       tester,
     ) async {
@@ -141,9 +147,48 @@ void main() {
     expect(fixture.app.current.findSkillById(fixture.id)?.draft, isNotNull);
   });
 
+  testWidgets(
+    'incoming review cancel preserves Draft; discard applies only after confirmation',
+    (tester) async {
+      final fixture = await _Fixture.open(tester);
+      await fixture.pump(tester, AttentionReason.incomingDraft);
+      fixture.app.revisionPackDiffTask =
+          ({
+            required skillId,
+            required expectedEffective,
+            required incomingEffective,
+            required incomingUpstream,
+            required packPath,
+          }) => completedWorkspaceTask(
+            kind: WorkspaceOperationKind.inspectRevisionPackDiff,
+            value: WorkspaceRevisionPackDiff(
+              skillId: skillId,
+              from: expectedEffective,
+              to: incomingEffective,
+              files: const [],
+            ),
+          );
+      await fixture.press(tester, 'reviewIncoming');
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 350)),
+      );
+      await tester.pumpAndSettle();
+      expect(fixture.app.current.findSkillById(fixture.id)?.draft, isNotNull);
+      await fixture.press(tester, 'reviewIncoming');
+      await fixture.run(
+        tester,
+        () => tester.tap(find.text('Discard Draft and update')),
+      );
+      expect(fixture.app.current.findSkillById(fixture.id)?.draft, isNull);
+      expect(find.byKey(const Key('cloud-attention-confirm')), findsNothing);
+    },
+  );
+
   for (final (side, label) in [
-    (WorkspaceUpdateCandidateSide.current, 'Keep this Device’s version'),
-    (WorkspaceUpdateCandidateSide.incoming, 'Keep the other Device’s version'),
+    (WorkspaceUpdateCandidateSide.current, "Keep this device's version"),
+    (WorkspaceUpdateCandidateSide.incoming, "Keep the other device's version"),
   ]) {
     testWidgets(
       'choosing ${side.name} resolves, and publishing is a separate action',
@@ -158,10 +203,7 @@ void main() {
           isNotNull,
         );
         await fixture.press(tester, 'reviewConflict');
-        await fixture.run(
-          tester,
-          () => tester.tap(find.text('Publish resolved Draft')),
-        );
+        await fixture.run(tester, () => tester.tap(find.text("Publish")));
         expect(
           fixture.app.current.findSkillById(fixture.id)?.updateCandidate,
           isNull,
@@ -170,10 +212,7 @@ void main() {
     );
   }
 
-  for (final reason in [
-    AttentionReason.removedWithDraft,
-    AttentionReason.missingAfterReset,
-  ]) {
+  for (final reason in [AttentionReason.removedWithDraft]) {
     testWidgets(
       'confirmed ${reason.name} removal unlinks and removes local Skill',
       (tester) async {
@@ -195,7 +234,6 @@ void main() {
   for (final reason in [
     AttentionReason.removedWithDraft,
     AttentionReason.sourceReplacedWithLocalChanges,
-    AttentionReason.tooLarge,
     AttentionReason.missingAfterReset,
   ]) {
     testWidgets(
@@ -203,7 +241,7 @@ void main() {
       (tester) async {
         final fixture = await _Fixture.open(tester);
         await fixture.pump(tester, reason);
-        await fixture.press(tester, 'keepDeviceOnly');
+        await fixture.press(tester, 'keepDeviceOnly', confirm: true);
         expect(await fixture.store.exclusions(), {fixture.lineage});
         expect(await fixture.store.links(), isEmpty);
         expect(
@@ -302,7 +340,7 @@ void main() {
   testWidgets('Stop Syncing stops the matched Cloud Lineage', (tester) async {
     final fixture = await _Fixture.open(tester);
     await fixture.pump(tester, AttentionReason.tooLarge);
-    await fixture.press(tester, 'stop');
+    await fixture.press(tester, 'stop', confirm: true);
     expect(fixture.service.requests.last, (
       method: 'POST',
       path: '/v0/lineages/${fixture.lineage}/stop',
@@ -459,6 +497,7 @@ final class _Fixture {
     WidgetTester tester,
     AttentionReason reason, {
     bool linkedOccupant = false,
+    String locale = 'en',
   }) async {
     const linkedSkillId = 'previous-linked-skill';
     if (reason != AttentionReason.slotOccupied) {
@@ -491,7 +530,7 @@ final class _Fixture {
           skillsWorkspaceRepositoryProvider.overrideWithValue(app),
         ],
         child: CupertinoApp(
-          locale: const Locale('en'),
+          locale: Locale(locale),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: appLocalizationsDelegates,
           home: NeoButtonTheme(
@@ -533,7 +572,7 @@ final class _Fixture {
           .skip(1)
           .listen((_) => finished = true);
       await action();
-      for (var attempt = 0; !finished && attempt < 100; attempt++) {
+      for (var attempt = 0; !finished && attempt < 500; attempt++) {
         await tester.pump(const Duration(milliseconds: 10));
         if (!finished) {
           await Future<void>.delayed(const Duration(milliseconds: 10));

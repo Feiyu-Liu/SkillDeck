@@ -93,6 +93,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Your synced Skills are ready'), findsOneWidget);
         expect(repository.activations, isEmpty);
+        expect(find.textContaining('/fixture'), findsNothing);
         final activateButton = find.byKey(
           const Key('cloud-new-device-activate'),
         );

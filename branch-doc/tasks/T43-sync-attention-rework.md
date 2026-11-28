@@ -26,8 +26,9 @@ state, button, and dialog is listed. If you meet one that is not, stop and ask.
   - `cloud_sign_in_settings.dart`;
   - the Reconciler actions that these buttons call.
 - **Maintainer decisions, 2026-11-28:**
-  - **"Use the new source"** (today's "Accept replacement") keeps this
-    device's unsynced revisions in the Skill's history.
+  - **"Use the new source"** (today's "Accept replacement") removes the
+    device's old history and unsynced revisions. Revised after implementation
+    review with explicit maintainer approval; preservation is a separate task.
   - **"Keep on this device only"** means the Skill stops syncing on this
     device.
   - **Too large:** offer only "Stop syncing". Drop "Keep on this Device only"
@@ -95,7 +96,7 @@ the others use the normal style.
 | --- | --- | --- | --- |
 | K | "Keep on this device only?" / "仅保留在这台设备？" | "This Skill stops syncing on this device. If you turn sync on again later, it's uploaded as a separate Skill." / "此 Skill 将在这台设备上停止同步。之后再开启同步，它会作为另一个 Skill 上传。" | "Keep on this device" / "保留在这台设备" |
 | R1 | "Remove from this device?" / "从这台设备移除？" | "The Skill, its Draft, and its history are removed from this device. This can't be undone." / "此 Skill、它的草稿和历史记录都会从这台设备移除，且无法撤销。" | "Remove" / "移除" |
-| N | "Use the new source?" / "使用新来源？" | "This device's unsynced changes stay in this Skill's history." / "这台设备上未同步的更改会保留在此 Skill 的历史记录中。" | "Use new source" / "使用新来源" |
+| N | "Use the new source?" / "使用新来源？" | "This device's unsynced changes and previous history will be removed and replaced by the new source's history." / "这台设备上未同步的更改和原有历史记录将被移除，由新来源的历史记录代替。" | "Use new source" / "使用新来源" |
 | S | "Replace with the synced Skill?" / "换成已同步的 Skill？" | "This Skill and its history are removed from this device, and the synced Skill takes its place." / "此 Skill 及其历史记录会从这台设备移除，由已同步的 Skill 代替。" | "Replace" / "替换" |
 | T | "Stop syncing this Skill?" / "停止同步此 Skill？" | "It stays on this device and your other devices, but changes no longer sync." / "它会保留在这台设备和你的其他设备上，但更改不再同步。" | "Stop syncing" / "停止同步" |
 
@@ -198,10 +199,44 @@ and shows nothing.
 
 ### Progress
 
+- Implemented and validated on 2026-11-28; see the combined report below.
+
 ### Decision Log
+
+- 2026-11-28: Fact 1 is false. `remote_source_replacement_preparation.dart`
+  prepares the new store and `destructive_operation_planner.dart:193` deletes
+  old lineages. Maintainer approved retaining behavior, warning that old local
+  history/unsynced changes are removed, and tracking preservation separately in
+  `../follow-ups/source-replacement-history.md`. Confirmation N now says:
+  "This device's unsynced changes and previous history will be removed and
+  replaced by the new source's history." / "这台设备上未同步的更改和原有历史记录将被移除，由新来源的历史记录代替。"
+- Fact 2: `keepDeviceOnly` excludes/unlinks; `startSyncing` creates a new
+  client key when no link exists (`reconciler.dart`). No old lineage is rejoined.
+- Fact 3: a stopped remote lineage only unlinks the local copy
+  (`reconciler.dart`, `LineageState.stopped` branch); it does not remove content.
+- Fact 4: remote conflict resolution creates a candidate commit with both
+  previousEffective and remoteParent (`candidate_conflict_preparation.dart`);
+  publishing retains that ancestry.
+- Fact 5: `removeMissingLocally` calls guarded Workspace removal; the
+  destructive planner deletes the Managed Skill aggregate and its stores.
+- Conflict-side buttons are equal content choices, the card's explicit rule-4
+  exception. Incoming review uses the existing equal-width footer to keep its
+  longer action inside the dialog. Conflict choices use bounded Flexible actions
+  in a 620 px dialog, preserving full labels at the default native window size.
 
 ### Surprises
 
+- The null-lineage action switch branch is unreachable: `_attention` returns
+  a slot conflict only from an outcome entry with a non-null map key or link ID.
+  The real Workspace adapter supplies an occupant ID; unresolved synthetic
+  states do not render actions.
+
 ### Follow-ups
 
+- Storage-limit status has no recovery action until quota policy is defined.
+- Source-replacement history: see the separate follow-up above.
+
 ### Outcome
+
+Implemented. See `../validation/t41-t44-2026-11-28.md` for per-command gates,
+native and staging acceptance, screenshot paths, approved deviations and limits.

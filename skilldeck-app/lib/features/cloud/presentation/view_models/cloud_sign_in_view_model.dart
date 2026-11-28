@@ -80,7 +80,7 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
     }
   }
 
-  Future<void> startSignIn() async {
+  Future<void> startSignIn({String? uiLocale}) async {
     final phase = state.value?.phase;
     if (phase != CloudSignInPhase.signedOut &&
         phase != CloudSignInPhase.failed) {
@@ -94,7 +94,11 @@ final class CloudSignInViewModel extends AsyncNotifier<CloudSignInState> {
     try {
       final device = await readDevice();
       if (!ref.mounted) return;
-      switch (await signIn.signInWithBrowser(device, authenticator)) {
+      switch (await signIn.signInWithBrowser(
+        device,
+        authenticator,
+        uiLocale: uiLocale,
+      )) {
         case CloudSignInSucceeded(:final account):
           _set(
             CloudSignInPhase.signedIn,

@@ -68,15 +68,15 @@ void main() {
             'Synced',
             'Waiting to Upload',
             'Applying Cloud changes…',
-            'An incoming change is waiting for this Draft.',
-            'Changes from two Devices need to be merged.',
-            'This Skill was removed on another Device while a Draft exists here.',
-            'This Skill is too large to sync.',
-            'A different local Skill occupies this slot.',
-            'Missing from the Cloud Library after a reset.',
-            'The Source was replaced on another Device while this Device has unsynced changes.',
-            'Review note conflict',
-            'Shorten the note to 4 KiB or less to sync it.',
+            "Another device updated this Skill. You have a Draft here, so the update is waiting.",
+            "This Skill was changed on two devices.",
+            "Another device removed this Skill. You have an unpublished Draft here.",
+            "This Skill is too large to sync. Make it smaller, or stop syncing it.",
+            "A synced Skill has the same name as this Skill.",
+            "This Skill is no longer in your SkillDeck Cloud library.",
+            "Another device switched this Skill to a new source. Changes on this device haven't synced.",
+            "Choose note",
+            "This note is too long to sync. Shorten it to sync it.",
             'Edit note',
           ],
         ),
@@ -87,15 +87,15 @@ void main() {
             '已同步',
             '等待上传',
             '正在应用云端更改…',
-            '请先处理草稿，再应用云端更改。',
-            '两台设备上的更改需要合并。',
-            '另一台设备已删除此 Skill，这台设备仍有草稿。',
-            '此 Skill 太大，无法同步。',
-            '另一个本地 Skill 已占用此位置。',
-            '重置后，此 Skill 已不在云端资料库中。',
-            '另一台设备已替换来源，这台设备仍有未同步的更改。',
-            '审阅备注冲突',
-            '将备注缩短至 4 KiB 以内即可同步。',
+            "另一台设备更新了此 Skill。这里有草稿，所以更新还在等待。",
+            "此 Skill 在两台设备上都有修改。",
+            "另一台设备已删除此 Skill，这里还有未发布的草稿。",
+            "此 Skill 太大，无法同步。请减小它的体积，或停止同步。",
+            "有一个已同步的 Skill 与此 Skill 同名。",
+            "此 Skill 已不在你的 SkillDeck Cloud 资料库中。",
+            "另一台设备把此 Skill 换成了新的来源，这台设备上的更改还没有同步。",
+            "选择备注",
+            "备注太长，无法同步。缩短后即可同步。",
             '编辑备注',
           ],
         ),
@@ -143,8 +143,12 @@ void main() {
           expect(find.text(label), findsOneWidget);
         }
         expect(
-          find.bySemanticsLabel(locale == 'en' ? 'Note conflict' : '备注冲突'),
-          findsOneWidget,
+          find.bySemanticsLabel(
+            locale == 'en'
+                ? "This note was edited on two devices."
+                : "备注在两台设备上都被修改了。",
+          ),
+          findsNWidgets(2),
         );
         final pending = locale == 'en'
             ? 'Favorites, notes, or tags are waiting to sync.'
@@ -241,22 +245,86 @@ void main() {
       expect(find.text('Cloud candidate'), findsOneWidget);
       expect(find.text('Other candidate'), findsOneWidget);
       expect(find.text('First local draft'), findsOneWidget);
-      expect(find.text('Unsynced note on this device'), findsOneWidget);
+      expect(find.text("On this device"), findsOneWidget);
 
       final field = find.byKey(const Key('cloud-note-resolution-text'));
-      await tester.ensureVisible(find.text('Combine versions'));
-      await tester.tap(find.text('Combine versions'));
-      await tester.pumpAndSettle();
       expect(
         tester.widget<CupertinoTextField>(field).controller!.text,
         'Cloud candidate\n\nOther candidate\n\nFirst local draft',
       );
+      expect(tester.widget<CupertinoTextField>(field).minLines, 4);
+      expect(
+        tester.getRect(field).bottom,
+        lessThan(
+          tester.getRect(find.byKey(const Key('cloud-note-resolve'))).top,
+        ),
+      );
       await tester.enterText(field, 'My chosen wording');
+      updates.add(
+        const CloudSyncState(
+          accountId: 'account',
+          metadataAttention: {
+            'skill': SyncMetadataAttention(
+              MetadataAttentionReason.noteConflict,
+              note: CloudNote(
+                'Latest synced text',
+                4,
+                conflict: CloudNoteConflict(
+                  CloudNoteCandidate('Latest synced text', null),
+                  CloudNoteCandidate('New incoming text', null),
+                ),
+              ),
+            ),
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Latest synced text'), findsOneWidget);
+      expect(
+        tester.widget<CupertinoTextField>(field).controller!.text,
+        'My chosen wording',
+      );
+      expect(
+        tester
+            .widget<AppButton>(find.byKey(const Key('cloud-note-resolve')))
+            .onPressed,
+        isNotNull,
+      );
       await tester.tap(find.byKey(const Key('cloud-note-resolve')));
       await tester.pumpAndSettle();
       expect(
-        find.text('The resolution couldn’t sync. Your chosen text stays here.'),
+        find.text(
+          "Couldn't save the note. Check your connection and try again.",
+        ),
         findsOneWidget,
+      );
+      expect(
+        tester.widget<CupertinoTextField>(field).controller!.text,
+        'My chosen wording',
+      );
+      updates.add(
+        const CloudSyncState(
+          accountId: 'account',
+          metadataAttention: {
+            'skill': SyncMetadataAttention(
+              MetadataAttentionReason.noteConflict,
+              note: CloudNote('Changed after failure', 5),
+            ),
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'This note changed on another device. The versions above are up to date, and your text is kept.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          "Couldn't save the note. Check your connection and try again.",
+        ),
+        findsNothing,
       );
       expect(
         tester.widget<CupertinoTextField>(field).controller!.text,
@@ -265,21 +333,16 @@ void main() {
       updates.add(const CloudSyncState(accountId: 'account'));
       await tester.pumpAndSettle();
       expect(
-        find.text(
-          'There is no conflict to resolve now. Your edited text stays here.',
-        ),
+        find.text("This conflict was resolved on another device."),
         findsOneWidget,
       );
       expect(
         tester
             .widget<AppButton>(find.byKey(const Key('cloud-note-resolve')))
             .onPressed,
-        isNull,
+        isNotNull,
       );
-      expect(
-        tester.widget<CupertinoTextField>(field).controller!.text,
-        'My chosen wording',
-      );
+      expect(field, findsNothing);
     },
   );
 }
