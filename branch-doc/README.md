@@ -79,3 +79,7 @@ New development documents for this work go in this folder.
 | `validation/t35-t39-2026-11-28.md` | T35–T39 implementation, approvals, native/browser evidence and gates | Complete local evidence; no deployment |
 | `reviews/2026-11-28-cloud-ui-inventory.md` | T39 Cloud UI state inventory and UI-rule observations | 62 states, 248 PNGs; ready for maintainer review |
 | T40 (withdrawn) | Was: move the marketing site into the private service repository. Withdrawn on 2026-11-28: the whole website, including the web Marketplace at a path on the main site, stays in its own private repository and uses the Cloud API only | Withdrawn before any work |
+| `tasks/T41-sign-in-precheck-and-language.md` | App sign-in: check reachability before opening the window (R-1); send the App's language to the page | Ready for Codex, after T42 is on staging |
+| `tasks/T42-service-sign-in-page.md` | Service: the App sign-in page in EN/ZH, light/dark, email asked once, exact states and look (R-2). Runs in the private service repository | Ready for Codex in the service repository; before T41 |
+| `tasks/T43-sync-attention-rework.md` | Sync attention states, confirmations, review dialogs, notices, and Settings rows rewritten with exact text; five behaviour facts to verify first | Ready for Codex |
+| `tasks/T44-notes-new-device-rework.md` | Note conflict dialog, new-Device sheet, and limit messages rewritten with exact text | Ready for Codex; parallel with T43 |

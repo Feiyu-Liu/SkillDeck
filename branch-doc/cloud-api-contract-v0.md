@@ -152,7 +152,13 @@ GET /app/sign-in?client_id=skilldeck-desktop
   &state=<16–128 characters of [A-Za-z0-9_-]>
   &device_name=<as in Device Authorization>
   &device_platform=macos
+  &ui_locales=<en | zh>            (optional; added 2026-11-28, T41/T42)
 ```
+
+- **`ui_locales`** is the App's display language. The page shows its text in
+  that language. Without it, or with any other value, the page uses the
+  request's `Accept-Language` (`zh` when its first supported tag starts with
+  `zh`), else English. An unknown value is not an error.
 
 - The App generates a new `code_verifier` (RFC 7636: 43–128 characters of
   `[A-Za-z0-9-._~]`, from a secure random source) and `state` for each
