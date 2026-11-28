@@ -1,4 +1,4 @@
-# SkillDeck Cloud API contract v0: conventions and Device sign-in
+# SkillDeck Cloud API contract v0: conventions and sign-in
 
 Status: draft, 2026-11-26. Milestone M3. Written in this repository at the
 maintainer's request; the private service repository implements it. Source of
@@ -127,9 +127,100 @@ failure or an HTTP 5xx keeps polling at the current interval until then.
 `POST /api/auth/device/deny` serve the approval page. The App never calls
 them. A person signs in there with email OTP (Resend) or GitHub.
 
+## App sign-in: authorization code with PKCE
+
+Added 2026-11-28, when the maintainer amended R14. This is how the App signs
+in. Device Authorization above stays for clients without a browser window; the
+App no longer uses it. Cards: T35 (service), T36 (client), T37 (App).
+
+### Fixed values
+
+- `client_id`: `skilldeck-desktop`, as for Device Authorization.
+- `redirect_uri`: exactly `cc.skilldeck.signin:/callback`. A private-use
+  scheme in reverse-DNS form (RFC 8252, section 7.1). The service accepts no
+  other value.
+- `code_challenge_method`: `S256` only.
+
+### 1. Open the sign-in page (in the App's web authentication window)
+
+```
+GET /app/sign-in?client_id=skilldeck-desktop
+  &redirect_uri=cc.skilldeck.signin:/callback
+  &response_type=code
+  &code_challenge=<BASE64URL(SHA-256(verifier)), 43 characters>
+  &code_challenge_method=S256
+  &state=<16–128 characters of [A-Za-z0-9_-]>
+  &device_name=<as in Device Authorization>
+  &device_platform=macos
+```
+
+- The App generates a new `code_verifier` (RFC 7636: 43–128 characters of
+  `[A-Za-z0-9-._~]`, from a secure random source) and `state` for each
+  attempt. Neither is stored outside memory, and neither is logged.
+- The page is the same sign-in page as `/device`: email OTP, and GitHub when
+  enabled. The same validation applies to `device_name` and `device_platform`.
+- **Once the person is signed in, the page redirects at once.** There is no
+  confirmation screen and no code to compare. PKCE and the fixed redirect make
+  a link sent by someone else useless: the code goes back only to the App on
+  this Mac that started the attempt, and only that App knows the verifier.
+- **Redirects:**
+  - success: `cc.skilldeck.signin:/callback?code=<code>&state=<state>`;
+  - the person chooses "Cancel" on the page:
+    `cc.skilldeck.signin:/callback?error=access_denied&state=<state>`;
+  - an invalid `code_challenge`, `state`, or device field:
+    `...?error=invalid_request&state=<state>`.
+- **A wrong `client_id` or `redirect_uri`** shows an error page and never
+  redirects (RFC 6749, section 4.1.2.1).
+- **After issuing a code,** the service ends the browser (cookie) session it
+  created for this page. Nothing stays signed in on the web.
+
+### 2. Exchange the code
+
+`POST /app/token`, `application/x-www-form-urlencoded`:
+
+| Field | Value |
+| --- | --- |
+| `grant_type` | `authorization_code` |
+| `code` | from the redirect |
+| `code_verifier` | the attempt's verifier |
+| `client_id` | `skilldeck-desktop` |
+| `redirect_uri` | `cc.skilldeck.signin:/callback` |
+
+- **200:** the same body as a successful Device Authorization token response:
+  `{"access_token": "<token>", "token_type": "Bearer", "expires_in": <s>}`,
+  with `Cache-Control: no-store`. The token is a Better Auth session token,
+  carrying the device name and platform from step 1, exactly like a Device
+  session. Everything after this, including the Session section below, is
+  unchanged.
+- **400** with an RFC 6749 error code:
+  - `invalid_grant`: the code is unknown, expired, already used, or the
+    verifier does not match its challenge;
+  - `invalid_request`: a missing or malformed field;
+  - `invalid_client`: a wrong `client_id`;
+  - `unsupported_grant_type`.
+- **429** `rate_limited`, as in Conventions.
+
+### Code rules (service)
+
+- A code is random, at least 128 bits, single use, and valid for 60 seconds.
+- It is bound to the challenge, `client_id`, `redirect_uri`, account, and
+  device description. The service stores only its hash.
+- A second use of a code fails with `invalid_grant`, and also revokes the
+  session issued from it (RFC 6749, section 4.1.2).
+
+### Credentials in URLs: the one exception
+
+The authorization code travels in the callback URL. This is the one exception
+to "never in a URL" in Conventions. It is acceptable because the code:
+- lives for 60 seconds and works once;
+- is useless without the verifier;
+- reaches only the App's web authentication session.
+
+The App never logs the callback URL, the code, the state, or the verifier.
+
 ## Session
 
-The token from step 2 is a Better Auth session token. The `bearer` plugin
+The token from step 2 (of either sign-in) is a Better Auth session token. The `bearer` plugin
 turns the `Authorization` header into the session on every request.
 
 - **Read:** `GET /api/auth/get-session`. HTTP 200 with

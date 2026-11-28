@@ -80,10 +80,21 @@ Each line is binding. The R number points to the full text.
 - **Sync Status (R10):** derived per Skill as Device Only, Synced, Waiting to
   Upload, Applying, or Needs Attention, shown on the Skill. The seven Attention
   Reasons and their actions are in R10's table.
-- **Sign-in (R14):** Device Authorization (RFC 8628) only. The App never
-  collects a password or OTP, never opens a loopback listener, and never
-  registers a URL scheme. The Cloud Session lives only in platform secure
-  storage.
+- **Sign-in (R14, amended by the maintainer on 2026-11-28):** the App signs in
+  with an authorization code and PKCE (RFC 7636, as RFC 8252 describes for
+  native apps), in the system's `ASWebAuthenticationSession`. The person signs
+  in in that window, and it closes and returns to the App by itself. There is
+  no code to compare.
+  - The callback uses a private-use scheme that only that session handles. It
+    is not registered in `Info.plist`, so no other app or link can open it.
+  - The App never collects a password or OTP, and never opens a loopback
+    listener.
+  - The Cloud Session lives only in platform secure storage.
+  - Device Authorization stays on the service for clients without a browser
+    window, such as a future CLI. The App no longer uses it.
+  - Reason for the change: comparing a code between the App and a browser on
+    the same Mac is a poor experience, and the code exists to defend a flow
+    the App does not need.
 - **Service origin (R16):** chosen per build through `--dart-define-from-file`.
   A build without an origin has Cloud off.
 

@@ -23,7 +23,7 @@ New development documents for this work go in this folder.
 | `git-hosting-local-test-results-2026-11-23.md` | Local Git hosting test results | Input to R15 |
 | `windows-http-test-plan.md` | Windows HTTP qualification plan | Paused (R17) |
 | `windows-http-2026-11-23.md` | First Windows HTTP qualification run | Input to R17 |
-| `execplan-template.md` | Template for the ExecPlans handed to Codex, with simplicity rules against over-engineering | Draft |
+| `execplan-template.md` | Template for the ExecPlans handed to Codex, with simplicity rules against over-engineering, and UI rules (added 2026-11-28) | Draft |
 | `phase1-plan.md` | Phase 1 (Personal Sync, macOS) plan: goal, binding decisions, components, milestones M1–M8, blockers | Draft |
 | `tasks/T01-revision-pack-export.md` | Seam 1: Revision Pack export and the public revision identifier (R16) | Implemented and verified locally |
 | `tasks/T02-revision-pack-import.md` | Seam 2: Revision Pack import into staging | Implemented and verified locally |
@@ -43,7 +43,7 @@ New development documents for this work go in this folder.
 | `tasks/T09-apply-remote-metadata-removal-vocabulary.md` | Seam 3, the rest: metadata, Synced Removal, and tag vocabulary | Implemented, reviewed, and accepted (gates run by Codex on macOS). M5 complete |
 | `tasks/T14-recovery-bundle-history.md` | Fix T13-1: Recovery Bundles carry each retained revision's history, with a roots-only fallback | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
 | `tasks/T15-m5-nit-cleanup.md` | Clean up Nits T09-1, T09-2, T09-3, and T14-1 | Implemented, reviewed, and accepted (gates run by Codex on macOS) |
-| `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and Device Authorization sign-in. Library, pack, and feed endpoints come in v0.1 with M4 | Draft; code lifetime decided 2026-11-26 (10 minutes); HTTP 429 added 2026-11-27 (T19). Service side: T17 |
+| `cloud-api-contract-v0.md` | M3: Cloud API contract v0, conventions and sign-in. App sign-in with an authorization code and PKCE added 2026-11-28 (R14 amended); Device Authorization kept for clients without a browser window. Library, pack, and feed endpoints come in v0.1 with M4 | Draft; code lifetime decided 2026-11-26 (10 minutes); HTTP 429 added 2026-11-27 (T19). Service side: T17 |
 | `cloud-api-contract-v0.1.md` | M4: Personal Sync data API: Cloud Library, Lineages and Generations, Head Packs, Head Advance, Removal and Stop Syncing, Account Change Feed | Accepted 2026-11-27, open points decided |
 | `cloud-api-contract-v0.2.md` | M6: Personal Sync metadata, Synced Tag Vocabulary, and Note Conflict | Accepted for M6 implementation on 2026-11-27 |
 | `tasks/T16-device-sign-in-client.md` | M3: Device Authorization sign-in client in `skills_cloud`, and M1–M2 review item 5 | Implemented by Claude (gates on Linux x64) |
@@ -70,3 +70,6 @@ New development documents for this work go in this folder.
 | `tasks/T33-service-metadata.md` | M6 service: metadata CAS, Note Conflict, tag identity and bounded Feed/library projection | Implemented and verified locally; see M6 validation |
 | `tasks/T34-metadata-reconciliation-and-app.md` | M6 client, guarded Workspace metadata and macOS App integration | Implemented and verified locally; see M6 validation |
 | `validation/m6-metadata-sync-2026-11-28.md` | M6 implementation, final gates and remaining acceptance boundaries | Record |
+| `tasks/T35-service-app-sign-in.md` | App sign-in, service side: `/app/sign-in` and `/app/token` with an authorization code and PKCE (R14 amended 2026-11-28). Runs in the private service repository | Ready for Codex in the service repository |
+| `tasks/T36-client-app-sign-in.md` | App sign-in, client side: `signInWithBrowser` over a web-authentication port | Ready for Codex; can run in parallel with T35 |
+| `tasks/T37-app-sign-in-window.md` | App sign-in, App side: the system sign-in window, with exact states and text; Device Authorization removed from the App | Ready for Codex, after T36 |

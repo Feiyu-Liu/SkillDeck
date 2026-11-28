@@ -59,6 +59,36 @@ Task-specific triggers. The simplicity rules below add the general ones.
 8. Tests prove Acceptance and the failure boundaries. Build no new test
    framework or helper unless at least two tests need it and `test/support/`
    has nothing that fits.
+9. One card, one commit. Work outside the card, even if approved, goes in its
+   own commit and is named in the Decision Log.
+
+## UI rules (every task that changes what a person sees)
+
+Added 2026-11-28. These rules come before visual or wording choices of your
+own.
+
+1. **Use only the card's strings.** Use the exact English and Chinese text the
+   card gives. If a state has no text in the card, stop and ask; do not write
+   one.
+2. **Build from existing widgets.** Use the components already on the same
+   screen, such as `SettingsGroup`, `SettingsRow`, `AppButton` with `loading`,
+   and the theme's spacing and colors. No new colors, font sizes, icons,
+   animations, dialogs, toasts, or custom painters, unless the card asks for
+   them.
+3. **Show what the person can do, not how it works.** No protocol names, codes,
+   IDs, URLs, error codes, file paths, or technical causes in the UI.
+4. **One primary action per state.** At most one secondary action. No button
+   that does nothing useful in that state.
+5. **Cancelling is not an error.** A person who cancels returns to where they
+   started, with no message.
+6. **No dead ends.** Every failure state shows one plain sentence and the
+   action that recovers.
+7. **Remove what the change replaces.** Delete the old widgets, strings in both
+   ARB files, and their tests.
+8. **Evidence:** attach screenshots of every state the card lists, in English
+   and Chinese, in light and dark appearance, at the default window size, to
+   the Outcome, under `branch-doc/screenshots/<card>/`. The reviewer accepts
+   the UI from these. A golden or widget test alone is not enough.
 
 ## Maintained by Codex
 
