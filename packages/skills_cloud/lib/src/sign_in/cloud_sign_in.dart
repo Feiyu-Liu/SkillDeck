@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -128,7 +131,13 @@ final class CloudSessionUnavailable extends CloudSessionStatus {
   final CloudAccount? account;
 }
 
-/// Device Authorization sign-in (RFC 8628) against one service origin.
+/// Opens an App-provided system web authentication window.
+abstract interface class CloudWebAuthenticator {
+  /// Returns the callback URL, or null when the person cancels.
+  Future<Uri?> authenticate(Uri url, {required String callbackScheme});
+}
+
+/// Sign-in against one service origin.
 ///
 /// See `cloud-api-contract-v0.md`. The Cloud Session token is sent only in
 /// the `Authorization` header to [origin], and device codes only in request
@@ -153,7 +162,96 @@ final class CloudSignIn {
   final CloudSessionStore _store;
   final Duration Function() _elapsed;
 
-  /// Requests a device code for [device].
+  bool _browserSignInRunning = false;
+
+  /// Signs in through the App's system authentication window.
+  Future<CloudSignInResult> signInWithBrowser(
+    CloudDevice device,
+    CloudWebAuthenticator authenticator,
+  ) async {
+    if (_browserSignInRunning) {
+      throw StateError('A browser sign-in is already running.');
+    }
+    _browserSignInRunning = true;
+    try {
+      final random = Random.secure();
+      String nonce() => base64Url
+          .encode(List<int>.generate(32, (_) => random.nextInt(256)))
+          .replaceAll('=', '');
+      final verifier = nonce();
+      final state = nonce();
+      final challenge = base64Url
+          .encode(sha256.convert(ascii.encode(verifier)).bytes)
+          .replaceAll('=', '');
+      const callbackScheme = 'cc.skilldeck.signin';
+      const redirectUri = '$callbackScheme:/callback';
+      final callback = await authenticator.authenticate(
+        origin
+            .resolve('/app/sign-in')
+            .replace(
+              queryParameters: {
+                'client_id': clientId,
+                'redirect_uri': redirectUri,
+                'response_type': 'code',
+                'code_challenge': challenge,
+                'code_challenge_method': 'S256',
+                'state': state,
+                'device_name': device.name,
+                'device_platform': device.platform.wireName,
+              },
+            ),
+        callbackScheme: callbackScheme,
+      );
+      if (callback == null) return const CloudSignInCancelled();
+      final params = callback.queryParametersAll;
+      if (callback.scheme != callbackScheme ||
+          callback.hasAuthority ||
+          callback.path != '/callback' ||
+          callback.hasFragment ||
+          params.values.any((values) => values.length != 1) ||
+          params['state']?.single != state) {
+        return const CloudSignInFailed(CloudFailureCode.protocol);
+      }
+      final error = params['error']?.single;
+      final code = params['code']?.single;
+      if (error != null) {
+        return error == 'access_denied' && code == null
+            ? const CloudSignInDenied()
+            : const CloudSignInFailed(CloudFailureCode.protocol);
+      }
+      if (code == null || code.isEmpty) {
+        return const CloudSignInFailed(CloudFailureCode.protocol);
+      }
+      final reply = await _send(
+        () => _client.post(
+          origin.resolve('/app/token'),
+          headers: const {'Accept': 'application/json'},
+          body: {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'code_verifier': verifier,
+            'client_id': clientId,
+            'redirect_uri': redirectUri,
+          },
+        ),
+      );
+      return switch (reply) {
+        _NetworkFailure() => const CloudSignInFailed(CloudFailureCode.network),
+        _Response(:final response) when response.statusCode == 200 =>
+          await _finishSignIn(null, response),
+        _Response(:final response) => CloudSignInFailed(
+          _statusFailure(response.statusCode),
+        ),
+      };
+    } on Object {
+      // Platform failures can contain the callback and must not escape.
+      return const CloudSignInFailed(CloudFailureCode.protocol);
+    } finally {
+      _browserSignInRunning = false;
+    }
+  }
+
+  /// Requests a device code for clients without a web authentication window.
   Future<CloudSignInStart> start(CloudDevice device) async {
     final reply = await _send(
       () => _client.post(
@@ -343,7 +441,7 @@ final class CloudSignIn {
   }
 
   Future<CloudSignInResult> _finishSignIn(
-    PendingSignIn pending,
+    PendingSignIn? pending,
     http.Response response,
   ) async {
     final body = _decodeObject(response);
@@ -355,8 +453,10 @@ final class CloudSignIn {
         tokenType.toLowerCase() != 'bearer') {
       return const CloudSignInFailed(CloudFailureCode.protocol);
     }
-    final read = await _unlessCancelled(pending, _readAccount(token));
-    if (read == null || pending._cancelled.isCompleted) {
+    final read = pending == null
+        ? await _readAccount(token)
+        : await _unlessCancelled(pending, _readAccount(token));
+    if (read == null || (pending?._cancelled.isCompleted ?? false)) {
       return const CloudSignInCancelled();
     }
     switch (read) {
