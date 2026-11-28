@@ -27,7 +27,7 @@ Future<Object?> readCloudIncomingDiff({
   if (read is! CloudApiSuccess<Lineage>) return null;
   final lineage = read.value, head = lineage.head;
   if (head == null || lineage.state != LineageState.live) return null;
-  final temp = await Directory.systemTemp.createTemp('skilldeck-cloud-review-');
+  final temp = await Directory.systemTemp.createTemp('skilldeck-review-');
   try {
     final pack = p.join(temp.path, 'incoming.pack');
     final downloaded = await reconciler.api.downloadPack(

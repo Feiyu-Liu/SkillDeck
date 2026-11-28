@@ -48,7 +48,7 @@ T2 peers read the ClientHello. Distinct T1 accept-without-reading and whole-proc
 
 The new entry point is `skilldeck-app/tool/qualify_windows_http.dart`. Its standalone dependency lock is in the sibling `windows_http_probe` directory. Use Dart 3.14.0, Python 3.11+ and an empty scratch directory on Windows. Resolve the probe package with `dart pub get --enforce-lockfile`, copy s1.py into scratch, and supply cert.pem/key.pem valid for 127.0.0.1 (make_certs.py generates valid.crt/valid.key, with fixture-root.crt as the trust anchor for the certificate matrix). The original pack run trusted a self-signed fixture leaf. For reproduction with generated certs, concatenate valid.crt and fixture-root.crt into cert.pem and use valid.key as key.pem. From scratch run the entry point with A, B or B --loopback-http. Run cert_cases.dart with the generated certs directory and the probe package configuration. native_pack_spike.py uses the same scratch-directory S1 fixture. The throwaway pack files total about 61 MB.
 
-Raw revised results are in `.private/scratch/skilldeck-cloud/windows-http-20261123/revised-*`. The expanded H1 output gives individual skips. Prior evidence follows as a dated appendix. Its WebSocket results belong to the superseded plan.
+Raw revised results are in `.private/scratch/<private service repository>/windows-http-20261123/revised-*`. The expanded H1 output gives individual skips. Prior evidence follows as a dated appendix. Its WebSocket results belong to the superseded plan.
 
 ---
 
@@ -109,7 +109,7 @@ Outstanding gates include H2–H7 coverage beyond the subsets above, T1/T5/T6 an
 
 ## Reproduction
 
-Retained private fixtures and JSONL results are under `.private/scratch/skilldeck-cloud/windows-http-20261123/`. The code is isolated from App dependencies. In that directory, resolve the pinned packages and run the following on Windows. Each measured row records the elapsed deadline and peer-observed closure. A null closure means observation expired.
+Retained private fixtures and JSONL results are under `.private/scratch/<private service repository>/windows-http-20261123/`. The code is isolated from App dependencies. In that directory, resolve the pinned packages and run the following on Windows. Each measured row records the elapsed deadline and peer-observed closure. A null closure means observation expired.
 
 ```powershell
 dart pub get
