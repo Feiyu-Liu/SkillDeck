@@ -73,3 +73,5 @@ New development documents for this work go in this folder.
 | `tasks/T35-service-app-sign-in.md` | App sign-in, service side: `/app/sign-in` and `/app/token` with an authorization code and PKCE (R14 amended 2026-11-28). Runs in the private service repository | Ready for Codex in the service repository |
 | `tasks/T36-client-app-sign-in.md` | App sign-in, client side: `signInWithBrowser` over a web-authentication port | Ready for Codex; can run in parallel with T35 |
 | `tasks/T37-app-sign-in-window.md` | App sign-in, App side: the system sign-in window, with exact states and text; Device Authorization removed from the App | Ready for Codex, after T36 |
+| `tasks/T38-device-bound-source-identity.md` | Fix from the 2026-11-28 spot check: renaming a Mac started a Generation change for every Device-Bound Skill | Ready for Codex |
+| `tasks/T39-cloud-ui-screenshot-audit.md` | Screenshots and an inventory of every Cloud UI state, flagged against the UI rules; no fixes | Ready for Codex; rework cards follow its review |
