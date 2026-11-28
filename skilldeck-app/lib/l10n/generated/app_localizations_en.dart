@@ -54,34 +54,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudSignIn => 'Sign in';
 
   @override
-  String get cloudSignedOut => 'Sign in to your SkillDeck Cloud account.';
-
-  @override
-  String get cloudRequestingCode => 'Requesting a verification code…';
-
-  @override
-  String cloudVerificationCode(String code) {
-    return 'Verification code: $code';
-  }
-
-  @override
-  String get cloudVerifyInBrowser =>
-      'Verify that this code matches the one in your browser before approving this device.';
-
-  @override
-  String get cloudOpenBrowser => 'Open browser';
-
-  @override
-  String get cloudBrowserOpenFailed => 'Could not open the browser. Try again.';
-
-  @override
-  String get cloudSignInDenied => 'Sign-in was denied in the browser.';
-
-  @override
-  String get cloudSignInExpired => 'The verification code expired.';
-
-  @override
-  String get cloudSignInFailed => 'Could not sign in.';
+  String get cloudSignedOut => 'Sign in to sync your Skills between your Macs.';
 
   @override
   String get cloudSessionCheckFailed => 'Could not read your saved session.';
@@ -3242,4 +3215,18 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get cloudSigningIn => 'Continue in the sign-in window.';
+
+  @override
+  String get cloudSignInNetworkFailed =>
+      'Couldn\'t reach SkillDeck Cloud. Check your connection and try again.';
+
+  @override
+  String get cloudSignInBusy =>
+      'SkillDeck Cloud is busy right now. Try again in a minute.';
+
+  @override
+  String get cloudSignInOtherFailed => 'Sign-in didn\'t finish. Try again.';
 }

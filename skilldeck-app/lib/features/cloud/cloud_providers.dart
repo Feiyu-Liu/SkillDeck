@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:skills_cloud/skills_cloud.dart';
 import 'package:skills_manager/features/cloud/data/secure_cloud_session_store.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:skills_manager/features/cloud/data/macos_web_authenticator.dart';
 
 final cloudIsMacOSProvider = Provider<bool>((ref) => Platform.isMacOS);
 
@@ -68,9 +68,8 @@ final cloudDeviceProvider = Provider<Future<CloudDevice> Function()>(
   },
 );
 
-final cloudBrowserLauncherProvider = Provider<Future<bool> Function(Uri)>(
-  (ref) =>
-      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+final cloudWebAuthenticatorProvider = Provider<CloudWebAuthenticator>(
+  (ref) => const MacosWebAuthenticator(),
 );
 
 /// Cloud requests must never forward a bearer token or device code.

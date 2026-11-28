@@ -54,33 +54,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cloudSignIn => '登录';
 
   @override
-  String get cloudSignedOut => '登录你的 SkillDeck Cloud 账号。';
-
-  @override
-  String get cloudRequestingCode => '正在请求验证码…';
-
-  @override
-  String cloudVerificationCode(String code) {
-    return '验证码：$code';
-  }
-
-  @override
-  String get cloudVerifyInBrowser => '在浏览器中确认验证码一致，再批准此设备。';
-
-  @override
-  String get cloudOpenBrowser => '打开浏览器';
-
-  @override
-  String get cloudBrowserOpenFailed => '无法打开浏览器，请重试。';
-
-  @override
-  String get cloudSignInDenied => '浏览器中的登录请求已被拒绝。';
-
-  @override
-  String get cloudSignInExpired => '验证码已过期。';
-
-  @override
-  String get cloudSignInFailed => '无法登录。';
+  String get cloudSignedOut => '登录后，可在你的多台 Mac 之间同步 Skill。';
 
   @override
   String get cloudSessionCheckFailed => '无法读取已保存的登录会话。';
@@ -2962,4 +2936,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String browserGroupSkillCount(int count) {
     return '$count Skills';
   }
+
+  @override
+  String get cloudSigningIn => '请在登录窗口中继续。';
+
+  @override
+  String get cloudSignInNetworkFailed => '无法连接 SkillDeck Cloud，请检查网络后重试。';
+
+  @override
+  String get cloudSignInBusy => 'SkillDeck Cloud 暂时繁忙，请稍后重试。';
+
+  @override
+  String get cloudSignInOtherFailed => '登录没有完成，请重试。';
 }

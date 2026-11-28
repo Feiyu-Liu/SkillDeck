@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:skills_manager/app/app_router.dart';
+import 'package:skills_manager/features/cloud/presentation/view_models/cloud_sign_in_view_model.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -21,13 +25,10 @@ import '../../../support/recording_app_analytics.dart';
 import '../../../support/skills_manager_test_app.dart';
 
 const _origin = 'https://cloud.example.test';
-const _userCode = 'WXYZ-1234';
 const _email = 'sign-in-only@example.test';
 const _token = 'sign-in-only-token';
-const _second = Duration(seconds: 1);
 
 final _originValue = CloudServiceOrigin.parse(_origin);
-final _verificationUrl = Uri.parse('$_origin/device?user_code=$_userCode');
 final _signInButton = find.text('Sign in');
 final _signOutButton = find.text('Sign out');
 
@@ -63,168 +64,240 @@ void main() {
     });
   }
 
-  testWidgets(
-    'logs in through the browser, retries rate limiting, then signs out',
-    (tester) async {
-      final store = InMemoryCloudSessionStore();
-      final analytics = RecordingAppAnalytics();
-      final logs = <String>[];
-      final originalDebugPrint = debugPrint;
-      debugPrint = (message, {wrapWidth}) {
-        if (message != null) logs.add(message);
-      };
-      addTearDown(() => debugPrint = originalDebugPrint);
-      final directory = Directory.systemTemp.createTempSync(
-        'cloud-settings-test',
-      );
-      addTearDown(() => directory.deleteSync(recursive: true));
-      final settingsFile = File('${directory.path}/app-settings.json');
-      final settingsStore = SharedPreferencesAppSettingsStore(
-        preferences: _FileSettingsPreferences(settingsFile),
-      );
-      await settingsStore.write(const AppSettings());
-      final originalSettings = settingsFile.readAsStringSync();
-      final openedUrls = <Uri>[];
-      var polls = 0;
-
-      await _pumpSettings(
-        tester,
-        store,
-        MockClient((request) async {
-          expect(request.url.origin, _origin);
-          switch (request.url.path) {
-            case '/api/auth/device/code':
-              expect(request.bodyFields['client_id'], 'skilldeck-desktop');
-              expect(request.bodyFields['device_platform'], 'macos');
-              final name = request.bodyFields['device_name']!;
-              expect(name.runes.length, 64);
-              expect(name, startsWith('Studio Mac'));
-              return _deviceCode();
-            case '/api/auth/device/token':
-              if (++polls == 1) return _json({'error': 'rate_limited'}, 429);
-              return _json({'access_token': _token, 'token_type': 'bearer'});
-            case '/api/auth/get-session':
-              expect(request.headers['authorization'], 'Bearer $_token');
-              return _json({
-                'user': {'id': 'example-account', 'email': _email},
-                'session': {'expiresAt': '2027-01-01T00:00:00Z'},
-              });
-            case '/api/auth/sign-out':
-              expect(request.headers['authorization'], 'Bearer $_token');
-              return _json({'success': true});
-            default:
-              fail('Unexpected Cloud request path');
-          }
-        }),
-        settingsStore: settingsStore,
-        overrides: [
-          appAnalyticsProvider.overrideWithValue(analytics),
-          appDiagnosticsProvider.overrideWithValue(
-            AppDiagnostics.debug(writer: logs.add),
-          ),
-          cloudBrowserLauncherProvider.overrideWithValue((uri) async {
-            openedUrls.add(uri);
-            return true;
-          }),
-        ],
-      );
-
-      expect(find.byKey(const Key('settings-section-cloud')), findsOneWidget);
-      await tester.tap(_signInButton);
-      await tester.pump();
-      expect(find.textContaining(_userCode), findsOneWidget);
-      expect(openedUrls, isEmpty);
-
-      await tester.tap(find.text('Open browser'));
-      await tester.pump();
-      expect(openedUrls, [_verificationUrl]);
-      await tester.pump(_second);
-      expect(polls, 1);
-      expect(find.textContaining(_userCode), findsOneWidget);
-      await tester.pump(_second);
-      expect(polls, 2);
-      expect(find.text(_email), findsOneWidget);
-      expect((await store.read(_originValue))?.token, _token);
-
-      final settingsAfterSignIn = settingsFile.readAsStringSync();
-      expect(settingsAfterSignIn, originalSettings);
-      final outputs = [
-        ...logs,
-        for (final event in analytics.events)
-          jsonEncode({
-            'category': event.category,
-            'action': event.action,
-            'name': event.name,
-            'dimensions': event.dimensions(
-              platform: 'macos',
-              appVersion: 'test',
-            ),
-          }),
-        settingsAfterSignIn,
-      ].join('\n');
-      expect(outputs, isNot(contains(_email)));
-      expect(outputs, isNot(contains(_token)));
-
-      await tester.tap(_signOutButton);
-      await tester.pump();
-      expect(await store.read(_originValue), isNull);
-      expect(find.text(_email), findsNothing);
-      expect(_signInButton, findsOneWidget);
-    },
-  );
-
-  testWidgets('cancel stops polling and restores sign-in', (tester) async {
+  testWidgets('system sign-in stores credentials securely and signs out', (
+    tester,
+  ) async {
     final store = InMemoryCloudSessionStore();
-    var polls = 0;
+    final analytics = RecordingAppAnalytics();
+    final logs = <String>[];
+    final originalDebugPrint = debugPrint;
+    debugPrint = (message, {wrapWidth}) {
+      if (message != null) logs.add(message);
+    };
+    addTearDown(() => debugPrint = originalDebugPrint);
+    final directory = Directory.systemTemp.createTempSync(
+      'cloud-settings-test',
+    );
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final settingsFile = File('${directory.path}/app-settings.json');
+    final settingsStore = SharedPreferencesAppSettingsStore(
+      preferences: _FileSettingsPreferences(settingsFile),
+    );
+    await settingsStore.write(const AppSettings());
+    final originalSettings = settingsFile.readAsStringSync();
+    final openedUrls = <Uri>[];
+    var exchanges = 0;
+    final completion = Completer<Uri?>();
+
     await _pumpSettings(
       tester,
       store,
       MockClient((request) async {
-        if (request.url.path.endsWith('/code')) return _deviceCode();
-        polls++;
-        return _json({'error': 'authorization_pending'}, 400);
+        expect(request.url.origin, _origin);
+        switch (request.url.path) {
+          case '/app/token':
+            exchanges++;
+            expect(request.bodyFields['client_id'], 'skilldeck-desktop');
+            return _json({'access_token': _token, 'token_type': 'bearer'});
+          case '/api/auth/get-session':
+            expect(request.headers['authorization'], 'Bearer $_token');
+            return _json({
+              'user': {'id': 'example-account', 'email': _email},
+              'session': {'expiresAt': '2027-01-01T00:00:00Z'},
+            });
+          case '/api/auth/sign-out':
+            expect(request.headers['authorization'], 'Bearer $_token');
+            return _json({'success': true});
+          default:
+            fail('Unexpected Cloud request path');
+        }
       }),
+      settingsStore: settingsStore,
+      overrides: [
+        appAnalyticsProvider.overrideWithValue(analytics),
+        appDiagnosticsProvider.overrideWithValue(
+          AppDiagnostics.debug(writer: logs.add),
+        ),
+        cloudWebAuthenticatorProvider.overrideWithValue(
+          _Authenticator((uri) {
+            openedUrls.add(uri);
+            return completion.future;
+          }),
+        ),
+      ],
     );
+
+    expect(find.byKey(const Key('settings-section-cloud')), findsOneWidget);
     await tester.tap(_signInButton);
     await tester.pump();
-    await tester.pump(_second);
-    expect(polls, 1);
-
-    await tester.tap(find.text('Cancel'));
+    expect(find.text('Continue in the sign-in window.'), findsOneWidget);
+    expect(openedUrls, hasLength(1));
+    await tester.tap(_signInButton);
     await tester.pump();
-    await tester.pump(const Duration(seconds: 10));
-    expect(polls, 1);
-    expect(_signInButton, findsOneWidget);
+    expect(openedUrls, hasLength(1));
+    completion.complete(_callback(openedUrls.single));
+    await tester.pumpAndSettle();
+    expect(exchanges, 1);
+    expect(find.text(_email), findsOneWidget);
+    expect((await store.read(_originValue))?.token, _token);
+
+    final settingsAfterSignIn = settingsFile.readAsStringSync();
+    expect(settingsAfterSignIn, originalSettings);
+    final outputs = [
+      ...logs,
+      for (final event in analytics.events)
+        jsonEncode({
+          'category': event.category,
+          'action': event.action,
+          'name': event.name,
+          'dimensions': event.dimensions(platform: 'macos', appVersion: 'test'),
+        }),
+      settingsAfterSignIn,
+    ].join('\n');
+    expect(outputs, isNot(contains(_email)));
+    expect(outputs, isNot(contains(_token)));
+
+    await tester.tap(_signOutButton);
+    await tester.pump();
     expect(await store.read(_originValue), isNull);
+    expect(find.text(_email), findsNothing);
+    expect(_signInButton, findsOneWidget);
   });
 
-  for (final (error, message) in [
-    ('access_denied', 'Sign-in was denied in the browser.'),
-    ('expired_token', 'The verification code expired.'),
-    ('invalid_client', 'Could not sign in.'),
-  ]) {
-    testWidgets('offers another sign-in attempt after $error', (tester) async {
+  testWidgets(
+    'leaving Settings keeps sign-in alive and returning shows its result',
+    (tester) async {
       final store = InMemoryCloudSessionStore();
+      final pending = Completer<Uri?>();
+      Uri? started;
       await _pumpSettings(
         tester,
         store,
-        MockClient((request) async {
-          if (request.url.path.endsWith('/code')) return _deviceCode();
-          return _json({'error': error}, 400);
-        }),
+        MockClient(
+          (request) async => request.url.path == '/app/token'
+              ? _json({'access_token': _token, 'token_type': 'Bearer'})
+              : _json({
+                  'user': {'id': 'example-account', 'email': _email},
+                  'session': {'expiresAt': '2027-01-01T00:00:00Z'},
+                }),
+        ),
+        overrides: [
+          cloudWebAuthenticatorProvider.overrideWithValue(
+            _Authenticator((url) {
+              started = url;
+              return pending.future;
+            }),
+          ),
+        ],
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(_signInButton),
       );
       await tester.tap(_signInButton);
       await tester.pump();
-      await tester.pump(_second);
+      container.read(skillsRouterProvider).go('/installed');
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(
+        container.read(cloudSignInViewModelProvider).value?.phase,
+        CloudSignInPhase.signingIn,
+      );
+      pending.complete(_callback(started!));
+      await tester.pumpAndSettle();
+      container.read(skillsRouterProvider).go('/settings?section=cloud');
+      await tester.pumpAndSettle();
+      expect(find.text(_email), findsOneWidget);
+      expect((await store.read(_originValue))?.token, _token);
+    },
+  );
 
-      expect(find.text(message), findsOneWidget);
-      expect(await store.read(_originValue), isNull);
-      await tester.tap(find.text('Try again'));
-      await tester.pump();
-      expect(find.textContaining(_userCode), findsOneWidget);
-      await tester.tap(find.text('Cancel'));
-      await tester.pump();
-    });
+  for (final locale in ['en', 'zh']) {
+    final chinese = locale == 'zh';
+    final signInLabel = chinese ? '登录' : 'Sign in';
+    final signedOut = chinese
+        ? '登录后，可在你的多台 Mac 之间同步 Skill。'
+        : 'Sign in to sync your Skills between your Macs.';
+    for (final denied in [false, true]) {
+      testWidgets('$locale cancellation denied=$denied has no error', (
+        tester,
+      ) async {
+        var requests = 0;
+        await _pumpSettings(
+          tester,
+          InMemoryCloudSessionStore(),
+          MockClient((_) async {
+            requests++;
+            return _json({}, 500);
+          }),
+          locale: Locale(locale),
+          overrides: [
+            cloudWebAuthenticatorProvider.overrideWithValue(
+              _Authenticator(
+                (url) => denied ? _callback(url, error: 'access_denied') : null,
+              ),
+            ),
+          ],
+        );
+        expect(find.text(signedOut), findsOneWidget);
+        await tester.tap(find.text(signInLabel));
+        await tester.pumpAndSettle();
+        expect(find.text(signedOut), findsOneWidget);
+        expect(find.text(signInLabel), findsOneWidget);
+        expect(requests, 0);
+      });
+    }
+    for (final (status, en, zh) in [
+      (
+        0,
+        "Couldn't reach SkillDeck Cloud. Check your connection and try again.",
+        '无法连接 SkillDeck Cloud，请检查网络后重试。',
+      ),
+      (
+        429,
+        'SkillDeck Cloud is busy right now. Try again in a minute.',
+        'SkillDeck Cloud 暂时繁忙，请稍后重试。',
+      ),
+      (
+        500,
+        'SkillDeck Cloud is busy right now. Try again in a minute.',
+        'SkillDeck Cloud 暂时繁忙，请稍后重试。',
+      ),
+      (400, "Sign-in didn't finish. Try again.", '登录没有完成，请重试。'),
+    ]) {
+      testWidgets('$locale maps $status and clears failure on retry', (
+        tester,
+      ) async {
+        final retry = Completer<Uri?>();
+        var attempts = 0;
+        await _pumpSettings(
+          tester,
+          InMemoryCloudSessionStore(),
+          MockClient((_) async {
+            if (status == 0) throw http.ClientException('offline');
+            return _json({'error': 'invalid_grant'}, status);
+          }),
+          locale: Locale(locale),
+          overrides: [
+            cloudWebAuthenticatorProvider.overrideWithValue(
+              _Authenticator(
+                (url) => ++attempts == 1 ? _callback(url) : retry.future,
+              ),
+            ),
+          ],
+        );
+        await tester.tap(find.text(signInLabel));
+        await tester.pumpAndSettle();
+        expect(find.text(chinese ? zh : en), findsOneWidget);
+        await tester.tap(find.text(signInLabel));
+        await tester.pump();
+        expect(find.text(chinese ? zh : en), findsNothing);
+        expect(
+          find.text(chinese ? '请在登录窗口中继续。' : 'Continue in the sign-in window.'),
+          findsOneWidget,
+        );
+        retry.complete(null);
+        await tester.pumpAndSettle();
+      });
+    }
   }
 
   testWidgets(
@@ -299,14 +372,24 @@ Future<void> _pumpSettings(
   await tester.pumpAndSettle();
 }
 
-http.Response _deviceCode() => _json({
-  'device_code': 'test-device-code',
-  'user_code': _userCode,
-  'verification_uri': '$_origin/device',
-  'verification_uri_complete': _verificationUrl.toString(),
-  'expires_in': 600,
-  'interval': 1,
-});
+final class _Authenticator implements CloudWebAuthenticator {
+  _Authenticator(this.reply);
+  final FutureOr<Uri?> Function(Uri) reply;
+  @override
+  Future<Uri?> authenticate(Uri url, {required String callbackScheme}) async =>
+      reply(url);
+}
+
+Uri _callback(Uri url, {String? error}) =>
+    Uri.parse('cc.skilldeck.signin:/callback').replace(
+      queryParameters: {
+        'state': url.queryParameters['state']!,
+        if (error != null)
+          'error': error
+        else
+          'code': 'test-authorization-code',
+      },
+    );
 
 http.Response _json(Object body, [int status = 200]) => http.Response(
   jsonEncode(body),

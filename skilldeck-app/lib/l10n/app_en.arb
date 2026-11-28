@@ -13,20 +13,7 @@
   "cloudAccount": "Cloud account",
   "cloudCheckingSession": "Checking your session…",
   "cloudSignIn": "Sign in",
-  "cloudSignedOut": "Sign in to your SkillDeck Cloud account.",
-  "cloudRequestingCode": "Requesting a verification code…",
-  "cloudVerificationCode": "Verification code: {code}",
-  "@cloudVerificationCode": {
-    "placeholders": {
-      "code": { "type": "String" }
-    }
-  },
-  "cloudVerifyInBrowser": "Verify that this code matches the one in your browser before approving this device.",
-  "cloudOpenBrowser": "Open browser",
-  "cloudBrowserOpenFailed": "Could not open the browser. Try again.",
-  "cloudSignInDenied": "Sign-in was denied in the browser.",
-  "cloudSignInExpired": "The verification code expired.",
-  "cloudSignInFailed": "Could not sign in.",
+  "cloudSignedOut": "Sign in to sync your Skills between your Macs.",
   "cloudSessionCheckFailed": "Could not read your saved session.",
   "cloudTryAgain": "Try again",
   "cloudOffline": "Offline. Your session could not be checked.",
@@ -1022,5 +1009,9 @@
   "browserUnknownSources": "Unknown source",
   "browserSortGroupingTags": "Sort, grouping and tags",
 "browserGroupSkillCount": "{count, plural, =1{1 Skill} other{{count} Skills}}",
-"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}}
+"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}},
+  "cloudSigningIn": "Continue in the sign-in window.",
+  "cloudSignInNetworkFailed": "Couldn't reach SkillDeck Cloud. Check your connection and try again.",
+  "cloudSignInBusy": "SkillDeck Cloud is busy right now. Try again in a minute.",
+  "cloudSignInOtherFailed": "Sign-in didn't finish. Try again."
 }

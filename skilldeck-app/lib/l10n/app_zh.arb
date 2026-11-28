@@ -13,15 +13,7 @@
   "cloudAccount": "云端账号",
   "cloudCheckingSession": "正在检查登录状态…",
   "cloudSignIn": "登录",
-  "cloudSignedOut": "登录你的 SkillDeck Cloud 账号。",
-  "cloudRequestingCode": "正在请求验证码…",
-  "cloudVerificationCode": "验证码：{code}",
-  "cloudVerifyInBrowser": "在浏览器中确认验证码一致，再批准此设备。",
-  "cloudOpenBrowser": "打开浏览器",
-  "cloudBrowserOpenFailed": "无法打开浏览器，请重试。",
-  "cloudSignInDenied": "浏览器中的登录请求已被拒绝。",
-  "cloudSignInExpired": "验证码已过期。",
-  "cloudSignInFailed": "无法登录。",
+  "cloudSignedOut": "登录后，可在你的多台 Mac 之间同步 Skill。",
   "cloudSessionCheckFailed": "无法读取已保存的登录会话。",
   "cloudTryAgain": "重试",
   "cloudOffline": "当前离线，暂时无法检查登录状态。",
@@ -986,5 +978,9 @@
   "browserUnknownSources": "来源未知",
   "browserSortGroupingTags": "排序、分组与标签",
 "browserGroupSkillCount": "{count} Skills",
-"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}}
+"@browserGroupSkillCount": {"placeholders": {"count": {"type": "int"}}},
+  "cloudSigningIn": "请在登录窗口中继续。",
+  "cloudSignInNetworkFailed": "无法连接 SkillDeck Cloud，请检查网络后重试。",
+  "cloudSignInBusy": "SkillDeck Cloud 暂时繁忙，请稍后重试。",
+  "cloudSignInOtherFailed": "登录没有完成，请重试。"
 }
